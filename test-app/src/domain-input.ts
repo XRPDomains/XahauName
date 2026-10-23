@@ -1,4 +1,4 @@
-import {normalizeDomainInput} from '../../sdk/src/protocol';
+import {normalizeDomainInput} from '../../packages/sdk/src/protocol';
 /** Clean pasted/typed input without adding a suffix on every keystroke or moving the caret. */
 export function enhanceDomainInputs(inputs:HTMLInputElement[]){
  for(const input of inputs){

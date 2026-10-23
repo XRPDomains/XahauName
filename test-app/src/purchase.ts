@@ -1,1 +1,1 @@
-export {purchaseThenClaim} from '../../sdk/src/purchase';
+export {purchaseThenClaim} from '../../packages/sdk/src/purchase';

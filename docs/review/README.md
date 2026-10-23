@@ -1,5 +1,7 @@
 # Assurance and review
 
+[Workspace migration verification](WORKSPACES.md) covers the `packages/` layout, shared lock and isolated npm tarball consumer.
+
 Latest [full source Open Code Review report](OPEN-CODE-REVIEW.md): two high and two medium open findings with deterministic reproductions.
 
 Current [indexer implementation evidence and open gates](INDEXER.md) complement the original event/indexing proposal.

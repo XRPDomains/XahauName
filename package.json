@@ -13,13 +13,29 @@
     "hook:build": "node scripts/build-hooks.mjs",
     "hook:test": "node scripts/test-hooks.mjs",
     "hook:check-deploy": "node hook/test/deployment.cjs",
-    "sdk:build": "npm --prefix sdk run build",
-    "sdk:test": "npm --prefix sdk test",
-    "indexer:build": "npm --prefix indexer run build",
-    "indexer:test": "npm --prefix indexer test",
-    "indexer:start": "npm --prefix indexer start",
-    "app:dev": "npm --prefix test-app run dev",
-    "app:test": "npm --prefix test-app test",
-    "check": "node scripts/check-repository.mjs"
+    "sdk:build": "npm run build --workspace @xahauname/sdk",
+    "sdk:test": "npm test --workspace @xahauname/sdk",
+    "indexer:build": "npm run sdk:build && npm run build --workspace @xahauname/indexer",
+    "indexer:test": "npm run sdk:build && npm test --workspace @xahauname/indexer",
+    "indexer:start": "npm start --workspace @xahauname/indexer",
+    "app:dev": "npm run dev --workspace xahauname-test-app",
+    "app:test": "npm test --workspace xahauname-test-app",
+    "check": "node scripts/check-repository.mjs",
+    "app:typecheck": "npm run typecheck --workspace xahauname-test-app",
+    "packages:build": "node scripts/check-packages.mjs --build-only",
+    "packages:test": "npm run packages:build && npm test --workspace packages --if-present",
+    "release:check": "node scripts/check-packages.mjs",
+    "release:version": "node scripts/version-packages.mjs",
+    "repo:test": "node --test scripts/test/*.test.cjs"
+  },
+  "workspaces": [
+    "packages/*",
+    "test-app"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "xahau": "4.2.0"
   }
 }

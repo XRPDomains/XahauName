@@ -2,8 +2,8 @@
 const fs = require('node:fs'), path = require('node:path'), assert = require('node:assert/strict'), crypto = require('node:crypto');
 const {decodeAccountID} = require('xahau');
 const {XahauNameClient, TESTNET} = require('../dist');
-const validation = require('../../deployments/testnet-validation.json');
-const repo = path.resolve(__dirname, '../..');
+const validation = require('../../../deployments/testnet-validation.json');
+const repo = path.resolve(__dirname, '../../..');
 async function main() {
     const c = new XahauNameClient(TESTNET); let timer;
     try {

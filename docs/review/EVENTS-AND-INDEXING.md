@@ -1,6 +1,6 @@
 # Events and indexing proposal
 
-Reviewed: 2026-10-23. This document records the original design proposal. An initial [developer indexer](../../indexer/README.md) now implements a subset with SQLite, validated-ledger polling/replay and an HTTP/SSE example; see [implementation evidence and remaining gates](INDEXER.md). Proposed granular event names and production storage features below are not all implemented. Collecting native transaction metadata needs no extra hook emission.
+Reviewed: 2026-10-23. This document records the original design proposal. An initial [developer indexer](../../packages/indexer/README.md) now implements a subset with SQLite, validated-ledger polling/replay and an HTTP/SSE example; see [implementation evidence and remaining gates](INDEXER.md). Proposed granular event names and production storage features below are not all implemented. Collecting native transaction metadata needs no extra hook emission.
 
 ## Native emit and application events
 
@@ -12,7 +12,7 @@ Sources: [emitted transactions](https://xahau.network/docs/hooks/concepts/emitte
 
 ## Read-only testnet proof
 
-`node sdk/test/verify-streams.cjs` subscribed to treasury account plus ledger stream and received ledgerClosed. Treasury account_tx contained all seven sampled operations: purchase, claim, profile, transfer offer, transfer claim and two burns. Replay found four autonomous children: two Mint and two CreateSellOffer, all tesSUCCESS, correlated through EmitParentTxnID. Profile had 11 state nodes; transfer claim had 20. Across samples, 51 state-node ledger indices matched the treasury/key/namespace formula.
+`node packages/sdk/test/verify-streams.cjs` subscribed to treasury account plus ledger stream and received ledgerClosed. Treasury account_tx contained all seven sampled operations: purchase, claim, profile, transfer offer, transfer claim and two burns. Replay found four autonomous children: two Mint and two CreateSellOffer, all tesSUCCESS, correlated through EmitParentTxnID. Profile had 11 state nodes; transfer claim had 20. Across samples, 51 state-node ledger indices matched the treasury/key/namespace formula.
 
 This is sampled coverage, not proof of account-only completeness for all failures/amendments. EmitFailure, future transaction types and history gaps require further tests. Local evidence: `hook/build/current/review/websocket-proof.json`.
 

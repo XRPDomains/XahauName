@@ -1,12 +1,12 @@
 # SDK API reference
 
-Version 0.3.0. Import from @xahauname/sdk. See [quickstart](../sdk/README.md), [types](../sdk/src/types.ts) and [protocol](SPEC.md). Arguments label/tld refer to canonical domain components. Amounts are bigint drops; binary values are Buffer.
+Version 0.3.0. Import from @xahauname/sdk. See [quickstart](../packages/sdk/README.md), [types](../packages/sdk/src/types.ts) and [protocol](SPEC.md). Arguments label/tld refer to canonical domain components. Amounts are bigint drops; binary values are Buffer.
 
 ## Client configuration
 
 `resolveNetworkConfig({network: 'testnet' | 'mainnet', deployment?, wss?})` selects shared transport and deployment configuration. The reviewed testnet deployment is bundled; mainnet requires its own explicit manifest. `XAHAU_NETWORKS` also provides Wallet Kit IDs and explorer/faucet settings. See [network configuration](NETWORKS.md).
 
-Optional `new IndexerReadClient({url, networkId, fetch?})` exposes `describe`, `listOwnedDomains`, `listIncomingOffers`, `getVerifiedPrimaryName`, `listRecovery` and cursor-paginated `events`. Responses contain `{status, data}`, retaining indexed ledger/hash, observed head, lag, last successful sync and last error. Network-mismatched responses are rejected. Read-model data is not current ledger proof and does not replace transaction preflight. See [indexer API](../indexer/README.md).
+Optional `new IndexerReadClient({url, networkId, fetch?})` exposes `describe`, `listOwnedDomains`, `listIncomingOffers`, `getVerifiedPrimaryName`, `listRecovery` and cursor-paginated `events`. Responses contain `{status, data}`, retaining indexed ledger/hash, observed head, lag, last successful sync and last error. Network-mismatched responses are rejected. Read-model data is not current ledger proof and does not replace transaction preflight. See [indexer API](../packages/indexer/README.md).
 
 new XahauNameClient(config) requires wss, treasury and exactly one namespaceId/namespaceSeed. wallet (xahau Wallet) and external signer (TxSigner) are mutually exclusive. TESTNET supplies verified public configuration, NetworkID 21338 and handler hashes. Optional cacheTtlMs, hardcodedTlds and maxFeeXAH control reads and signing. Local-wallet default fee ceiling is1 XAH; purchase price is separate.
 

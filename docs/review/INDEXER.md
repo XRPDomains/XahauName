@@ -14,7 +14,7 @@ Date: 2026-10-23. Initial developer implementation; not published to npm and not
 
 Latest local checks: indexer 27/27, SDK 71/71, app 129/129; browser smoke 16 checks. TypeScript and repository link/signing-material checks pass. Hook C and installed artifact identities are unchanged.
 
-Offline indexer tests use independently constructed binary root, record-index, custom-slot and keylet fixtures. They cover profiles, receiving addresses, custom texts, verified primary, pending/claim, native offers without HookExecutions, transfer/burn cleanup, native failure, weak failure, reserved mapping inconsistency, snapshot pagination/identity, unknown hashes, duplicate/shuffled deliveries, gaps, restart, database network isolation and SQLite transaction rollback. See `indexer/test/`.
+Offline indexer tests use independently constructed binary root, record-index, custom-slot and keylet fixtures. They cover profiles, receiving addresses, custom texts, verified primary, pending/claim, native offers without HookExecutions, transfer/burn cleanup, native failure, weak failure, reserved mapping inconsistency, snapshot pagination/identity, unknown hashes, duplicate/shuffled deliveries, gaps, restart, database network isolation and SQLite transaction rollback. See `packages/indexer/test/`.
 
 Two immutable public receipts are stored as fixtures, independently checked against expected transaction hashes/results and node counts:
 

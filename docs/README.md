@@ -1,7 +1,7 @@
 # Documentation
 
 - [Network and deployment configuration](NETWORKS.md)
-- [Indexer package and local API](../indexer/README.md)
+- [Indexer package and local API](../packages/indexer/README.md)
 
 Release 0.3.0. Network: Xahau testnet. Native wire marker:2.
 
@@ -10,7 +10,7 @@ Release 0.3.0. Network: Xahau testnet. Native wire marker:2.
 | [Protocol specification](SPEC.md) | Hook, SDK and resolver implementers |
 | [Hook functions](HOOK-FUNCTIONS.md) | C maintainers and reviewers |
 | [SDK API](API.md) | Application developers |
-| [SDK quickstart](../sdk/README.md) | Integration examples |
+| [SDK quickstart](../packages/sdk/README.md) | Integration examples |
 | [XNIP standards](standards/README.md) | Interoperability and future proposals |
 | [Deployment guide](../hook/DEPLOY-TESTNET.md) | Operators |
 | [Wallet integration](WALLET-INTEGRATION.md) | Wallet Kit integrations |

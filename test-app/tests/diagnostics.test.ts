@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {explainError} from '../../sdk/src/diagnostics';
+import {explainError} from '../../packages/sdk/src/diagnostics';
 for (const code of ['tecUNFUNDED_PAYMENT','tecINSUFFICIENT_RESERVE','terINSUF_FEE_B','tecINSUFF_FEE']) {
     test('friendly available-XAH explanation for '+code,()=>{
         const result=explainError({code,message:'technical failure'});

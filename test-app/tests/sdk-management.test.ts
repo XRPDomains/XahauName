@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {RegistrarModule} from '../../sdk/src/registrar';
-import {XahauNameClient} from '../../sdk/src/index';
-import {TESTNET_V2} from '../../sdk/src/deployments';
-import {purchaseThenClaim} from '../../sdk/src/purchase';
+import {RegistrarModule} from '../../packages/sdk/src/registrar';
+import {XahauNameClient} from '../../packages/sdk/src/index';
+import {TESTNET_V2} from '../../packages/sdk/src/deployments';
+import {purchaseThenClaim} from '../../packages/sdk/src/purchase';
 import {Wallet} from 'xahau';
 const owner=Wallet.generate().classicAddress,recipient=Wallet.generate().classicAddress,id='A'.repeat(64),ledgerHash='B'.repeat(64);
 function setup(signer=owner){const calls:any[]=[];const ctx:any={treasury:TESTNET_V2.treasury,signerAddress:()=>signer,submitNative:async(tx:any)=>{calls.push(tx);return{txHash:'C'.repeat(64),engineResult:'tesSUCCESS',validated:true};},submit:async(tx:any,opts:any)=>{calls.push({tx,opts});return{txHash:'D'.repeat(64),engineResult:'tesSUCCESS'};},ledgerObject:async()=>({Owner:owner,Destination:recipient,Amount:'0'})};const r=new RegistrarModule(ctx);r.getRegistrationStatus=async()=>({stage:'claimed',domain:'alice.xah',uritokenId:id,ledgerHash,owner,tokenOwner:owner});return{r,calls,ctx};}

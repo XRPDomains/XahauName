@@ -1,18 +1,20 @@
 # @xahauname/sdk
 
-Use `resolveNetworkConfig({network: 'testnet'})` for the reviewed deployment. Mainnet uses the same API with its own explicit deployment; see [network configuration](../docs/NETWORKS.md). Optional `IndexerReadClient` reads the [indexer HTTP API](../indexer/README.md) and retains checkpoint/lag; transaction submission and critical verification stay ledger-backed.
+Use `resolveNetworkConfig({network: 'testnet'})` for the reviewed deployment. Mainnet uses the same API with its own explicit deployment; see [network configuration](../../docs/NETWORKS.md). Optional `IndexerReadClient` reads the [indexer HTTP API](../indexer/README.md) and retains checkpoint/lag; transaction submission and critical verification stay ledger-backed.
 
-Release 0.3.0 for the native ten-handler XahauName protocol. Requires Node.js 20+ or a modern browser bundler. Uses xahau 4.2.0. [Complete API](../docs/API.md), [protocol](../docs/SPEC.md), [wallet integration](../docs/WALLET-INTEGRATION.md).
+Release 0.3.0 for the native ten-handler XahauName protocol. Requires Node.js 20+ or a modern browser bundler. Uses xahau 4.2.0. [Complete API](../../docs/API.md), [protocol](../../docs/SPEC.md), [wallet integration](../../docs/WALLET-INTEGRATION.md).
 
 ## Build
 
 ```sh
 npm ci
-npm run build
-npm test
+npm run sdk:build
+npm run sdk:test
 ```
 
 Exports CommonJS, ESM and declarations. The browser app bundles the ESM/source entry; a separate IIFE is not needed for that integration. No npm publish is performed by build.
+
+Run these commands from the repository root; see [workspace and release maintenance](../README.md). A single root lockfile covers all client packages.
 
 ## Read a profile
 

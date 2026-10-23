@@ -1,7 +1,7 @@
 // Explicit testnet integration suite. Never runs from the default offline test command.
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const {Wallet}=require('xahau'),sdk=require('../dist'),{XahauNameClient,TESTNET,util,parameters,normalizeContentURI,encodeContentHash}=sdk;
-const repo=path.resolve(__dirname,'../..'),out=path.join(repo,'hook/build/current',process.env.SDK_LIVE_RUN??'live'),clients=[],journal=[],checks=[];const resume=process.argv.includes('--resume-failed-purchase');let stage='setup',started=false;
+const repo=path.resolve(__dirname,'../../..'),out=path.join(repo,'hook/build/current',process.env.SDK_LIVE_RUN??'live'),clients=[],journal=[],checks=[];const resume=process.argv.includes('--resume-failed-purchase');let stage='setup',started=false;
 assert(/^[a-z0-9-]+$/i.test(path.basename(out))&&path.dirname(out)===path.join(repo,'hook/build/current'),'Invalid live journal directory');
 const save=(n,v)=>fs.writeFileSync(path.join(out,n+'.json'),JSON.stringify(v,(_k,v)=>typeof v==='bigint'?v.toString():v,2)+'\n');
 function env(file){return Object.fromEntries(fs.readFileSync(file,'utf8').split(/\r?\n/).filter(l=>/^[A-Z][A-Z0-9_]*=/.test(l)).map(l=>{const i=l.indexOf('=');return[l.slice(0,i),l.slice(i+1)];}));}

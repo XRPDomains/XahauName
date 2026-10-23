@@ -1,6 +1,6 @@
-import {assertWalletKitSession,createWalletKitSigner,type WalletKitSession} from '../../sdk/src/wallet-kit';
+import {assertWalletKitSession,createWalletKitSigner,type WalletKitSession} from '../../packages/sdk/src/wallet-kit';
 import {CHAIN} from './config';
-export {waitValidated} from '../../sdk/src/confirmation';
+export {waitValidated} from '../../packages/sdk/src/confirmation';
 export const NETWORK=CHAIN.walletKitId;
 export const MAX_FEE='1000000';
 export function assertNetwork(manager:Pick<WalletKitSession,'getAccount'|'getNetwork'>,address?:string){return assertWalletKitSession(manager,NETWORK,address);}

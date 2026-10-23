@@ -1,6 +1,6 @@
 const fs=require('fs'),assert=require('node:assert/strict'),crypto=require('crypto');
 const root=require('node:path').resolve(__dirname,'../build/current'),active=JSON.parse(fs.readFileSync(require('node:path').resolve(__dirname,'../config/handlers.json')));
-const codec=require(require('node:path').resolve(__dirname,'../../sdk/node_modules/xahau-binary-codec')),addr=require(require('node:path').resolve(__dirname,'../../sdk/node_modules/xahau-address-codec'));
+const codec=require('xahau'),addr=require('xahau');
 const metadataBase='https://xrpdomains.xyz/api/nftdomains/metadata/',baseKey=sha=>sha('_uri_base_v1').toString('hex');
 const owner=Buffer.alloc(20,0x11),buyer=Buffer.alloc(20,0x22),sha=b=>crypto.createHash('sha512').update(b).digest().subarray(0,32),id=sha(Buffer.concat([Buffer.from([0,85]),owner,Buffer.from(metadataBase+'alice.xah')])),pkey=Buffer.concat([Buffer.from('pending:'),id.subarray(0,24)]).toString('hex'),rootkey=sha('alice.xah:root').toString('hex');
 const results=[];function test(name,f){try{f();results.push({name,pass:true});}catch(e){results.push({name,pass:false,error:e.stack||String(e)});}}

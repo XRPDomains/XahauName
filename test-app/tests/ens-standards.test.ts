@@ -1,10 +1,10 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {decodeAccountID} from 'xahau';
-import {encodeAddress,decodeAddress,canonicalAddressBytes} from '../../sdk/src/addresses';
-import {COIN_TYPES,LEGACY_COIN_TYPES} from '../../sdk/src/constants';
-import {ENS_GLOBAL_TEXT_KEYS,GLOBAL_PROFILE_FIELDS,getDomainDisplayName} from '../../sdk/src/text-records';
-import {PROFILE_TEXT_KEYS,profilePatchFields,coinBytes} from '../../sdk/src/protocol';
-import {ResolverModule} from '../../sdk/src/resolver';
+import {encodeAddress,decodeAddress,canonicalAddressBytes} from '../../packages/sdk/src/addresses';
+import {COIN_TYPES,LEGACY_COIN_TYPES} from '../../packages/sdk/src/constants';
+import {ENS_GLOBAL_TEXT_KEYS,GLOBAL_PROFILE_FIELDS,getDomainDisplayName} from '../../packages/sdk/src/text-records';
+import {PROFILE_TEXT_KEYS,profilePatchFields,coinBytes} from '../../packages/sdk/src/protocol';
+import {ResolverModule} from '../../packages/sdk/src/resolver';
 import {NETWORKS} from '../src/records';
 const address='rf1BiGeXwwQoi8Z2ueFYTEXSwuJYfV2Jpn',h='A'.repeat(64);
 for(const [coin,text,hex] of [

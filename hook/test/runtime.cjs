@@ -5,8 +5,8 @@ const moduleObject = new WebAssembly.Module(moduleBytes);
 function setup(options = {}) {
   let instance, offset = 131072, reserved = false;
   const guards = new Map(), calls = [], values = options.values || new Map(), slots = new Map();
-  const codec=require(require('node:path').resolve(__dirname,'../../../../sdk/node_modules/xahau-binary-codec'));
-  const address=require(require('node:path').resolve(__dirname,'../../../../sdk/node_modules/xahau-address-codec'));
+  const codec=require('xahau');
+  const address=require('xahau');
   const account=address.encodeAccountID(Buffer.alloc(20,0x11));
   const emitted=options.emitted || [];
   const bytes = () => new Uint8Array(instance.exports.memory.buffer);

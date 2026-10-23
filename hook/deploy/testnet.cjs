@@ -1,5 +1,5 @@
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),crypto=require('node:crypto');
-const {Client,Wallet}=require('../../sdk/node_modules/xahau');
+const {Client,Wallet}=require('xahau');
 const repo=path.resolve(__dirname,'../..'),base=path.join(repo,'hook/build/current'),out=path.join(base,process.env.XAHAU_DEPLOY_RUN??'deployment'),manifestPath=path.join(repo,'deployments/testnet.json'),checkOnly=process.argv.includes('--check');
 assert(/^[a-z0-9-]+$/i.test(path.basename(out))&&path.dirname(out)===base,'Invalid deployment journal directory');
 const read=p=>JSON.parse(fs.readFileSync(p,'utf8')),sha=b=>crypto.createHash('sha256').update(b).digest('hex');
@@ -42,7 +42,7 @@ async function main(){
   const manifest={schemaVersion:1,release:'0.3.0',network:'xahau-testnet',networkID:21338,rpc:previous.rpc,treasury:account,namespace:previous.namespace,installTransaction:response.result.hash,installedAt:new Date().toISOString(),profileBatchVersions:[1,2],handlers:artifacts.map(a=>({name:a.name,position:a.position,hash:a.hash,definitionIndex:a.definitionIndex,bytes:a.proof.bytes,sha256:a.proof.sha256,sourceSha256:a.proof.sourceSha256,instructionCounts:a.proof.instructionCounts,hookOn:a.hook.HookOn,hookCanEmit:a.hook.HookCanEmit}))};
   fs.writeFileSync(manifestPath,JSON.stringify(manifest,null,2)+'\n');save('installed-manifest',manifest);
   const config={wss:manifest.rpc,treasury:manifest.treasury,namespaceId:manifest.namespace,expectedNetworkId:manifest.networkID,hookHashes:Object.fromEntries(manifest.handlers.map(h=>[h.name,h.hash]))};
-  fs.writeFileSync(path.join(repo,'sdk/src/deployments.ts'),"import type {XahauNameConfig} from './types';\n/** Verified public testnet deployment; regenerate only after a validated upgrade. */\nexport const TESTNET:Readonly<XahauNameConfig>=Object.freeze("+JSON.stringify(config,null,2)+");\n/** @deprecated Use TESTNET. The native wire marker remains version 2. */\nexport const TESTNET_V2=TESTNET;\n");
+  fs.writeFileSync(path.join(repo,'packages/sdk/src/deployments.ts'),"import type {XahauNameConfig} from './types';\n/** Verified public testnet deployment; regenerate only after a validated upgrade. */\nexport const TESTNET:Readonly<XahauNameConfig>=Object.freeze("+JSON.stringify(config,null,2)+");\n/** @deprecated Use TESTNET. The native wire marker remains version 2. */\nexport const TESTNET_V2=TESTNET;\n");
   save('result',{result:'DEPLOYED',transaction:response.result.hash,statePreserved:true,handlers:10});console.log(JSON.stringify({result:'DEPLOYED',transaction:response.result.hash,statePreserved:true,handlers:10}));
  }finally{await c.disconnect();}
 }

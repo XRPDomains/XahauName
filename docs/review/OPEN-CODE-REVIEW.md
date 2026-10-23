@@ -2,6 +2,8 @@
 
 Date: 2026-10-23. Release candidate 0.3.0: development/testnet only.
 
+Package-layout follow-up: SDK/indexer moved to `packages/`; source links below follow their current paths. The JSON coverage record preserves paths from the original reviewed snapshot. Workspace reorganization corrected the app README configuration description; OCR-04's SDK error-guidance issue remains open.
+
 ## Method and scope
 
 Open Code Review's autonomous review could not start because no LLM endpoint was configured. Its **delegate** mode supplied deterministic file selection and rule resolution; the host performed code review and validation. This is not an independent external-model audit.
@@ -20,7 +22,7 @@ Required: native fault injection at claim/root/index/primary and burn cleanup bo
 
 ### OCR-02 / High / new: bootstrap can call unfinished registration claimed
 
-[projection.ts:70–78](../../indexer/src/projection.ts) promotes an existing root to claimed after root/native-owner verification without requiring pending state to be absent. Bootstrap has no preceding failed-execution metadata to establish quarantine. A matching root/native owner with leftover pending state can therefore appear in owned domains and verified-primary results while SDK registration status says recoveryRequired.
+[projection.ts:70–78](../../packages/indexer/src/projection.ts) promotes an existing root to claimed after root/native-owner verification without requiring pending state to be absent. Bootstrap has no preceding failed-execution metadata to establish quarantine. A matching root/native owner with leftover pending state can therefore appear in owned domains and verified-primary results while SDK registration status says recoveryRequired.
 
 Offline reproduction: add a valid 32-byte pending record to the independent claimed fixture, bootstrap a fresh SQLite database, and compare indexer.describe with RegistrarModule.getRegistrationStatus. Actual results: **claimed / recoveryRequired**. No ledger writes or real signing.
 
@@ -28,7 +30,7 @@ Required: align projection with the SDK state machine, handle root+pending/refun
 
 ### OCR-03 / Medium / new: wallet-filled fees bypass SDK helper ceiling
 
-[wallet-kit.ts:35](../../sdk/src/wallet-kit.ts) checks maxFeeDrops only when the input already contains Fee. Normal SDK requests omit Fee and let the wallet fill it. The helper neither verifies the resulting fee before signing nor rejects an over-limit receipt when Fee was absent from input intent. The test app has an additional Wallet Kit preflight ceiling; that integration is protected separately.
+[wallet-kit.ts:35](../../packages/sdk/src/wallet-kit.ts) checks maxFeeDrops only when the input already contains Fee. Normal SDK requests omit Fee and let the wallet fill it. The helper neither verifies the resulting fee before signing nor rejects an over-limit receipt when Fee was absent from input intent. The test app has an additional Wallet Kit preflight ceiling; that integration is protected separately.
 
 Offline reproduction: Invoke without Fee, limit 1000000 drops, mock matching validated wallet receipt with Fee=2000000. The signer **accepts** it.
 
@@ -36,7 +38,7 @@ Required: enforce a pre-sign fee-preparation/preflight contract, or explicitly r
 
 ### OCR-04 / Medium / new: error guidance still assumes testnet
 
-[diagnostics.ts:44–48](../../sdk/src/diagnostics.ts) instructs users to add test XAH, fund Xahau Testnet or connect a Testnet wallet even when the shared configuration selects mainnet. The app README also still calls the runtime fixed-testnet. This sends configured mainnet users to the wrong network.
+[diagnostics.ts:44–48](../../packages/sdk/src/diagnostics.ts) instructs users to add test XAH, fund Xahau Testnet or connect a Testnet wallet even when the shared configuration selects mainnet. The app README also still calls the runtime fixed-testnet. This sends configured mainnet users to the wrong network.
 
 Required: network-neutral wording or active-network context, tests for both profiles, and matching app docs. The deliberately testnet-only deploy/live-test scripts should remain explicit.
 

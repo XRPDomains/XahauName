@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {normalizeDomainInput} from '../../sdk/src/protocol';
-import {XahauNameClient} from '../../sdk/src/index';
-import {TESTNET_V2} from '../../sdk/src/deployments';
+import {normalizeDomainInput} from '../../packages/sdk/src/protocol';
+import {XahauNameClient} from '../../packages/sdk/src/index';
+import {TESTNET_V2} from '../../packages/sdk/src/deployments';
 import {createBalanceResolver} from '../src/wallet-balance';
 const address='rw5W1Ljeg7T4JionCu2hKzWeUus7XQ9qs';
 for(const [input,expected] of [[' Alice ','alice.xah'],['A L I C E.XAH','alice.xah'],['ALICE.XAHAU','alice.xahau'],['alice.','alice.xah'],['\u00a0 ALICE \t','alice.xah']])test('friendly domain input: '+JSON.stringify(input),()=>assert.equal(normalizeDomainInput(input),expected));

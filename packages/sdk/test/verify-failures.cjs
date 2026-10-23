@@ -1,7 +1,7 @@
 // Native-ledger failure simulation only: never signs/submits a transaction.
 const assert = require('node:assert/strict'), fs = require('node:fs'), path = require('node:path');
 const {XahauNameClient, TESTNET, parameters, explainError} = require('../dist');
-const validation = require('../../deployments/testnet-validation.json');
+const validation = require('../../../deployments/testnet-validation.json');
 async function main() {
     const c = new XahauNameClient(TESTNET);
     try {
@@ -23,7 +23,7 @@ async function main() {
             hookStateNodes: (simulation.meta?.AffectedNodes ?? []).filter(row => (row.CreatedNode ?? row.ModifiedNode ?? row.DeletedNode).LedgerEntryType === 'HookState').length,
             unchangedAccountSequenceAndBalance: true, domainRemainsAvailable: true};
         assert.equal(result.hookStateNodes, 0, 'A rejected native payment must not project a successful domain-state update');
-        const out = path.resolve(__dirname, '../../hook/build/current/review'); fs.mkdirSync(out, {recursive: true});
+        const out = path.resolve(__dirname, '../../../hook/build/current/review'); fs.mkdirSync(out, {recursive: true});
         fs.writeFileSync(path.join(out, 'insufficient-funds-simulation.json'), JSON.stringify(simulation, null, 2) + '\n');
         fs.writeFileSync(path.join(out, 'insufficient-funds.json'), JSON.stringify(result, null, 2) + '\n');
         console.log(JSON.stringify(result));

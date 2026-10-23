@@ -4,9 +4,11 @@ A native name service for Xahau. Canonical names, ownership mappings, addresses,
 
 **Release 0.3.0 targets Xahau testnet.** No mainnet deployment is included. Names have no expiry or renewal.
 
-SDK, indexer and the domain manager share [network/deployment configuration](docs/NETWORKS.md). Mainnet transport is predefined; its own reviewed deployment must be supplied before use. The [indexer package](indexer/README.md) provides an initial SQLite read model and HTTP/SSE example for development.
+SDK, indexer and the domain manager share [network/deployment configuration](docs/NETWORKS.md). Mainnet transport is predefined; its own reviewed deployment must be supplied before use. The [indexer package](packages/indexer/README.md) provides an initial SQLite read model and HTTP/SSE example for development.
 
 ## Repository
+
+Install once with `npm ci` at the root. Public libraries are npm workspaces under [`packages/`](packages/README.md), with one shared lockfile and synchronized release tooling. See the package guide for adding a library or preparing an npm release.
 
 | Path | Purpose |
 | --- | --- |
@@ -14,8 +16,8 @@ SDK, indexer and the domain manager share [network/deployment configuration](doc
 | hook/toolchain/ | Pinned compiler configuration and checker checksums |
 | hook/deploy/ | Journaled testnet upgrade |
 | hook/test/ | Production-artifact model tests |
-| sdk/ | TypeScript SDK, codecs and wallet integration |
-| indexer/ | Validated-ledger decoder, SQLite read model, event outbox and local API |
+| packages/sdk/ | TypeScript SDK, codecs and wallet integration |
+| packages/indexer/ | Validated-ledger decoder, SQLite read model, event outbox and local API |
 | test-app/ | English domain manager with Wallet Kit |
 | docs/ | Protocol, function reference, SDK API and XNIP standards |
 | deployments/ | Public deployment identity and validation summary |
@@ -23,11 +25,10 @@ SDK, indexer and the domain manager share [network/deployment configuration](doc
 
 ## Development
 
-Use Node.js 20+ (22 recommended). Install packages independently:
+Use Node.js 20+ (22 recommended). Install all workspaces from the root:
 
 ```sh
-npm ci --prefix sdk
-npm ci --prefix test-app
+npm ci
 npm run sdk:test
 npm run app:test
 npm run app:dev
@@ -39,7 +40,7 @@ Hook builds require Docker and the native checker. Follow [hook development](hoo
 
 ## Documentation
 
-Start with the [documentation index](docs/README.md), [protocol](docs/SPEC.md), [SDK quickstart](sdk/README.md) and [standards registry](docs/standards/README.md). Installed hashes and public addresses are in [the deployment manifest](deployments/testnet.json).
+Start with the [documentation index](docs/README.md), [protocol](docs/SPEC.md), [SDK quickstart](packages/sdk/README.md) and [standards registry](docs/standards/README.md). Installed hashes and public addresses are in [the deployment manifest](deployments/testnet.json).
 
 ## Authority and limits
 

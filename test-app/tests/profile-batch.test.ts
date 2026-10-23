@@ -1,7 +1,7 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import {ResolverModule} from '../../sdk/src/resolver';
-import {profilePatchFields,PROFILE_TEXT_KEYS,diffProfile} from '../../sdk/src/protocol';
-import {textKey} from '../../sdk/src/util';
+import {ResolverModule} from '../../packages/sdk/src/resolver';
+import {profilePatchFields,PROFILE_TEXT_KEYS,diffProfile} from '../../packages/sdk/src/protocol';
+import {textKey} from '../../packages/sdk/src/util';
 const H='AB'.repeat(32),address='rw5W1Ljeg7T4JionCu2hKzWeUus7XQ9qs';
 function setup(texts:Record<string,string>={}){const calls:any[]=[],reads:string[]=[];const data=new Map(Object.entries(texts).map(([key,value])=>[textKey('alice','xah',key),Buffer.from(value)]));const r=new ResolverModule({treasury:address,signerAddress:()=>address,ledgerHash:async()=>H,readState:async(key,opts)=>{assert.equal(opts?.ledgerHash,H);assert.equal(opts?.bypassCache,true);reads.push(key);return data.get(key)??null;},submit:async(tx,opts)=>{calls.push({tx,opts});return{txHash:'CD'.repeat(32),engineResult:'tesSUCCESS'} as any;}} as any);return{r,calls,reads};}
 function fields(tx:any){return Object.fromEntries(tx.HookParameters.map((row:any)=>[Buffer.from(row.HookParameter.HookParameterName,'hex').toString(),Buffer.from(row.HookParameter.HookParameterValue,'hex')]));}

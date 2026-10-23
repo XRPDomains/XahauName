@@ -36,6 +36,15 @@ function walk(dir) {
   }
 }
 walk(root);
+const workspaceManifest = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
+if (workspaceManifest.workspaces?.includes('packages/*')) {
+  if (!fs.existsSync(path.join(root, 'package-lock.json'))) problems.push('Missing shared workspace lockfile');
+  for (const entry of fs.readdirSync(path.join(root, 'packages'), {withFileTypes: true})) {
+    if (entry.isDirectory() && fs.existsSync(path.join(root, 'packages', entry.name, 'package-lock.json')))
+      problems.push(`packages/${entry.name}: use the root package-lock.json`);
+  }
+  if (fs.existsSync(path.join(root, 'test-app/package-lock.json'))) problems.push('test-app: use the root package-lock.json');
+}
 const tracked = execFileSync('git', ['ls-files', '-z'], {cwd: root, encoding: 'utf8'}).split('\0').filter(Boolean);
 for (const name of tracked) {
   if (!fs.existsSync(path.join(root, name))) continue; // Intentional removals may not be staged yet.

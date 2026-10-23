@@ -6,6 +6,6 @@ export const NETWORKS = [
     {coin:501,symbol:'SOL',name:'Solana',placeholder:'Base58 Solana address'},
     {coin:195,symbol:'TRX',name:'TRON',placeholder:'T…'},
 ] as const;
-export {encodeAddress,decodeAddress} from '../../sdk/src/addresses';
+export {encodeAddress,decodeAddress} from '../../packages/sdk/src/addresses';
 export function networkName(coin:number){return NETWORKS.find(n=>n.coin===coin)?.name??(coin===345?'Legacy SOL record (345)':coin===535?'Legacy Xahau record (535)':`Custom coin ${coin}`);}
-export {GLOBAL_PROFILE_FIELDS as PROFILE_FIELDS} from '../../sdk/src/text-records';
+export {GLOBAL_PROFILE_FIELDS as PROFILE_FIELDS} from '../../packages/sdk/src/text-records';

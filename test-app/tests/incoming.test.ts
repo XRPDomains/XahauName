@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {Wallet} from 'xahau';
-import {RegistrarModule} from '../../sdk/src/registrar';
-import {computeUritokenId,tokenKey,labelOfKey,uriKey} from '../../sdk/src/util';
+import {RegistrarModule} from '../../packages/sdk/src/registrar';
+import {computeUritokenId,tokenKey,labelOfKey,uriKey} from '../../packages/sdk/src/util';
 import {incomingDomainCards} from '../src/views';
 const treasury=Wallet.generate().classicAddress,owner=Wallet.generate().classicAddress,recipient=Wallet.generate().classicAddress,hash='A'.repeat(64),name='incoming.xah',id=computeUritokenId(treasury,'incoming','xah');
 function setup(){let token:any={LedgerEntryType:'URIToken',Issuer:treasury,Owner:owner,Destination:recipient,Amount:'0',URI:Buffer.from(name).toString('hex')};const calls:any[]=[];let pages:any[]=[{transactions:[{validated:true,tx:{Destination:recipient,URITokenID:id},meta:{TransactionResult:'tesSUCCESS'}}]}];const ctx:any={treasury,ledgerHash:async()=>hash,request:async(q:any)=>{calls.push(q);if(q.command==='ledger')return{ledger_index:100};return pages.shift();},ledgerObject:async(_id:any,opts:any)=>{assert.equal(opts.ledgerHash,hash);return token;},readState:async(key:any,opts:any)=>{assert.equal(opts.ledgerHash,hash);return key===tokenKey('incoming','xah')?Buffer.from(id,'hex'):key===labelOfKey(id)||key===uriKey(id)?Buffer.from(name):null;}};const r=new RegistrarModule(ctx);r.getRegistrationStatus=async()=>({domain:name,uritokenId:id,ledgerHash:hash,stage:'claimed',owner,tokenOwner:owner});return{r,calls,ctx,setToken:(t:any)=>token=t,token,setPages:(p:any[])=>pages=p};}

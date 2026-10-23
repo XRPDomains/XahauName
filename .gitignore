@@ -13,7 +13,7 @@ test-results/
 *.wasm.hex
 *.log
 *.zip
-indexer/data/
+packages/indexer/data/
 *.sqlite
 *.sqlite-shm
 *.sqlite-wal

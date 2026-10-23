@@ -3,9 +3,9 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const {XahauNameClient, TESTNET, parameters} = require('../dist');
-const repo = path.resolve(__dirname, '../..');
-const manifest = require('../../deployments/testnet.json');
-const validation = require('../../deployments/testnet-validation.json');
+const repo = path.resolve(__dirname, '../../..');
+const manifest = require('../../../deployments/testnet.json');
+const validation = require('../../../deployments/testnet-validation.json');
 const checks = [];
 async function main() {
   const c = new XahauNameClient(TESTNET);

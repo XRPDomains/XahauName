@@ -1,6 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {Wallet,decodeAccountID,classicAddressToXAddress} from 'xahau';
-import {ResolverModule} from '../../sdk/src/resolver';import {encodeAddress} from '../../sdk/src/addresses';
+import {ResolverModule} from '../../packages/sdk/src/resolver';import {encodeAddress} from '../../packages/sdk/src/addresses';
 const a=Wallet.generate().classicAddress,b=Wallet.generate().classicAddress,H='AB'.repeat(32);
 function setup(){const calls:any[]=[];const ctx:any={ledgerHash:async()=>H};const r=new ResolverModule(ctx);let candidate:string|null='alice.xah',owner:string|null=a,record:Buffer|null=encodeAddress(21337,a);r.getPrimaryName=async(address,opts)=>{calls.push({op:'primary',address,opts});return candidate;};r.getOwner=async(name,opts)=>{calls.push({op:'owner',name,opts});return owner;};r.getAddr=async(name,coin,opts)=>{calls.push({op:'addr',name,coin,opts});return record;};return{r,calls,setCandidate:(s:string|null)=>candidate=s,setOwner:(s:string|null)=>owner=s,setRecord:(s:Buffer|null)=>record=s,ctx};}
 test('primary is verified only when native receiving record points back to address',async()=>{const{r,calls}=setup();assert.equal(await r.getVerifiedPrimaryName(a),'alice.xah');assert.equal(calls.length,3);assert.equal(calls[2].coin,21337);assert(calls.every(c=>c.opts.ledgerHash===H&&c.opts.verifyOwner===true));});

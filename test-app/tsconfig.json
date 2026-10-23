@@ -16,7 +16,7 @@
     ],
     "paths": {
       "@xahauname/sdk": [
-        "../sdk/src/index.ts"
+        "../packages/sdk/src/index.ts"
       ]
     },
     "resolvePackageJsonExports": false

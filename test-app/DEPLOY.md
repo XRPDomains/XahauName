@@ -3,8 +3,7 @@
 Development uses npm run dev and SDK source. Build only when a server release is requested.
 
 ```sh
-npm ci --prefix sdk
-npm ci --prefix test-app
+npm ci
 npm --prefix test-app run build
 ```
 

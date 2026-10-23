@@ -7,9 +7,8 @@ An initial developer package for XahauName: validated-ledger replay, a SQLite re
 Node.js 20+ is required. SQLite uses `better-sqlite3`; environments without a prebuilt binary need its native build prerequisites.
 
 ```sh
-npm ci --prefix sdk
+npm ci
 npm run sdk:build
-npm ci --prefix indexer
 npm run indexer:test
 ```
 
@@ -40,7 +39,7 @@ storage.close();
 
 For mainnet, set `network: 'mainnet'` and supply a reviewed mainnet `deployment` with `treasury`, `namespaceId`, `expectedNetworkId: 21337`, and `hookHashes`. No mainnet name-service deployment is bundled yet. Missing/wrong-network deployment values fail before connection; testnet identities never become mainnet defaults. An optional `wss` override changes transport, not deployment identity. The database is bound to network ID, treasury, namespace, decoder version and hash set; use a new database for another identity.
 
-See [shared network configuration](../docs/NETWORKS.md). The existing hook deploy script remains explicitly testnet-only; configuring a client does not deploy a mainnet hook.
+See [shared network configuration](../../docs/NETWORKS.md). The existing hook deploy script remains explicitly testnet-only; configuring a client does not deploy a mainnet hook.
 
 ## Read API
 
@@ -116,8 +115,8 @@ The pure `decodeTransaction(receipt, deployment, before)` validates committed me
 Offline tests cover independent binary fixtures, real immutable profile/transfer receipts, custom keys, verified primary, pending/claim, offer discovery, transfer/burn cleanup, weak failure quarantine, namespace isolation, failed native execution, duplicate/shuffled deliveries, hash/gap detection, crash rollback, restart and network isolation.
 
 ```sh
-npm --prefix indexer run test:testnet  # read-only current expanded-ledger check
-node indexer/test/capture-fixtures.cjs # explicit immutable receipt refresh; no signing
+npm run test:testnet --workspace @xahauname/indexer  # read-only current expanded-ledger check
+node packages/indexer/test/capture-fixtures.cjs # explicit immutable receipt refresh; no signing
 ```
 
 Before publishing production guidance: native weak-failure/recovery proof, sustained RPC outage/load testing, a pinned full-namespace/native-token comparison after replay, complete callback failure/expiry coverage, deployment-version migrations, and storage/load benchmarks. Tests and public receipts are retained under `test/`; runtime databases stay ignored.

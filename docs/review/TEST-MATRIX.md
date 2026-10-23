@@ -83,13 +83,13 @@ Keep manual acceptance for actual GemWallet/Xaman/Xyra consent, popup/deep-link/
 
 ```sh
 node scripts/test-hooks.mjs
-npm --prefix sdk test
-npm --prefix test-app test
-node test-app/node_modules/typescript/bin/tsc --noEmit -p test-app/tsconfig.json
+npm run sdk:test
+npm run app:test
+npm run app:typecheck
 npm --prefix test-app run test:browser
-node sdk/test/verify-release.cjs
-node sdk/test/verify-streams.cjs
-node sdk/test/verify-failures.cjs
+node packages/sdk/test/verify-release.cjs
+node packages/sdk/test/verify-streams.cjs
+node packages/sdk/test/verify-failures.cjs
 ```
 
 Live writes remain a separately authorized testnet operation. Native fault-injection and the business-event projector are planned work, not covered by these commands today.

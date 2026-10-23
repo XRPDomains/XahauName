@@ -1,16 +1,17 @@
 # XahauName testnet domain manager
 
-English UI using the local SDK and XRPL Wallet Kit 0.2.1. Fixed Xahau Testnet, NetworkID 21338, wss://xahau-test.net. The app has no private-key fields or server signing endpoint.
+English UI using the SDK workspace and XRPL Wallet Kit 0.2.1. The default deployment is Xahau Testnet. Network, endpoint and reviewed deployment come from the [shared network configuration](../docs/NETWORKS.md). The app has no private-key fields or server signing endpoint.
 
 ## Development
 
 ```sh
-npm ci --prefix sdk
-npm ci --prefix test-app
-npm --prefix test-app run dev
+npm ci
+npm run app:dev
 ```
 
 Open http://127.0.0.1:5173/. Vite and TypeScript resolve local SDK source, so SDK changes use HMR. Do not build a server package for ordinary edits. [Static deployment](DEPLOY.md) is a separate explicit action.
+
+Run commands from the repository root. The root lockfile installs the SDK, indexer and private app together; the app has no separate lockfile.
 
 ## Wallets
 
@@ -32,8 +33,8 @@ GemWallet, Xyra and Xaman are enabled. Select Xahau Testnet in the wallet, permi
 ## Verification
 
 ```sh
-npm --prefix test-app test
-node test-app/node_modules/typescript/bin/tsc --noEmit -p test-app/tsconfig.json
+npm run app:test
+npm run app:typecheck
 npm --prefix test-app run test:browser
 ```
 

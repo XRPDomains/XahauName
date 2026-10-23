@@ -1,6 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import {normalizeContentURI,encodeContentHash,decodeContentHash} from '../../sdk/src/content';
-import {ResolverModule} from '../../sdk/src/resolver';import {XahauNameClient} from '../../sdk/src/index';import {validateProfileValue} from '../../sdk/src/text-records';
+import {normalizeContentURI,encodeContentHash,decodeContentHash} from '../../packages/sdk/src/content';
+import {ResolverModule} from '../../packages/sdk/src/resolver';import {XahauNameClient} from '../../packages/sdk/src/index';import {validateProfileValue} from '../../packages/sdk/src/text-records';
 const URI='ipfs://QmRAQB6YaCyidP37UdDnjFY5vQuiBrcqdyoW1CuDgwxkD4',HEX='e3010170122029f2d17be6139079dc48696d1f582a8530eb9805b561eda517e22a892c7e3f1f',H='A'.repeat(64);
 test('ENSIP-7 official IPFS vector round-trips through canonical text storage',()=>{assert.equal(encodeContentHash(URI).toString('hex'),HEX);assert.equal(decodeContentHash(Buffer.from(HEX,'hex')),normalizeContentURI(URI));assert(normalizeContentURI(URI).startsWith('ipfs://bafy'));});
 test('content URI rejects gateway URLs, paths, fragments, invalid CIDs and unsupported schemes',()=>{for(const v of ['https://example.com','ipfs://invalid',URI+'/index.html',URI+'#a',URI+'?a',URI+'/../','ipns://example','data:text/plain,a'])assert.throws(()=>normalizeContentURI(v));});

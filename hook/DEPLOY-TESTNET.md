@@ -25,7 +25,7 @@ URIBase: https://xrpdomains.xyz/api/nftdomains/metadata/. Public identity is in 
 
 ## Live validation
 
-Rebuild SDK, then `SDK_LIVE_TESTNET=1 node sdk/test/live.cjs`. It creates two fresh wallets, stores seeds in ignored local environment files, funds them and tests purchase/claim, Globals, receiving addresses, primary, website content, transfer, reset, burn and smoke through SDK. Unexpected failure stops the suite and retains receipts.
+Rebuild SDK, then `SDK_LIVE_TESTNET=1 node packages/sdk/test/live.cjs`. It creates two fresh wallets, stores seeds in ignored local environment files, funds them and tests purchase/claim, Globals, receiving addresses, primary, website content, transfer, reset, burn and smoke through SDK. Unexpected failure stops the suite and retains receipts.
 
 The narrowly scoped --resume-failed-purchase accepts only a known validated initial tecHOOK_REJECTED after two successful funding transactions. It retains that failure and reuses the funded wallets. No general silent restart is supported.
 
@@ -33,4 +33,4 @@ Smoke requires a bare Payment with validated tesSUCCESS and HookReturnCode0. Sep
 
 SDK_LIVE_RUN selects a new local journal directory (letters, digits and hyphens only). Keep previous runs and their failed receipts. Changed-slot upgrades retain byte-identical slots rather than uploading their code again.
 
-Read-only post-release verification: `node sdk/test/verify-release.cjs`. VERIFY_BASELINE may point to a local before-state.json snapshot to require exact namespace cleanup as well as the public deployment checks. No seed is used by this script.
+Read-only post-release verification: `node packages/sdk/test/verify-release.cjs`. VERIFY_BASELINE may point to a local before-state.json snapshot to require exact namespace cleanup as well as the public deployment checks. No seed is used by this script.

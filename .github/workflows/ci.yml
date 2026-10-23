@@ -8,14 +8,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: npm ci --prefix sdk
-      - run: npm ci --prefix test-app
-      - run: npm ci --prefix indexer
+      - run: npm ci
       - run: npm run sdk:test
-      - run: npm --prefix sdk run lint
+      - run: npm run lint --workspace @xahauname/sdk
       - run: npm run indexer:test
       - run: npm run app:test
-      - run: node test-app/node_modules/typescript/bin/tsc --noEmit -p test-app/tsconfig.json
+      - run: npm run app:typecheck
+      - run: npm run release:check
+      - run: npm run repo:test
       - run: npm run check
   hooks:
     runs-on: ubuntu-latest
@@ -24,7 +24,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: npm ci --prefix sdk
+      - run: npm ci
       - run: docker build -t xahauname-hook-toolchain:cli-3.0.0 hook/toolchain
       - run: node scripts/setup-guard.mjs
       - run: npm run hook:build
