@@ -1,12 +1,12 @@
 # XahauName protocol specification
 
-Version 0.3.0. Native wire marker 2. Target: Xahau testnet, NetworkID 21338. Integers are unsigned big-endian unless stated otherwise. Amounts use drops (1 XAH = 1,000,000 drops).
+Version 0.3.0 with the lifecycle-recovery extension installed on testnet on 2026-10-23. Native wire marker 2. Target: Xahau testnet, NetworkID 21338. Integers are unsigned big-endian unless stated otherwise. Amounts use drops (1 XAH = 1,000,000 drops).
 
 ## 1. Identity and authority
 
 Canonical names are `<label>.<tld>`. Labels contain 1..57 lowercase ASCII letters, digits or internal hyphens, with alphanumeric endpoints. TLDs contain 2..8 lowercase ASCII letters or digits. Subdomains, Unicode normalization, expiry, renewal and leasing are outside this version. Friendly SDK/UI input may remove whitespace and add `.xah`; hook inputs are lowercased before validation. Reserved labels are xahau, treasury, admin, root and www. Default TLDs are xah/xahau unless explicitly disabled.
 
-The hook account is the treasury and URIToken issuer. Its owner controls upgrades, administrative registration/reset, pricing, TLDs, issuance pause and URIBase. Delegated roles and owner profile locking are unsupported. The legacy lock bit has no effect. Issuer-burn authority remains because tokens use `tfBurnable=1`.
+The hook account is the treasury and URIToken issuer. Its owner controls upgrades, administrative registration/reset, pricing, TLDs, issuance pause and URIBase. Delegated roles and owner profile locking are unsupported. The legacy lock bit has no effect. Only the native URIToken Owner may burn through this installed hook chain, including when the issuer submits the transaction. Tokens retain `tfBurnable=1` so the issuer can strongly validate Buy/Remit; the strong burn handler overrides its native issuer-burn permission. This restriction depends on the installed chain: the treasury's upgrade authority could remove it. It is not an immutable ledger-level revocation of issuer-burn permission.
 
 Domain authorization checks both root owner and native URIToken owner. Metadata, arbitrary texts and third-party tokens cannot establish ownership. All ten handlers share one namespace. Strong execution can reject the originating transaction and roll back its provisional hook writes. Weak executions run after native application and cannot undo that native transaction; see the failure boundary below.
 
@@ -33,6 +33,7 @@ Requests use native HookParameters. JSON hex wraps parameter names and values; v
 | 13/14 | pause/unpause | none | treasury |
 | 15 | reserved | unsupported | none |
 | 16 | setURIBase | uri_base | treasury |
+| 17 | reconcile | canonical label, tld, token32 | permissionless; native ledger and journal determine the result |
 
 Recipient is40 ASCII hex characters for AccountID20. CoinType is transported as uint32 but limited to0..65535 by the current index. Addresses decode to1..128 bytes. Text keys normalize to lowercase, with1..40 ASCII letters, digits, dot, underscore or hyphen. Values contain 1..128 bytes. The hook enforces bounds and authorization; typed SDK helpers add UTF-8/field semantics.
 
@@ -46,7 +47,7 @@ TokenID = SHA512Half(`0x0055 || issuerAccountID20 || exactURIBytes`). The forwar
 
 Issuance reserves identity, writes reverse-name and pending data and emits one URITokenMint. Its successful callback emits a restricted zero-price URITokenCreateSellOffer. Dependent stages are sequential. Root ownership finalizes only when the recipient signs URITokenBuy. A UI may request the claim signature immediately when the offer validates, or allow later Claim.
 
-Callbacks correlate emitted transaction ID with a stored stage hash. Callback reason is not an engine result: transaction/metadata slots provide outcome. Missing outcome stays unresolved. Repeated/unknown callbacks cannot promote ownership. Failed mint/offer queues a correlated refund; pending is cleared after confirmed refund success. A minted token remains reserved if settlement needs recovery. Failed refunds and zero-value administrative issuance failures need operator recovery; this release has no general recovery command.
+Callbacks correlate emitted transaction ID with a stored stage hash. Callback reason is not an engine result: transaction/metadata slots provide outcome. Missing outcome stays unresolved. Repeated/unknown callbacks cannot promote ownership. Failed mint/offer queues a correlated refund; pending is cleared after confirmed refund success. A minted token remains reserved if settlement needs recovery. Failed refunds and zero-value administrative issuance failures need operator recovery; opcode 17 does not settle failed mint/refund or administrative issuance obligations.
 
 Only issuance may emit Payment0, Mint45 and CreateSellOffer48. Other handlers cannot emit. HookCanEmit uses active-low bits except SetHook22, which is active-high and disabled here. Deployment validates effective installed overrides, not just definitions.
 
@@ -54,7 +55,7 @@ Only issuance may emit Payment0, Mint45 and CreateSellOffer48. Other handlers ca
 
 Transfer uses a recipient-restricted zero-price offer and URITokenBuy. Records stay with the sender until claim. Claim clears all indexed addresses, standard/custom texts, custom-key name slots, website content and old primary before setting the new owner. Native Remit of recognized domain tokens rejects 65 to prevent bypass. Paid marketplace settlement APIs are outside this release.
 
-Burn removes root, identity/reverse mappings and records. Reset clears records/primary but retains ownership. The bounded index includes custom keys. Strong record updates roll back on failed writes. Claim/transfer/burn finalization runs weakly: a failed weak hook can leave native token state applied while domain finalization fails. Do not treat its rollback as native-transaction reversal. The SDK must reject inconsistent identity and report recoveryRequired; a complete repair flow and ledger fault-injection tests are still required before production. Clearing an older domain cannot remove a newer primary selection.
+Burn removes root, identity/reverse mappings and records. Before native application, the strong burn handler reads the exact URIToken keylet and requires transaction Account to equal native Owner; mismatch rejects12, unreadable ownership rejects20 and missing fields reject3. Root ownership is not sufficient authorization. The treasury may burn an unclaimed token only while it is its native Owner. Successful owner burns notify the issuer weakly after deletion, so cleanup does not require the deleted object to remain readable. Reset clears records/primary but retains ownership. The bounded index includes custom keys. Strong record updates roll back on failed writes. Claim/transfer/burn finalization runs weakly: a failed weak hook can leave native token state applied while domain finalization fails. Do not treat its rollback as native-transaction reversal. The SDK rejects inconsistent identity and reports recoveryRequired. The recovery extension writes a durable journal before weak cleanup; an explicit strong Invoke resumes cleanup against native ledger ownership/existence. Native fault-injection validation remains a production gate. Clearing an older domain cannot remove a newer primary selection.
 
 ## 5. State
 
@@ -64,6 +65,7 @@ H(s) is SHA512Half of exact bytes without a terminator. Keys are namespace-scope
 | --- | --- |
 | H(domain + :root) |32 bytes: owner 20, flags 1, mintedAt uint64 at 21, padding |
 | H(domain + :token) | tokenID32 |
+| rcv: + rootKey[0:28] | journal v1: version1, hadRoot1, full tokenID32, original root32, nameLength1, canonical name (up to66); total67+nameLength |
 | H(domain + :addr: + decimal coinType) | binary address1..128 |
 | H(domain + :text: + textKey) | text bytes1..128 |
 | H(domain + :records) |124-byte index |
@@ -124,3 +126,13 @@ Code0 alone is insufficient evidence that the intended operation ran. SDK receip
 ## Assurance status
 
 [Open findings](review/FINDINGS.md) distinguish proven strong-operation rollback, modeled weak failure detection and still-required native ledger fault tests. Do not infer complete failure recovery from passing WASM probes.
+
+## 10. Lifecycle reconciliation (testnet)
+
+`reconcile` is an Invoke to the treasury. The `token` parameter is raw32 bytes, not ASCII hex. Labels/TLDs must already be canonical. The claim handler reads the exact token keylet: only DOESNT_EXIST proves absence; other slot errors reject. A present token must have this treasury as issuer, and its native Owner supplies the repaired owner. Caller identity cannot choose the new owner.
+
+Before weak writes, lifecycle processing validates custom slots and persists a journal binding full token ID, original root and canonical name. The journal survives partial failure; it blocks profile changes and re-registration. It is deleted last. Recovery preserves the original owner for primary cleanup even if root was already updated, tolerates custom slots already deleted after their value, and clears all indexed records. Initial claims clear pending/mint/offer tracking only after proving the original claim; refund obligations are never discarded. Burn with an unclaimed registration remains an operator/refund case.
+
+A strong recovery Invoke is atomic under the native strong-hook transaction sandbox. Retry this Invoke after checking status; never replay the native purchase/burn merely to repair state. Repeated completed burn calls are no-ops only when identity, index and registration tracking are absent. A journal-free already-consistent live owner is not permissionlessly reset. Pre-journal historical corruption with missing identity/custom-slot evidence needs an operator snapshot; the new command cannot reconstruct unknown hashed keys.
+
+SDK and indexer quarantine journals and root/pending/refund/async contradictions. Indexer quarantine can clear only on a validated known-handler reconciliation receipt plus verified committed final state and cleanup. Return strings alone cannot establish completion. See [recovery evidence and remaining native gate](review/RECOVERY-AND-CLIENT-FIXES.md).

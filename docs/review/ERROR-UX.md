@@ -40,6 +40,12 @@ The actual rejecting hook may differ from the requested handler. Save profile ta
 - UI catch/form paths use explainError instead of raw RC strings. Refund/recovery after purchase shows a warning rather than a completed-claim message; purchase hashes remain in Activity.
 - Tests cover funds/fee/reserve wording, price distinction, actual hook attribution, emission stages, wallet decline, uncertainty, weak recovery and nested post-claim hash preservation.
 
+## Application toast presentation
+
+The application presents operation progress and outcomes in one compact bottom-right toast. Wallet Kit transaction toasts are disabled to avoid duplicate feedback; SDK confirmation and Kit transaction history remain enabled as before. The app uses blue waiting/spinner, green success, amber attention and red error, with text/icons and accessible status/alert roles. Success fades away after five seconds; warnings and errors remain dismissible. Phase changes and dismissal use a 180ms fade, while reduced-motion preferences apply updates immediately. Rapid updates cancel obsolete transitions, and action cleanup cannot remove a pending success state. Form errors retain inline guidance. Notification dismissal never cancels or retries a transaction.
+
+When a native dialog is open, the notification is mounted in that dialog's subtree so it remains visible and dismissible. Closing the dialog returns the notification to the page. Browser coverage verifies bottom-right placement at 320–1440px, disabled Kit toast mounting, distinct tones, fade/auto-dismiss, persistent warnings, rapid updates, reduced motion, modal visibility and dismissal. Long messages remain scrollable on short screens. No wallet transaction is sent by these presentation tests.
+
 ## Remaining work
 
 A real RPC simulation of an over-balance purchase returned tecUNFUNDED_PAYMENT and the friendly funds explanation, with no broadcast. Fee/reserve and consensus boundaries still need fixtures. Total balance is not a precise spendable/reserve estimate; there is no complete pre-sign reserve/fee breakdown yet. Simulation cannot guarantee later success after balance, fee load or offer changes.

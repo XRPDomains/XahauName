@@ -1,6 +1,7 @@
 import {createHash} from 'node:crypto';
 import type {XahauNameConfig} from '@xahauname/sdk';
-import {canonicalName, decodeTransaction, hex64, nameFromParameters} from './decoder';
+import {canonicalName, decodeTransaction, hex64, nameFromParameters, reconciliationToken} from './decoder';
+import {util} from '@xahauname/sdk';
 import {applyChanges, assertAddress, cleanupComplete, knownNames, projectDomain} from './projection';
 import {XahauLedgerSource} from './source';
 import type {Change, Checkpoint, Deployment, Event, LedgerSource, Materialized, Storage} from './types';
@@ -63,7 +64,8 @@ export class XahauNameIndexer {
             for (const [i, r] of ordered.entries()) {
                 if (r.meta.TransactionIndex !== i || r.ledgerIndex !== ledger.checkpoint.ledgerIndex || r.ledgerHash !== ledger.checkpoint.ledgerHash) throw new Error('Incomplete or mixed ledger');
                 const decoded = decodeTransaction(r, this.config, next);
-                if (!decoded.changes.length && !decoded.failedWeak) {events.push(...decoded.events); continue;}
+                const repairedId=reconciliationToken(r,this.config);
+                if (!decoded.changes.length && !decoded.failedWeak && !repairedId) {events.push(...decoded.events); continue;}
                 const previous = {...next.domains};
                 const names = knownNames(next), paramName = nameFromParameters(r.tx); if (paramName) names.add(paramName);
                 applyChanges(next, decoded.changes); changes.push(...decoded.changes);
@@ -76,8 +78,19 @@ export class XahauNameIndexer {
                         transactionIndex: r.meta.TransactionIndex, txHash: r.hash, ordinal, type, domain, tokenId, data});
                 };
                 // No mutation inference from failed transactions or unrelated account traffic.
-                if (decoded.changes.length || decoded.failedWeak) for (const name of names) {
+                if (decoded.changes.length || decoded.failedWeak || repairedId) for (const name of names) {
                     const old = previous[name];
+                    if(repairedId&&old?.tokenId===repairedId&&paramName===name&&!decoded.failedWeak&&next.recovery[name]) {
+                        const {label,tld}=util.splitDomain(name);
+                        const candidate=await projectDomain(name,{...next,recovery:{...next.recovery,[name]:''}},this.config,r.ledgerHash);
+                        const noTracking=[util.recoveryKey(label,tld),util.pendingKey(repairedId),...['mnt','ofr','rfd'].map(t=>util.asyncKey(t as 'mnt'|'ofr'|'rfd',repairedId))].every(k=>next.state[k]===undefined);
+                        const completedBurn=!candidate&&!next.tokens[repairedId]&&next.state[util.tokenKey(label,tld)]===undefined&&
+                            next.state[util.uriKey(repairedId)]===undefined&&next.state[util.labelOfKey(repairedId)]===undefined;
+                        if(noTracking&&(candidate?.status==='claimed'||completedBurn)&&cleanupComplete(old.recoverySnapshot??old,next)) {
+                            const change:Change={table:'recovery',key:name,value:null};changes.push(change);applyChanges(next,[change]);
+                            add('DomainRecoveryCompleted',name,{status:candidate?.status??'burned'},repairedId);
+                        }
+                    }
                     const current = await projectDomain(name, next, this.config, r.ledgerHash);
                     const tokenId = old?.tokenId ?? current?.tokenId;
                     const affected = (tokenId && decoded.tokenIds.includes(tokenId)) || paramName === name;
@@ -86,7 +99,8 @@ export class XahauNameIndexer {
                         changes.push(change); applyChanges(next, [change]);
                     }
                     if (old?.status === 'claimed' && affected &&
-                        (!current || (current.status === 'claimed' && current.owner !== old.owner)) && !cleanupComplete(old, next)) {
+                        (!current || (current.status === 'claimed' && current.owner !== old.owner) ||
+                            (current.status === 'recoveryRequired' && decoded.tokenIds.includes(old.tokenId))) && !cleanupComplete(old, next)) {
                         const change: Change = {table: 'recovery', key: name, value: 'Transfer/burn cleanup incomplete; operator reconciliation required'};
                         changes.push(change); applyChanges(next, [change]);
                     }

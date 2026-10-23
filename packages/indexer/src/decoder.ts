@@ -25,6 +25,22 @@ export function nameFromParameters(tx: Json): string | null {
     }
     return canonicalName(`${fields.label}.${fields.tld}`);
 }
+/** A reviewed handler receipt is necessary, but committed state is checked separately. */
+export function reconciliationToken(receipt: Receipt, config: Deployment): string | null {
+    if(receipt.meta.TransactionResult!=='tesSUCCESS'||receipt.tx.TransactionType!=='Invoke')return null;
+    const fields: Record<string,string>=Object.create(null);
+    for(const row of receipt.tx.HookParameters??[]) {
+        const p=row.HookParameter; if(!p||typeof p.HookParameterName!=='string'||typeof p.HookParameterValue!=='string')return null;
+        const key=Buffer.from(p.HookParameterName,'hex').toString();
+        if(Object.hasOwn(fields,key))return null;
+        fields[key]=p.HookParameterValue.toUpperCase();
+    }
+    if(fields.xn_v!=='02'||fields.op!=='11'||!fields.token||!/^[A-F0-9]{64}$/.test(fields.token))return null;
+    const ok=(receipt.meta.HookExecutions??[]).some((r:Json)=>{const e=r.HookExecution??r;return e.HookAccount===config.treasury&&
+        e.HookHash===config.hookHashes.claim&&Number(e.HookResult)===3&&/^0{1,16}$/.test(String(e.HookReturnCode))&&
+        Buffer.from(e.HookReturnString??'','hex').toString().replace(/\0+$/,'')==='reconciled';});
+    return ok?fields.token:null;
+}
 /** Pure metadata decoder. No RPC/DB calls; committed nodes, not return strings, drive mutations. */
 export function decodeTransaction(receipt: Receipt, config: Deployment, before: Materialized) {
     if (receipt.validated !== true) throw new Error('Unvalidated transaction');

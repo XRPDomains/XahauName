@@ -1,4 +1,4 @@
-import { rootKey, addrKey, textKey, primaryOfKey, decodeRoot, splitDomain, joinDomain, recordsKey, textSlotKey } from './util';
+import { rootKey, addrKey, textKey, primaryOfKey, decodeRoot, splitDomain, joinDomain, recoveryKey, recordsKey, textSlotKey } from './util';
 import { parameters, domainFields, coinBytes, boolBytes, addressBytes, textKeyBytes, textValueBytes, HANDLERS, profilePatchFields, PROFILE_TEXT_KEYS } from './protocol';
 import type { Operation } from './protocol';
 import type { ClientContext } from './context';
@@ -9,6 +9,8 @@ import {validateProfileValue} from './text-records';
 import {normalizeContentURI,encodeContentHash} from './content';
 import { decodeAccountID } from 'xahau';
 import { domainIdentity, tokenMatchesDomain, domainOfToken } from './identity';
+import {snapshotContext,mapReads} from './read-snapshot';
+import type {OwnedDomainSummary,PortfolioSnapshot} from './types';
 export class ResolverModule {
     constructor(private ctx: ClientContext) {
     }
@@ -18,7 +20,8 @@ export class ResolverModule {
     async getRoot(domain: string, options: ReadOptions = {}): Promise<RootRecord | null> {
         const { label, tld } = splitDomain(domain);
         domainFields(label, tld);
-        const buf = await this.ctx.readState(rootKey(label, tld), options);
+        const [recovery,buf]=await Promise.all([this.ctx.readState(recoveryKey(label,tld),options),this.ctx.readState(rootKey(label,tld),options)]);
+        if(recovery)throw new XahauNameError('Domain lifecycle requires reconciliation','OWNERSHIP_MISMATCH');
         if (!buf)
             return null;
         return decodeRoot(buf);
@@ -95,38 +98,56 @@ export class ResolverModule {
     }
     async listOwnedDomains(address: string, options: ReadOptions = {}): Promise<string[]> {
         decodeAccountID(address);
-        const opts = { ...options, ledgerHash: options.ledgerHash ?? await this.ctx.ledgerHash() }, names = new Set<string>();
+        const opts={...options,ledgerHash:options.ledgerHash??await this.ctx.ledgerHash()};
+        const scoped=new ResolverModule(snapshotContext(this.ctx,opts.ledgerHash));
+        return(await scoped.ownedRecords(address,opts)).map(record=>record.domain);
+    }
+    async getPortfolio(address:string,options:ReadOptions={}):Promise<PortfolioSnapshot> {
+        decodeAccountID(address);
+        const opts={...options,ledgerHash:options.ledgerHash??await this.ctx.ledgerHash()};
+        const scoped=new ResolverModule(snapshotContext(this.ctx,opts.ledgerHash));
+        const [domains,primaryHash]=await Promise.all([scoped.ownedRecords(address,opts),scoped.getPrimaryHash(address,opts)]);
+        const primary=primaryHash?domains.find(record=>{const {label,tld}=splitDomain(record.domain);return rootKey(label,tld)===primaryHash&&record.primary;})?.domain:null;
+        if(primaryHash&&!primary)throw new XahauNameError('Primary reverse map does not match an owned primary domain','OWNERSHIP_MISMATCH');
+        return{address,ledgerHash:opts.ledgerHash,domains,primary:primary??null};
+    }
+    private async ownedRecords(address:string,options:ReadOptions):Promise<OwnedDomainSummary[]> {
+        decodeAccountID(address);
+        const opts=options,records=new Map<string,OwnedDomainSummary>();
         let marker: unknown, pages = 0;
         do {
             const r = await this.ctx.request({
                 command: 'account_objects', account: address, ledger_hash: opts.ledgerHash, limit: 200, ...(marker ? { marker } : {})
             });
-            for (const token of r.account_objects ?? []) {
-                if (token.LedgerEntryType !== 'URIToken' || token.Issuer !== this.ctx.treasury || token.Owner !== address)
-                    continue;
+            const tokens=(r.account_objects??[]).filter((token:any)=>token.LedgerEntryType==='URIToken'&&token.Issuer===this.ctx.treasury&&token.Owner===address);
+            await mapReads(tokens,async(token:any)=>{
                 const name = await domainOfToken(this.ctx, token, opts);
-                if (!name) continue;
-                const root = await this.getRoot(name, opts);
+                if (!name) return;
+                const {label,tld}=splitDomain(name);
+                const [journal,bytes]=await Promise.all([this.ctx.readState(recoveryKey(label,tld),opts),this.ctx.readState(rootKey(label,tld),opts)]);
+                if(journal)throw new XahauNameError('Domain lifecycle requires reconciliation','OWNERSHIP_MISMATCH');
+                const root=bytes?decodeRoot(bytes):null;
                 if (!root && address === this.ctx.treasury)
-                    continue;
+                    return;
                 if (!root || root.owner !== address)
                     throw new XahauNameError('Native token ownership is not finalized in root: ' + name, 'OWNERSHIP_MISMATCH');
-                names.add(name);
-            }
+                records.set(name,{domain:name,tokenId:token.index.toUpperCase(),uri:Buffer.from(token.URI,'hex').toString('utf8'),primary:root.primary});
+            });
             marker = r.marker;
             if (++pages > 100)
                 throw new XahauNameError('Owner enumeration pagination limit', 'RPC_LIMIT');
         } while (marker);
-        return [...names].sort();
+        return [...records.values()].sort((a,b)=>a.domain.localeCompare(b.domain));
     }
     async getPrimaryName(address: string, options: ReadOptions = {}): Promise<string | null> {
-        const opts = { ...options, ledgerHash: options.ledgerHash ?? await this.ctx.ledgerHash() }, hash = await this.getPrimaryHash(address, opts);
+        const opts = { ...options, ledgerHash: options.ledgerHash ?? await this.ctx.ledgerHash() };
+        const scoped=new ResolverModule(snapshotContext(this.ctx,opts.ledgerHash)),hash=await scoped.getPrimaryHash(address,opts);
         if (!hash)
             return null;
-        for (const name of await this.listOwnedDomains(address, opts)) {
+        for (const name of await scoped.listOwnedDomains(address, opts)) {
             const { label, tld } = splitDomain(name);
             if (rootKey(label, tld) === hash) {
-                const root = await this.getRoot(name, opts);
+                const root = await scoped.getRoot(name, opts);
                 if (root?.primary)
                     return name;
             }
@@ -162,6 +183,12 @@ export class ResolverModule {
             out.addrs.push(coin);
         }
         const standard = ['avatar','description','url','email','notice','keywords','com.twitter','com.github','com.discord','com.reddit','com.linkedin','org.telegram','name','location','contenthash','display','mail','phone'];
+        // Descriptor slots are independent; avoid a round trip per custom key in series.
+        const customSlots:number[]=[];
+        for(let i=0;i<idx[3];i++)if(idx[34+i*6]===255){
+            const slot=idx[35+i*6];if(slot>=15||customSlots.includes(slot))bad();customSlots.push(slot);
+        }
+        const slotValues=new Map(await mapReads(customSlots,async slot=>[slot,await this.ctx.readState(textSlotKey(label,tld,slot),opts)] as const));
         const slots = new Set<number>(), stateKeys = new Set<string>();
         for (let i = 0; i < idx[3]; i++) {
             const off = 34 + i * 6, tag = idx[off];
@@ -170,7 +197,7 @@ export class ResolverModule {
                 const slot = idx[off + 1];
                 if (slot >= 15 || slots.has(slot)) bad();
                 slots.add(slot);
-                const stored = await this.ctx.readState(textSlotKey(label, tld, slot), opts);
+                const stored = slotValues.get(slot);
                 if (!stored || stored.length < 32 || stored.length > 72) bad();
                 stateKey = stored!.subarray(0, 32).toString('hex').toUpperCase();
                 if (stored!.length > 32) {
@@ -191,13 +218,15 @@ export class ResolverModule {
         return out;
     }
     async describe(domain: string, options: DescribeOptions = {}): Promise<FullProfile | null> {
+        const opts={...options,ledgerHash:options.ledgerHash??await this.ctx.ledgerHash()};
+        return new ResolverModule(snapshotContext(this.ctx,opts.ledgerHash)).describeSnapshot(domain,opts);
+    }
+    private async describeSnapshot(domain:string,options:DescribeOptions):Promise<FullProfile|null> {
         const opts = { ...options, ledgerHash: options.ledgerHash ?? await this.ctx.ledgerHash() }, root = await this.getRoot(domain, opts);
         if (!root)
             return null;
-        if (options.verifyOwner)
-            await this.getOwner(domain, opts);
         const { label, tld } = splitDomain(domain), addrs: Record<number, Buffer> = {}, texts: Record<string, string> = {}, unnamedTexts: Record<string, string> = {};
-        const keys = await this.getRecordKeys(domain, opts);
+        const [keys]=await Promise.all([this.getRecordKeys(domain, opts),options.verifyOwner?this.getOwner(domain,opts):Promise.resolve()]);
         await Promise.all([...(options.addrs ?? keys.addrs).map(async (ct) => {
                 const v = await this.getAddr(domain, ct, opts);
                 if (v)

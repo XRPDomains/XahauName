@@ -29,6 +29,10 @@ Rebuild SDK, then `SDK_LIVE_TESTNET=1 node packages/sdk/test/live.cjs`. It creat
 
 The narrowly scoped --resume-failed-purchase accepts only a known validated initial tecHOOK_REJECTED after two successful funding transactions. It retains that failure and reuses the funded wallets. No general silent restart is supported.
 
+`--resume-missing-reconcile-destination` handles the recorded recovery-extension SDK routing regression only: it requires a fully validated successful prefix ending in the exact missing-Destination Invoke and its `HOOK_NOT_EXECUTED` error. It re-queries the receipt, requires no hook/token changes and unchanged native owner, preserves the original failure and replays no purchase/claim. It is not a general resume switch.
+
+The recovery extension was installed on testnet on2026-10-23. See [deployment evidence](../docs/review/TESTNET-RECOVERY-DEPLOYMENT.md). Opcode17's normal reconciliation is live-verified; controlled native weak-failure injection remains a production gate.
+
 Smoke requires a bare Payment with validated tesSUCCESS and HookReturnCode0. Separately verify dependent callbacks, native ownership, complete cleanup and incoming-offer discovery. Install success cannot establish these.
 
 SDK_LIVE_RUN selects a new local journal directory (letters, digits and hyphens only). Keep previous runs and their failed receipts. Changed-slot upgrades retain byte-identical slots rather than uploading their code again.

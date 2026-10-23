@@ -2,268 +2,212 @@
   "release": "0.3.0",
   "networkID": 21338,
   "result": "PASS",
-  "checks": 49,
-  "transactions": 33,
-  "validatedTransactions": 33,
-  "ownerA": "r3ntcoBspgWEUgC1xkyEwLS28zkCeuAFp",
-  "ownerB": "rHSypss6AqPRFvaocnYz2xnZ7k8TizLg6c",
+  "checks": 54,
+  "transactions": 37,
+  "validatedTransactions": 37,
+  "ownerA": "rE9S7KiKFjJcuXXBAiNTMB6zP5Mxyu96Y9",
+  "ownerB": "r9XZxSTEdi6bLNmDLHX59a9BRZZxGMuBuC",
   "domains": [
-    "release2740701369.xah",
-    "manage2740701369.xah"
+    "release2750233521.xah",
+    "manage2750233521.xah"
   ],
   "cleanup": "both domains burned",
-  "profileSaveTransaction": "99A9DABFC79517777B74A032055298A129060F718A54195B076CBA63AE397867",
-  "smokeTransaction": "3C87B8A6B3CE1B8556E3B0984AA59F6D5300EA82353F10D883DCEF43F6E00138",
+  "profileSaveTransaction": "B18FC97968C2C26D258E2829AEBF3066018B074B4896EB45A57982667FECE2FE",
+  "smokeTransaction": "A640BB5C3EF089A0BE0CA4D53E174DDF84999FE796D620565A150ADACBA14B0F",
   "transactionsByAction": [
     {
       "action": "fund fresh wallet A",
-      "hash": "61CBBBD62E86C9F9726A0BE409BBBC9D99BD620B62374B57B6FCA5899326D58E",
+      "hash": "077C60B3B3539289F8FE25E2F7A0A211CED60DC77B32237CD4AEEF3E725B1581",
       "result": "tesSUCCESS"
     },
     {
       "action": "fund fresh wallet B",
-      "hash": "F11412D726955F7289B316AC5033FDF8CCB7E34EE02E3A69CC53A8F8617F07A3",
+      "hash": "9FF8306CC028931C28BE793D19F91BEA54A074FF9CEAF84A700E1A59BB72770C",
       "result": "tesSUCCESS"
     },
     {
       "action": "purchase domain through SDK",
-      "hash": "EAB0FD548257DB44105E494E4C9D89A855BA368FE36CC75AF4F6BB4B4EA73FB1",
+      "hash": "AD26B561E9EEA8A87F06342968933587F88ECE5B5648170300D80CB2E5F32326",
       "result": "tesSUCCESS"
     },
     {
       "action": "claim purchased domain",
-      "hash": "33662879DF3903BC8856165B5AC9DE51210763A0B8D35ED21345B2E9C036917F",
+      "hash": "BA53B151D193734714F237D39CBABBE00B5667AFB22F5D38B1CF9504AC2362D9",
       "result": "tesSUCCESS"
     },
     {
       "action": "save all ten Global Keys with one Invoke",
-      "hash": "99A9DABFC79517777B74A032055298A129060F718A54195B076CBA63AE397867",
+      "hash": "B18FC97968C2C26D258E2829AEBF3066018B074B4896EB45A57982667FECE2FE",
       "result": "tesSUCCESS"
     },
     {
       "action": "patch and clear profile atomically",
-      "hash": "4AC01742707278E71C0F1F64E7D7E13762EE2E486AFBE65D98DC1C13D5BBEC5D",
+      "hash": "2FE531A6071BAA48268F25C4BCD0FE2C2F2AA2FE6316B72470DDCA1CA61A4815",
       "result": "tesSUCCESS"
     },
     {
       "action": "store custom key",
-      "hash": "D95A69DD2239BD07465DC59C934CD3849AC134D816FD3F4F5B7785DAAE9E85DE",
+      "hash": "8C76A500C04B376B8980F15A3C30CF285068FA066C76DFAE60649109D00F0C0A",
       "result": "tesSUCCESS"
     },
     {
       "action": "store service key",
-      "hash": "65E4B42B85500CC9A5DF9DE3B7476E3234C4140659ADCDB3AB05272CF94141E2",
+      "hash": "65C7F837C54161B92C0E2EB7726D0D13BE239A60CC083AD19D20A957A1CA47A8",
       "result": "tesSUCCESS"
     },
     {
       "action": "set receiving address 21337",
-      "hash": "191A9A8CD05C0047A085A4EA254FB41FCBE616922EE9EA2186317E880ADFC051",
+      "hash": "97848776730B3C0AC4353C9621449FA922F020600892B5646B88445C9B02F740",
       "result": "tesSUCCESS"
     },
     {
       "action": "set receiving address 144",
-      "hash": "687A3CCC94CEC5903DC967D1C184646BD88665239E35303BA44783BC6D9A73BE",
+      "hash": "5C732D1D2334FD70B737A32BC5916326E6ECB4EED533AA77F25225A76F833C53",
       "result": "tesSUCCESS"
     },
     {
       "action": "set receiving address 0",
-      "hash": "6F83BF34F8018FCDCF2474E87E8FD0B28A14367D4E77FC3556802C0C25A46D8D",
+      "hash": "B8D378B6C2FE039A3385CE014D1BF30551A5F4055F73D3F2E3A71F74E8A84FFA",
       "result": "tesSUCCESS"
     },
     {
       "action": "set receiving address 60",
-      "hash": "69C379FEB073139FFE552FE1D24E670EC6C404CE06F953A6110EEB3D4C551986",
+      "hash": "2BBB71353E1C7CCE1EAFF52FC43444C9ECDBECB3C10722E6D6F23F49049E31B0",
       "result": "tesSUCCESS"
     },
     {
       "action": "set receiving address 501",
-      "hash": "8F5DC409CBF4D2AD440AF82CB15F4D1B51B17C63001991A69732A8C5C49A9CD0",
+      "hash": "D2AE17F31981A59F3C174C649EFA911AAF16BCD59F7BC14AC56C258832E5A9F4",
       "result": "tesSUCCESS"
     },
     {
       "action": "set receiving address 195",
-      "hash": "E4B2F8CBDF79C3F3A135C568DD8C31C189EAE6C6793D6579C12069AF69D07B79",
+      "hash": "1105C1EF479E5327B6490DD8D331FAA3052F818C4D55D625578C9761AA7E14DC",
       "result": "tesSUCCESS"
     },
     {
       "action": "clear receiving address",
-      "hash": "C07CA8B0FED17E537204CDEBEE7F3D7C3C2C09BAB4DC26124BE289E72E4AFEAA",
+      "hash": "34D92E0A3334BE29FA56093955F6CFFEDBC3DC57B51CB5BA6926ACE3CE6C9874",
       "result": "tesSUCCESS"
     },
     {
       "action": "set primary name",
-      "hash": "6A9C2C92B1C5ADA70BF327642B05D69AC9518C46A883F36D9854FB9F4D425348",
+      "hash": "EE1F512AD636E09AB44F2D15DC474B8D3ADE1837B913EA8705E0F5F1FB1B8E80",
       "result": "tesSUCCESS"
     },
     {
       "action": "change native receiving record",
-      "hash": "79B237C12A63102E998CA434099386CD85FFB55CCC41CEDD029637766C4BB503",
+      "hash": "A7A65E109A364B4E516F259A5C927A55540DBE50D3FEAC6FD574A030EE3DA004",
       "result": "tesSUCCESS"
     },
     {
       "action": "restore native receiving record",
-      "hash": "AEA0132D06D529EF4AFCB6B56C89A9647A1068D58D3685929F9719D96AF336EA",
+      "hash": "88CFA3CD2CE7596D947AD3AE71751E5A0A12C3F0A4784733C40D277B121D248B",
       "result": "tesSUCCESS"
     },
     {
       "action": "set website content through text record",
-      "hash": "C340AFDC58452865A33A706D125D0E5E45A33FD5223073DE66A40634D42BE829",
+      "hash": "5D30E0435BFDE216E49657286875197715D6B978147D589F0F5801319B28C107",
+      "result": "tesSUCCESS"
+    },
+    {
+      "action": "reconcile consistent native owner through SDK",
+      "hash": "70E642A55C3AF63F9FF08B3C071B5A90CB44F72F7640E00E94513DFB5929E65B",
+      "result": "tesSUCCESS",
+      "sdkError": "HOOK_NOT_EXECUTED"
+    },
+    {
+      "action": "reconcile consistent native owner through SDK",
+      "hash": "A94F91E3BFF76723FB877E206BD3145DEC05834D10EAE75BAD4662960EAAAB02",
       "result": "tesSUCCESS"
     },
     {
       "action": "create transfer offer",
-      "hash": "301ABF6661B18FB3AB1EEF802F61F432812BC6D1E140CC6CE2B1C98406AABDFA",
+      "hash": "25B13B8380491A319703D0A782CFDD97D591B9CFB0CB40117900D288E6214789",
       "result": "tesSUCCESS"
     },
     {
       "action": "cancel transfer offer",
-      "hash": "EA41E492C461A409CB9BD457D007638759B4EE70F62C533AB3C34AFAFA643C82",
+      "hash": "454BD3A98C5512FF05613C09C97AF4D5F91BE9EF72F3780052E78C0F5FD1997D",
       "result": "tesSUCCESS"
     },
     {
       "action": "recreate transfer offer",
-      "hash": "0897E54E9896106536F9B61F0160D585FF8CB0D11ED84B950F5B6A0802D341A9",
+      "hash": "F15B6BD4B638713CD54E582130E55A63DF0534ED1622AC28282971A2A3E84B9D",
       "result": "tesSUCCESS"
     },
     {
       "action": "recipient claims transfer",
-      "hash": "EBFC6AD3CA45C7BA9CC4E055567594BE2A61860B65E309518C27B4516C07BAF9",
+      "hash": "FB668F0F8D88B9BB1DCB02A2F32AB26E4F5829CA5D4D5057E5A1ABE77B72F593",
       "result": "tesSUCCESS"
     },
     {
       "action": "recipient writes profile",
-      "hash": "1CDE7EBFF16DFBDF4DABD2F99230BEA5C9308F891DA19D37367D3A684B420F9D",
+      "hash": "6F0532E6FDAEE9FA4656ED4D09706E4D396B0061CF0E9D8005C6AAE03F89AE4E",
       "result": "tesSUCCESS"
     },
     {
       "action": "recipient writes website content",
-      "hash": "2CEC2CC92E1563D43F09D30A111D084A1B8795A31787588CFE1BFCE159B7E000",
+      "hash": "E384E139D2ACDB0CA3DDE104EF2801ADEBCC838495499B0A31FDB19111BE4C9A",
       "result": "tesSUCCESS"
     },
     {
       "action": "burn domain",
-      "hash": "014EC43CD82BBDD35D6CDC85E8B4E2D106F13F54A7EA8E58FF731FA41EFF2AF0",
+      "hash": "4206BAAF93320ACA9700F3C22F1A0719A075C12789FF6CBEC4216A906DD1E21E",
+      "result": "tesSUCCESS"
+    },
+    {
+      "action": "reconcile completed burn through SDK",
+      "hash": "BA5FA14396F4C5D5E874B4AF9E35EAF942909F412BB4D795A88CDB4F59DAF508",
+      "result": "tesSUCCESS"
+    },
+    {
+      "action": "repeat completed burn reconciliation safely",
+      "hash": "039772B6E000A0FBC6C44C96E6D3C026248F90C4587A44FFB9623A36835E734E",
       "result": "tesSUCCESS"
     },
     {
       "action": "treasury registers a second domain",
-      "hash": "0947CB7F6C9343A7BBAB8B3A24CFF6A12EADB0F200E32C34D0249D618C1D1952",
+      "hash": "B49B555FF3A5FC9CF5C0302CAEF444E38643AE522C9EEF67A47160481A9FF729",
       "result": "tesSUCCESS"
     },
     {
       "action": "claim registered domain",
-      "hash": "C1FF81312CF522FAAE6C17C44DF7A1DDF2B80336F875A73B82F02A19EBE69ED5",
+      "hash": "4A82BBB7DC65DD50D51FC896D0BFD5BD8CF767BF9A87A00C9AD1777A77F504C4",
       "result": "tesSUCCESS"
     },
     {
       "action": "set second domain custom text",
-      "hash": "09720226E79C89F1B1204ED39384D0EDE5DE7974140109339EC43C0DF71776D7",
+      "hash": "758AA73096B039FFB2B5B0D68708F6916392C77122BF77BD81CA71CE3B067217",
       "result": "tesSUCCESS"
     },
     {
       "action": "set second domain content",
-      "hash": "E4F56E367C28C2E6258E8FAE476945319CEA87FDA4C9BF0121B96B731C658059",
+      "hash": "F8B3A7928620D84A02F3EDFBC62729278285D42ED6F22A6224EB1A491E76099B",
       "result": "tesSUCCESS"
     },
     {
       "action": "reset clears content and custom text",
-      "hash": "5E4E9F72D8B5600AB65EEDC2C681A78E8EB0AB78723E891EBB2D0592A2A4BC04",
+      "hash": "F165A74C2DE5982AD3A95DE86702BD77B6FBE243662DCC7827D3DD74AEE2BB52",
       "result": "tesSUCCESS"
     },
     {
       "action": "cleanup second domain",
-      "hash": "6FD055A338E71FC9C1CFDA6E87D830CD842F3E12975B5912F21F9E9C9687F06C",
+      "hash": "14AF686CA995C787E9D340B811862F5019DDB3C17A964E4C19F3897A25895DED",
       "result": "tesSUCCESS"
     },
     {
       "action": "noop Payment smoke",
-      "hash": "3C87B8A6B3CE1B8556E3B0984AA59F6D5300EA82353F10D883DCEF43F6E00138",
+      "hash": "A640BB5C3EF089A0BE0CA4D53E174DDF84999FE796D620565A150ADACBA14B0F",
       "result": "tesSUCCESS"
     }
   ],
-  "installTransaction": "B96790141B0C74AEB224D6621F8803A20AFCDB2F1DEA9318806B0F4CE3F326FB",
-  "smokeHookExecutions": [
+  "resolvedSdkIssues": [
     {
-      "account": "rw5W1Ljeg7T4JionCu2hKzWeUus7XQ9qs",
-      "hash": "E26CE9AD02ADD81587576C56B0125E41D56BDB5B7BC12206BE5A5727B75EECE3",
-      "returnCode": "0",
-      "returnString": "not v2"
-    },
-    {
-      "account": "rw5W1Ljeg7T4JionCu2hKzWeUus7XQ9qs",
-      "hash": "EEEC8F27EABF855F67CF8A59EB81E269959CBE70DFD6347466EA20C69A7FD4D4",
-      "returnCode": "0",
-      "returnString": "not v2"
-    },
-    {
-      "account": "rw5W1Ljeg7T4JionCu2hKzWeUus7XQ9qs",
-      "hash": "348F83DB337E25200EB806159FA9D9DE74F42AEA4063322803196EB14370A72E",
-      "returnCode": "0",
-      "returnString": "not v2"
-    },
-    {
-      "account": "rw5W1Ljeg7T4JionCu2hKzWeUus7XQ9qs",
-      "hash": "F890650018E336EA7F4F05EBB602802F417D4CC21FD8DA3A04BCF1D2916A2C58",
-      "returnCode": "0",
-      "returnString": "not v2"
-    },
-    {
-      "account": "rw5W1Ljeg7T4JionCu2hKzWeUus7XQ9qs",
-      "hash": "F901A00367C3A5B3B66A8DB9AAC4AEB364708B345565B762879165C82DE0C06D",
-      "returnCode": "0",
-      "returnString": "not v2"
-    },
-    {
-      "account": "rw5W1Ljeg7T4JionCu2hKzWeUus7XQ9qs",
-      "hash": "AE7DDE6804B8C8EA7C7CA6A9244E9E5F6E165B628A4FB5E9A5866A56FBED8990",
-      "returnCode": "0",
-      "returnString": "not v2"
-    },
-    {
-      "account": "rw5W1Ljeg7T4JionCu2hKzWeUus7XQ9qs",
-      "hash": "368C7D1DDB329C2565366EA1490B3F6FAEA2AE862E04AFDA2DA2420C33B7CF2B",
-      "returnCode": "0",
-      "returnString": "not v2"
-    },
-    {
-      "account": "rw5W1Ljeg7T4JionCu2hKzWeUus7XQ9qs",
-      "hash": "96A4F09EFA39911C67F4C72DCB44E3534E0F65849348D834982ECB2980B3CF72",
-      "returnCode": "0",
-      "returnString": "not v2"
+      "action": "reconcile consistent native owner through SDK",
+      "hash": "70E642A55C3AF63F9FF08B3C071B5A90CB44F72F7640E00E94513DFB5929E65B",
+      "code": "HOOK_NOT_EXECUTED",
+      "engineResult": "tesSUCCESS"
     }
-  ],
-  "postDeploymentChecks": [
-    {
-      "name": "raw noncanonical issuance 6261645f6e616d655f6c6f6e67",
-      "result": "PASS"
-    },
-    {
-      "name": "raw noncanonical issuance 626164c3a96c6f6e6772656c65617365",
-      "result": "PASS"
-    },
-    {
-      "name": "unpause simulation is idempotent",
-      "result": "PASS"
-    },
-    {
-      "name": "test domains removed",
-      "result": "PASS"
-    },
-    {
-      "name": "installed hashes and effective masks match manifest",
-      "result": "PASS"
-    },
-    {
-      "name": "namespace exactly restored after live tests",
-      "result": "PASS",
-      "entries": 62
-    }
-  ],
-  "recoveredFailure": {
-    "transaction": "420CBB3E0C10A992198142737639A3CFBBE76AE559A6B527C9B321CE2D2ECE68",
-    "result": "tecHOOK_REJECTED",
-    "cause": "Initial deployment mask blocked required emissions; payment and state rolled back, fee charged.",
-    "permissionCorrectionTransaction": "FAF1C0D61E85EC669E49E0009EC3DD2B2C423F79C234348519C20D90674F167E",
-    "finalRun": "Two new wallets; 33/33 submissions successful."
-  }
+  ]
 }

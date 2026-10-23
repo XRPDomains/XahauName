@@ -1,15 +1,18 @@
 import { Client, Wallet, decodeAccountID } from 'xahau';
-import { namespaceId as computeNamespaceId } from './util';
+import { namespaceId as computeNamespaceId,splitDomain } from './util';
+import {domainFields} from './protocol';
 import type { XahauNameConfig, TxSigner, SignAndSubmitResult, ReadOptions, SubmitOptions, TxResult, DescribeOptions } from './types';
 import type { ClientContext, RpcResult } from './context';
 import { ResolverModule } from './resolver';
 import { RegistrarModule } from './registrar';
 import { ControllerModule } from './controller';
 import { TreasuryModule } from './treasury';
-import { XahauNameError } from './errors';
+import { XahauNameError, isTransientRpcError } from './errors';
 import {mediaURL} from './metadata';
 import {waitValidated} from './confirmation';
 import { transactionResult } from './receipts';
+import {snapshotContext} from './read-snapshot';
+import type {DomainQuote,ProfileSnapshot} from './types';
 export * from './types';
 export * from './addresses';
 export * from './text-records';
@@ -41,6 +44,9 @@ class WalletSigner implements TxSigner {
 export class XahauNameClient {
     private client: Client;
     private signer: TxSigner | null;
+    private context:ClientContext;
+    private connecting?: Promise<void>;
+    private pinnedReads=new Map<string,Promise<RpcResult>>();
     private cache = new Map<string, {
         value: Buffer | null;
         expires: number;
@@ -61,13 +67,16 @@ export class XahauNameClient {
             throw new XahauNameError('Invalid namespaceId', 'INVALID_ARGUMENT');
         if (cfg.cacheTtlMs !== undefined && (!Number.isFinite(cfg.cacheTtlMs) || cfg.cacheTtlMs < 0))
             throw new XahauNameError('Invalid cacheTtlMs', 'INVALID_ARGUMENT');
+        if (cfg.connectionTimeoutMs !== undefined && (!Number.isSafeInteger(cfg.connectionTimeoutMs) || cfg.connectionTimeoutMs <= 0 || cfg.connectionTimeoutMs > 2147483647))
+            throw new XahauNameError('Invalid connectionTimeoutMs', 'INVALID_ARGUMENT');
         decodeAccountID(cfg.treasury);
         this.treasuryAddress = cfg.treasury;
-        this.client = new Client(cfg.wss, { maxFeeXAH: cfg.maxFeeXAH ?? '1' });
+        this.client = new Client(cfg.wss, { maxFeeXAH: cfg.maxFeeXAH ?? '1', connectionTimeout: cfg.connectionTimeoutMs ?? 15000 });
         this.signer = cfg.signer ?? (cfg.wallet ? new WalletSigner(cfg.wallet, this.client) : null);
         const ctx: ClientContext = {
             treasury: cfg.treasury, signerAddress: () => this.signer?.address, readState: this.readState.bind(this), submit: this.submit.bind(this), submitNative: this.submitNative.bind(this), request: this.request.bind(this), ledgerHash: this.getLedgerHash.bind(this), ledgerObject: this.getLedgerObject.bind(this)
         };
+        this.context=ctx;
         this.resolver = new ResolverModule(ctx);
         this.registrar = new RegistrarModule(ctx);
         this.controller = new ControllerModule(ctx, cfg.hardcodedTlds ?? ['xah', 'xahau']);
@@ -78,12 +87,25 @@ export class XahauNameClient {
             throw new XahauNameError('Connected network differs from deployment', 'WRONG_NETWORK');
     }
     async connect(): Promise<void> {
+        if (this.connecting) return this.connecting;
+        this.connecting = this.connectAndVerify();
+        try { await this.connecting; }
+        finally { this.connecting = undefined; }
+    }
+    private async connectAndVerify(): Promise<void> {
         try {
-            if (!this.client.isConnected())
-                await this.client.connect();
+            if (!this.client.isConnected()) {
+                try { await this.client.connect(); }
+                catch (cause) {
+                    throw new XahauNameError(cause instanceof Error ? cause.message : String(cause), 'RPC_CONNECTION_FAILED', {
+                        endpoint: this.cfg.wss, connectionTimeoutMs: this.cfg.connectionTimeoutMs ?? 15000, phase: 'connect',
+                    });
+                }
+            }
             this.checkNetwork();
             if (this.cfg.hookHashes) {
-                const r = await this.request({ command: 'account_objects', account: this.treasuryAddress, type: 'hook', ledger_index: 'validated' }), hashes = (r.account_objects ?? []).flatMap((o: RpcResult) => (o.Hooks ?? []).map((s: RpcResult) => s.Hook?.HookHash));
+                // Do not enter read recovery while verifying that same connection.
+                const r = (await this.client.request({ command: 'account_objects', account: this.treasuryAddress, type: 'hook', ledger_index: 'validated' } as any)).result as RpcResult, hashes = (r.account_objects ?? []).flatMap((o: RpcResult) => (o.Hooks ?? []).map((s: RpcResult) => s.Hook?.HookHash));
                 for (const expected of Object.values(this.cfg.hookHashes))
                     if (!hashes.includes(expected))
                         throw new XahauNameError('Deployment hook hash is not installed; refresh deployment profile', 'DEPLOYMENT_MISMATCH');
@@ -128,12 +150,36 @@ export class XahauNameClient {
     get signerAddress() {
         return this.signer?.address ?? null;
     }
+    /** Attach a wallet session without creating another ledger connection. */
+    setSigner(signer:TxSigner|null):void {
+        if(signer)decodeAccountID(signer.address);
+        this.signer=signer;this.clearCache();
+    }
     get hasSigner() {
         return this.signer !== null;
     }
     /** Dynamic JSON RPC is isolated here; modules validate the fields they use. */
     private async request(request: Record<string, unknown>): Promise<RpcResult> {
-        return (await this.client.request(request as any)).result as RpcResult;
+        // Only immutable ledger reads may share an in-flight transport request.
+        // No TTL, no moving ledger/queue/fee cache, and no signing/submit reuse.
+        if(['ledger_entry','account_objects'].includes(String(request.command))&&typeof request.ledger_hash==='string'&&/^[a-f0-9]{64}$/i.test(request.ledger_hash)){
+            const key=JSON.stringify(request),existing=this.pinnedReads.get(key);
+            if(existing)return structuredClone(await existing);
+            const pending=this.requestOnceWithRecovery(request);this.pinnedReads.set(key,pending);
+            try{return structuredClone(await pending);}finally{if(this.pinnedReads.get(key)===pending)this.pinnedReads.delete(key);}
+        }
+        return this.requestOnceWithRecovery(request);
+    }
+    private async requestOnceWithRecovery(request:Record<string,unknown>):Promise<RpcResult> {
+        const reads=['server_info','account_info','account_objects','account_tx','fee','ledger','ledger_entry','tx','ping'];
+        try { return (await this.client.request(request as any)).result as RpcResult; }
+        catch(error) {
+            if(!reads.includes(String(request.command)) || !isTransientRpcError(error))throw error;
+            // Retry one read after checking the network and installed deployment.
+            // Keep the original ledger_hash; never replay signing or submission.
+            await this.connect();
+            return (await this.client.request(request as any)).result as RpcResult;
+        }
     }
     async getLedgerHash(): Promise<string> {
         const r = await this.request({ command: 'ledger', ledger_index: 'validated', transactions: false }), hash = String(r.ledger_hash ?? r.ledger?.ledger_hash ?? '');
@@ -192,7 +238,7 @@ export class XahauNameClient {
     /** Native transfer offers have no registrar hook acknowledgement. Never retries a write. */
     private async submitNative(tx: Record<string, unknown>): Promise<SignAndSubmitResult> {
         if (!this.signer) throw new XahauNameError('Signer required', 'NO_SIGNER');
-        if (!this.client.isConnected()) throw new XahauNameError('Connect before submitting', 'NOT_CONNECTED');
+        if (!this.client.isConnected()) await this.connect();
         this.checkNetwork();
         if (!['URITokenCreateSellOffer','URITokenCancelSellOffer'].includes(String(tx.TransactionType)))
             throw new XahauNameError('Unsupported native operation', 'INVALID_ARGUMENT');
@@ -207,8 +253,7 @@ export class XahauNameClient {
             throw new XahauNameError('Signer required', 'NO_SIGNER');
         if (!options?.handler || !options.returns?.length)
             throw new XahauNameError('Expected handler acknowledgement required', 'INVALID_ARGUMENT');
-        if (!this.client.isConnected())
-            throw new XahauNameError('Connect before submitting', 'NOT_CONNECTED');
+        if (!this.client.isConnected()) await this.connect();
         this.checkNetwork();
         if (tx.NetworkID !== undefined && tx.NetworkID !== this.client.networkID)
             throw new XahauNameError('Transaction network differs from connection', 'WRONG_NETWORK');
@@ -243,19 +288,49 @@ export class XahauNameClient {
     describe(domain: string, options?: DescribeOptions) {
         return this.resolver.describe(domain, {...options,verifyOwner:options?.verifyOwner!==false});
     }
+    /** Profile, lifecycle and token display data share one operation-local snapshot. */
+    async getProfileSnapshot(domain:string,options:DescribeOptions={}):Promise<ProfileSnapshot|null> {
+        const opts={...options,bypassCache:true,verifyOwner:true,ledgerHash:options.ledgerHash??await this.getLedgerHash()};
+        const ctx=snapshotContext(this.context,opts.ledgerHash),resolver=new ResolverModule(ctx),registrar=new RegistrarModule(ctx);
+        const [profile,status]=await Promise.all([resolver.describe(domain,opts),registrar.getRegistrationStatus(domain,opts)]);
+        // A rootless registration belongs to the registration/claim view, not a profile.
+        if(!profile)return null;
+        if(status.stage!=='claimed' || status.owner!==profile.owner)
+            throw new XahauNameError('Domain lifecycle is not finalized','OWNERSHIP_MISMATCH');
+        const token=await ctx.ledgerObject(status.uritokenId,opts);
+        return{ledgerHash:opts.ledgerHash,profile,tokenId:status.uritokenId,uri:Buffer.from(token!.URI,'hex').toString('utf8'),
+            transferOffer:typeof token!.Destination==='string'&&typeof token!.Amount==='string'?{destination:token!.Destination,amountDrops:token!.Amount}:null};
+    }
     primaryOf(address: string, options?: ReadOptions) {
         return this.resolver.getPrimaryHash(address, options);
     }
     getPrimaryName(address: string, options?: ReadOptions) {
-        return this.resolver.getPrimaryName(address, options);
+        return this.primaryRead(address,options,false);
     }
     getVerifiedPrimaryName(address:string,options?:ReadOptions) {
-        return this.resolver.getVerifiedPrimaryName(address,options);
+        return this.primaryRead(address,options,true);
+    }
+    private async primaryRead(address:string,options:ReadOptions={},verify=false) {
+        decodeAccountID(address);
+        const opts={...options,ledgerHash:options.ledgerHash??await this.getLedgerHash()};
+        const resolver=new ResolverModule(snapshotContext(this.context,opts.ledgerHash));
+        return verify?resolver.getVerifiedPrimaryName(address,opts):resolver.getPrimaryName(address,opts);
     }
     listOwnedDomains(address: string, options?: ReadOptions) {
         return this.resolver.listOwnedDomains(address, options);
     }
-    listIncomingDomains(address: string, options?: ReadOptions) {
+    getPortfolio(address:string,options?:ReadOptions) {
+        return this.resolver.getPortfolio(address,options);
+    }
+    /** Quote and lifecycle state at one validated ledger; purchase still rechecks price. */
+    async checkDomain(domain:string,options:ReadOptions={}):Promise<DomainQuote> {
+        const {label,tld}=splitDomain(domain);domainFields(label,tld);
+        const opts={...options,ledgerHash:options.ledgerHash??await this.getLedgerHash()};
+        const ctx=snapshotContext(this.context,opts.ledgerHash),registrar=new RegistrarModule(ctx),controller=new ControllerModule(ctx,this.cfg.hardcodedTlds??['xah','xahau']);
+        const [status,priceDrops,tldEnabled]=await Promise.all([registrar.getRegistrationStatus(domain,opts),registrar.getPriceForDomain(domain,opts),controller.isTldEnabled(tld,opts)]);
+        return{status,priceDrops,tldEnabled,ledgerHash:opts.ledgerHash};
+    }
+    listIncomingDomains(address: string, options?: ReadOptions & {signal?:AbortSignal}) {
         return this.registrar.listIncomingDomains(address, options);
     }
     async isAvailable(domain: string) {

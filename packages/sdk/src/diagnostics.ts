@@ -1,4 +1,4 @@
-export type FailureStage = 'validation' | 'wallet' | 'ledger' | 'mint' | 'offer' | 'claim' | 'burn' | 'refund' | 'confirmation' | 'unknown';
+export type FailureStage = 'connection' | 'validation' | 'wallet' | 'ledger' | 'mint' | 'offer' | 'claim' | 'burn' | 'refund' | 'confirmation' | 'unknown';
 export interface ErrorExplanation {
     title: string;
     message: string;
@@ -9,7 +9,7 @@ export interface ErrorExplanation {
     hookHash?: string;
     txHash?: string;
     engineResult?: string;
-    recovery: 'correct-input' | 'check-status' | 'operator' | 'none';
+    recovery: 'reconnect' | 'correct-input' | 'check-status' | 'operator' | 'none';
 }
 /** Presentation only: raw errors/receipts remain available for debugging. Never authorizes a retry. */
 export function explainError(error: unknown): ErrorExplanation {
@@ -18,7 +18,7 @@ export function explainError(error: unknown): ErrorExplanation {
     const failure = details.failure ?? {};
     const engine = details.engineResult ?? details.tx?.engineResult ?? details.engine_result ?? e.data?.engine_result;
     const code = e.code ?? engine ?? details.error;
-    const txHash = e.txHash ?? details.txHash ?? details.tx?.txHash ?? details.hash;
+    const txHash = e.txHash ?? details.txHash ?? details.tx?.txHash ?? details.hash ?? details.providerHash;
     const text = String(failure.returnString ?? e.message ?? '');
     const result: ErrorExplanation = {
         title: 'Action not completed',
@@ -36,16 +36,28 @@ export function explainError(error: unknown): ErrorExplanation {
     }
     if (details.validated === true && engine === 'tesSUCCESS' && ['claim', 'burn'].includes(failure.handler))
         return set('Domain needs recovery', 'The native token transaction is confirmed, but domain-state processing failed. Do not repeat the claim or burn; contact the operator with the transaction hash.', failure.handler, 'operator');
+    if (code === 'RPC_CONNECTION_FAILED' || /You need to be connected to a ledger|connect\(\) timed out after \d+ ms/i.test(text) || ['ConnectionError', 'NotConnectedError', 'DisconnectedError'].includes(e.name)) {
+        if (txHash || details.outcomeUnknown === true || details.providerRequestId)
+            return set('Connection lost — check transaction status', 'The ledger connection is unavailable. Reconnect, then check this transaction before trying the action again. Do not send another purchase payment.', 'confirmation', 'check-status');
+        return set('Unable to connect to Xahau', 'Could not load on-chain data. Please try again.', 'connection', 'reconnect');
+    }
     if (['NOT_VALIDATED', 'TIMEOUT', 'ABORTED'].includes(String(code)) || /confirmation.*(unknown|still)|check the hash/i.test(text))
         return set('Confirmation pending', 'Confirmation is still unknown. Refresh the transaction or domain status; do not send another purchase payment.', 'confirmation', 'check-status');
-    if (String(code) === '4001' || code === 'ACTION_REJECTED' || /user (rejected|declined|cancelled)|request (rejected|declined) by/i.test(text))
+    if (code === 'SIGN_FAILED') {
+        if(txHash || details.outcomeUnknown === true || details.providerRequestId)
+            return set('Wallet result needs checking', 'The wallet result could not be verified. Check the transaction or wallet request status before trying again. Do not send another purchase payment.', 'wallet', 'check-status');
+        if(/Xahau verification failed: Signed fields changed: LastLedgerSequence$/.test(text))
+            return set('Wallet changed the transaction expiry', 'The wallet changed the transaction expiry. Refresh the domain status before trying again.', 'wallet', 'check-status');
+        return set('Wallet verification failed', 'The wallet could not sign or verify this transaction. Check your wallet and the action status before trying again.', 'wallet', 'check-status');
+    }
+    if (String(code) === '4001' || ['ACTION_REJECTED','SIGN_REJECTED','CONNECTION_REJECTED'].includes(String(code)) || /user (rejected|declined|cancelled)|request (rejected|declined) by/i.test(text))
         return set('Wallet request declined', 'The wallet request was declined. If purchase was already confirmed, use Claim domain later; do not buy again.', 'wallet', 'none');
     if (['tecUNFUNDED_PAYMENT', 'tecUNFUNDED', 'tecINSUFFICIENT_FUNDS', 'terINSUF_FEE_B', 'tecINSUFF_FEE', 'tecINSUFFICIENT_RESERVE', 'tecINSUF_RESERVE_OFFER', 'tecINSUF_RESERVE'].includes(String(code)))
-        return set('Not enough available XAH', 'Your wallet needs enough XAH for this action, network fees and the ledger reserve. Add test XAH, then refresh the action status before trying again.', 'ledger', 'correct-input');
+        return set('Not enough available XAH', 'Your wallet needs enough XAH for this action, network fees and the ledger reserve. Add XAH on the selected network, then refresh the action status before trying again.', 'ledger', 'correct-input');
     if (code === 'actNotFound')
-        return set('Wallet is not funded', 'Fund this wallet on Xahau Testnet, then refresh its balance.', 'ledger', 'correct-input');
-    if (['NO_SIGNER', 'NOT_CONNECTED', 'WRONG_NETWORK'].includes(String(code)) || /switch your wallet|incorrect NetworkID|account has changed|incorrect signing account/i.test(text))
-        return set('Check your wallet', 'Connect the intended wallet on Xahau Testnet before continuing.', 'wallet', 'correct-input');
+        return set('Wallet is not funded', 'Fund this wallet on the selected Xahau network, then refresh its balance.', 'ledger', 'correct-input');
+    if (['NO_SIGNER', 'NOT_CONNECTED', 'WRONG_NETWORK', 'NETWORK_MISMATCH', 'NETWORK_NOT_SUPPORTED'].includes(String(code)) || /switch your wallet|incorrect NetworkID|account has changed|incorrect signing account/i.test(text))
+        return set('Check your wallet', 'Connect the intended wallet on the configured Xahau network before continuing.', 'wallet', 'correct-input');
     if (/fee exceeds|fee.*configured limit/i.test(text))
         return set('Network fee exceeds limit', 'The requested network fee exceeds the configured safety limit. Refresh the fee estimate before signing.', 'wallet', 'correct-input');
     if (typeof code === 'number') {

@@ -18,7 +18,7 @@ async function main(){
  const artifacts=parts.map((name,position)=>{
   const dir=path.join(base,name),proof=read(path.join(dir,'proof.json')),code=fs.readFileSync(path.join(dir,'xahau-name-hook.cleaned.wasm')),source=fs.readFileSync(path.join(repo,'hook/src/handlers',name+'.c'));
   assert.equal(proof.sourceSha256,sha(Buffer.concat([common,source])));assert.equal(proof.sha256,sha(code));assert.equal(verified.artifacts.find(a=>a.name===name)?.sha256,sha(code),'Untested artifact');assert(proof.guardPassed&&code.length<65536&&WebAssembly.validate(code));assert(fs.readFileSync(path.join(dir,'guard-check.log'),'utf8').includes('Hook validation successful!'));
-  const types=name==='issuance'?[0]:name==='claim'?[47,95]:name==='burn'?[46]:[0,99];const {hookMask}=require('./masks.cjs');const on=hookMask(types);
+  const types=name==='issuance'?[0]:name==='claim'?[47,95,99]:name==='burn'?[46]:[0,99];const {hookMask}=require('./masks.cjs');const on=hookMask(types);
   return{name,position,proof,hook:{CreateCode:code.toString('hex').toUpperCase(),HookNamespace:previous.namespace,HookOn:on,HookCanEmit:hookMask(name==='issuance'?[0,45,48]:[]),HookApiVersion:0,Flags:name==='burn'?5:1}};
  });
  const c=new Client(previous.rpc);try{

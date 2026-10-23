@@ -1,11 +1,11 @@
 import { decodeAccountID, encodeAccountID } from 'xahau';
-import { pricingKey, pausedKey, decodePricing, priceForLength, splitDomain, joinDomain, computeUritokenIdFromURI, rootKey, pendingKey, asyncKey, decodeRoot, uriBaseKey } from './util';
+import { pricingKey, pausedKey, decodePricing, priceForLength, splitDomain, joinDomain, computeUritokenIdFromURI, rootKey, pendingKey, asyncKey, decodeRoot, uriBaseKey, recoveryKey } from './util';
 import { parameters, domainFields, recipientAddress, recipientBytes, priceBytes, invalid, rejectCustomURI, uriBaseBytes } from './protocol';
 import { domainIdentity, tokenMatchesDomain, domainOfToken } from './identity';
 import type { ClientContext } from './context';
 import type { BuyArgs, RegisterArgs, PriceTable, ReadOptions, WaitOptions, RegistrationStatus } from './types';
 import { fetchMetadata, metadataURL } from './metadata';
-import { XahauNameError } from './errors';
+import { XahauNameError, isTransientRpcError } from './errors';
 export class RegistrarModule {
     constructor(private ctx: ClientContext) {
     }
@@ -17,18 +17,18 @@ export class RegistrarModule {
             throw new XahauNameError('Unsupported pricing version', 'BAD_STATE');
         return { version: 1, prices: decodePricing(buf) };
     }
-    async getPrice(length: number): Promise<bigint> {
+    async getPrice(length: number, options:ReadOptions={}): Promise<bigint> {
         if (!Number.isInteger(length) || length < 1 || length > 57)
             invalid('Invalid label length');
-        const table = await this.getPricing({ bypassCache: true });
+        const table = await this.getPricing({ ...options,bypassCache: true });
         if (!table)
             throw new XahauNameError('Pricing is not set', 'PRICING_NOT_SET');
         return priceForLength(table.prices, length);
     }
-    getPriceForDomain(domain: string) {
+    getPriceForDomain(domain: string, options?:ReadOptions) {
         const { label, tld } = splitDomain(domain);
         domainFields(label, tld);
-        return this.getPrice(label.length);
+        return this.getPrice(label.length,options);
     }
     async isPaused(options?: ReadOptions) {
         const buf = await this.ctx.readState(pausedKey(), options);
@@ -103,9 +103,14 @@ export class RegistrarModule {
         const opts = { ...options, bypassCache: true, ledgerHash: options.ledgerHash ?? await this.ctx.ledgerHash() };
         const identity = await domainIdentity(this.ctx, domain, opts), {name} = identity;
         let id = identity.id;
-        const [root, pending, refund, token] = await Promise.all([this.ctx.readState(rootKey(label, tld), opts), this.ctx.readState(pendingKey(id), opts), this.ctx.readState(asyncKey('rfd', id), opts), this.ctx.ledgerObject(id, opts)]);
-        if (!identity.mapped && !root && !pending && !refund && !token) {
-            const base = await this.getURIBase(opts);
+        // A missing forward map may need the current URIBase for a prospective ID.
+        // Fetch alongside lifecycle state, but only require it on the available path.
+        const baseRequest=identity.mapped?null:this.getURIBase(opts).then(value=>({value}),error=>({error}));
+        const [root, pending, refund, token, recovery, mint, offer] = await Promise.all([this.ctx.readState(rootKey(label, tld), opts), this.ctx.readState(pendingKey(id), opts), this.ctx.readState(asyncKey('rfd', id), opts), this.ctx.ledgerObject(id, opts), this.ctx.readState(recoveryKey(label,tld), opts), this.ctx.readState(asyncKey('mnt',id),opts), this.ctx.readState(asyncKey('ofr',id),opts)]);
+        if (!identity.mapped && !root && !pending && !refund && !token && !recovery) {
+            const result=await baseRequest!;
+            if('error' in result)throw result.error;
+            const base=result.value;
             if (base) id = computeUritokenIdFromURI(this.ctx.treasury, base + name);
         }
         const status: RegistrationStatus = { domain: name, uritokenId: id, stage: 'available', ledgerHash: opts.ledgerHash };
@@ -122,10 +127,17 @@ export class RegistrarModule {
                 return status;
             }
         }
+        if (recovery) {
+            const nameBytes=Buffer.from(name);
+            if(recovery.length!==67+nameBytes.length||recovery[0]!==1||recovery[1]>1||recovery[66]!==nameBytes.length||!recovery.subarray(67).equals(nameBytes))
+                throw new XahauNameError('Invalid recovery journal','BAD_STATE');
+            status.uritokenId=recovery.subarray(2,34).toString('hex').toUpperCase();
+            status.stage = 'recoveryRequired'; return status;
+        }
         if (root) {
             const decoded = decodeRoot(root);
             status.owner = decoded.owner;
-            status.stage = token?.Owner === decoded.owner && !pending ? 'claimed' : 'recoveryRequired';
+            status.stage = token?.Owner === decoded.owner && !pending && !refund && !mint && !offer ? 'claimed' : 'recoveryRequired';
             return status;
         }
         if (refund) {
@@ -140,18 +152,46 @@ export class RegistrarModule {
             status.stage = 'recoveryRequired';
         return status;
     }
+    /** Explicit strong Invoke, safe to retry after checking status; never repeats a buy/burn. */
+    async reconcile(domain:string) {
+        const signer=this.signer();
+        const {label,tld}=splitDomain(domain),fields=domainFields(label,tld);
+        const opts={bypassCache:true,ledgerHash:await this.ctx.ledgerHash()};
+        const identity=await domainIdentity(this.ctx,domain,opts);
+        const journal=await this.ctx.readState(recoveryKey(label,tld),opts);
+        let id=identity.id;
+        if(journal){
+            const name=Buffer.from(identity.name);
+            if(journal.length!==67+name.length||journal[0]!==1||journal[1]>1||journal[66]!==name.length||!journal.subarray(67).equals(name))
+                throw new XahauNameError('Invalid recovery journal','BAD_STATE');
+            id=journal.subarray(2,34).toString('hex').toUpperCase();
+            if(identity.mapped&&id!==identity.id)throw new XahauNameError('Recovery identity changed','BAD_STATE');
+        }
+        return this.ctx.submit({TransactionType:'Invoke',...(signer===this.ctx.treasury?{}:{Destination:this.ctx.treasury}),HookParameters:parameters('reconcile',{...fields,token:Buffer.from(id,'hex')})},{handler:'claim',returns:['reconciled']});
+    }
     private async wait(domain: string, stage: 'awaitingClaim' | 'claimed', options: WaitOptions): Promise<RegistrationStatus> {
         const timeout = options.timeoutMs ?? 60000, interval = options.pollIntervalMs ?? 1000;
         if (!Number.isFinite(timeout) || timeout <= 0 || !Number.isFinite(interval) || interval <= 0)
             invalid('Invalid polling timeout/interval');
         const deadline = Date.now() + timeout;
+        let completedLedger:string|undefined,lastState:RegistrationStatus|undefined;
         while (true) {
             if (options.signal?.aborted)
                 throw new XahauNameError('Polling aborted', 'ABORTED');
-            const state = await this.getRegistrationStatus(domain);
-            if (state.stage === stage)
+            let state=lastState;
+            try{
+                const ledgerHash=await this.ctx.ledgerHash();
+                if(options.signal?.aborted)throw new XahauNameError('Polling aborted','ABORTED');
+                // A validated ledger is immutable. Do not reread every lifecycle
+                // key until its hash changes; failed reads are still retried.
+                if(ledgerHash!==completedLedger){
+                    state=await this.getRegistrationStatus(domain,{ledgerHash});
+                    completedLedger=ledgerHash;lastState=state;
+                }
+            }catch(error){if(!isTransientRpcError(error))throw error;}
+            if (state?.stage === stage)
                 return state;
-            if (state.stage === 'recoveryRequired' || state.stage === 'refundPending')
+            if (state?.stage === 'recoveryRequired' || state?.stage === 'refundPending')
                 throw new XahauNameError('Registration requires recovery or refund', 'REGISTRATION_FAILED', state);
             if (Date.now() >= deadline)
                 throw new XahauNameError('Timed out waiting for ' + stage, 'TIMEOUT', state);
@@ -192,8 +232,9 @@ export class RegistrarModule {
     }
     /** Discover directed free offers from validated account history, then verify current ledger state.
      * History availability depends on the RPC server. Never treats an offer as ownership. */
-    async listIncomingDomains(address: string, options: ReadOptions = {}): Promise<import('./types').IncomingDomains> {
+    async listIncomingDomains(address: string, options: ReadOptions & {signal?:AbortSignal} = {}): Promise<import('./types').IncomingDomains> {
         decodeAccountID(address);
+        options.signal?.throwIfAborted();
         const opts = {...options, bypassCache:true, ledgerHash:options.ledgerHash ?? await this.ctx.ledgerHash()};
         const ledger = await this.ctx.request({command:'ledger',ledger_hash:opts.ledgerHash,transactions:false,expand:false});
         const max = Number(ledger.ledger_index ?? ledger.ledger?.ledger_index);
@@ -201,8 +242,10 @@ export class RegistrarModule {
         const ids = new Set<string>(), markers = new Set<string>();
         let marker: unknown, historyMinLedger = 0;
         for (let page=0; ; page++) {
+            options.signal?.throwIfAborted();
             if(page>=100) throw new XahauNameError('Incoming offer history exceeds pagination limit','HISTORY_LIMIT');
             const result = await this.ctx.request({command:'account_tx',account:address,ledger_index_min:-1,ledger_index_max:max,binary:false,forward:false,limit:200,...(marker?{marker}:{})});
+            options.signal?.throwIfAborted();
             if(!Array.isArray(result.transactions)) throw new XahauNameError('Invalid account history response','BAD_RESPONSE');
             historyMinLedger = Math.max(historyMinLedger, Number(result.ledger_index_min)||0);
             for(const item of result.transactions) {
@@ -223,13 +266,14 @@ export class RegistrarModule {
         }
         const offers:import('./types').IncomingDomain[]=[];
         for(const id of ids) {
+            options.signal?.throwIfAborted();
             const token=await this.ctx.ledgerObject(id,opts);
             if(!token || token.Issuer!==this.ctx.treasury || token.Destination!==address || token.Amount!=='0' || token.Owner===address)continue;
             const domain=await domainOfToken(this.ctx,{...token,index:id},opts);
             if(!domain)continue;
             const state=await this.getRegistrationStatus(domain,opts);
             const kind=state.stage==='awaitingClaim' && state.recipient===address ? 'registration' : state.stage==='claimed' && state.owner===token.Owner ? 'transfer' : null;
-            if(kind)offers.push({domain,uritokenId:id,sender:token.Owner,recipient:address,kind});
+            if(kind)offers.push({domain,uri:Buffer.from(token.URI,'hex').toString('utf8'),uritokenId:id,sender:token.Owner,recipient:address,kind});
         }
         offers.sort((a,b)=>a.domain.localeCompare(b.domain));
         return {offers,ledgerHash:opts.ledgerHash,historyMinLedger};

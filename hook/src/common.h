@@ -652,7 +652,7 @@ static int recidx_add_custom(uint8_t *idx, const uint8_t *root, const uint8_t *t
 
 static int clear_indexed_records(const uint8_t *idx,
                                  const uint8_t *label, int llen,
-                                 const uint8_t *tld, int tlen, const uint8_t *root_key)
+                                 const uint8_t *tld, int tlen, const uint8_t *root_key, int resume)
 {
     int acnt = ((int)idx[RECIDX_OFF_ADDR_CNT] << 8) | idx[RECIDX_OFF_ADDR_CNT + 1];
     int tcnt = idx[RECIDX_OFF_TEXT_CNT];
@@ -695,6 +695,9 @@ static int clear_indexed_records(const uint8_t *idx,
             uint8_t skey[32], stored[72];
             if (!text_slot_key(skey, root_key, idx[off+1])) return 0;
             int slen = state(stored, 72, skey, 32);
+            // A previous weak execution can have deleted this slot after its
+            // value was deleted. Only a validated recovery journal allows this.
+            if (resume && slen == DOESNT_EXIST) continue;
             if (slen < 32 || slen > 72 || state_set(zero, 0, stored, 32) < 0 ||
                 state_set(zero, 0, skey, 32) < 0) return 0;
             continue;
@@ -901,6 +904,8 @@ static int emit_stage(int kind, const uint8_t *uri, int uri_len,
     int p = 0;
     tx[p++] = 0x12; tx[p++] = 0; tx[p++] = (uint8_t)kind;
     tx[p++] = 0x22; tx[p++] = 0; tx[p++] = 0; tx[p++] = 0;
+    // Burnable keeps the issuer strong for Remit/Buy validation; burn.c
+    // denies issuer-originated burn unless it is also the native Owner.
     tx[p++] = kind == ttURITOKEN_MINT ? 1 : 0;
     tx[p++] = 0x24; tx[p++] = 0; tx[p++] = 0; tx[p++] = 0; tx[p++] = 0;
     tx[p++] = 0x20; tx[p++] = 26;
@@ -1032,6 +1037,142 @@ static int finalize_claim(const uint8_t *id, const uint8_t *buyer)
     return 1;
 }
 
+#define RECOVERY_COPY(dst,src,count) do { \
+    _Pragma("clang loop unroll(full)") \
+    for(int ri=0;ri<(count);ri++)(dst)[ri]=(src)[ri]; \
+} while(0)
+// A durable journal makes weak-phase writes resumable, including partial writes.
+// v1 | hadRoot | full token ID | original root | name length | canonical name.
+static void recovery_key(uint8_t *out, const uint8_t *root) {
+    out[0]='r'; out[1]='c'; out[2]='v'; out[3]=':';
+    RECOVERY_COPY(out+4,root,28);
+}
+static int recovery_name_equal(const uint8_t *a,const uint8_t *b,int n) {
+    for(int i=0;GUARD(67),i<n;i++)if(a[i]!=b[i])return 0;
+    return 1;
+}
+
+static int lifecycle_update(const uint8_t *id, const uint8_t *owner, int repair) {
+    uint8_t name[66], label[64], tld[16], lk[32], rk[32], tk[32], jk[32];
+    int n, dot=-1;
+    if (repair) {
+        int ll=otxn_param(label,64,(uint32_t)"label",5);
+        int tl=otxn_param(tld,16,(uint32_t)"tld",3);
+        if(ll<1||ll>57||tl<2||tl>8)
+            rollback(SBUF("invalid recovery name"),RC_BAD_MEMO);
+        XN_COPY(name,label,ll); name[ll]='.'; XN_COPY(name+ll+1,tld,tl); n=ll+1+tl; dot=ll;
+    } else {
+        make_label_of_key(lk,id); n=state(name,sizeof(name),lk,32);
+        if(n==DOESNT_EXIST)return 0;
+        if(n<3||n>66)rollback(SBUF("identity read"),RC_STATE_ERR);
+        for(int i=0;GUARD(67),i<n;i++)if(name[i]=='.')dot=i;
+        if(dot<1||dot>=n-1)rollback(SBUF("identity format"),RC_STATE_ERR);
+    }
+    make_root_key(rk,name,dot,name+dot+1,n-dot-1);
+    make_token_key(tk,name,dot,name+dot+1,n-dot-1); recovery_key(jk,rk);
+    uint8_t journal[133], root[32]={0}, bound[32], pending[32], hash[32], zero[1]={0};
+    int jl=state(journal,sizeof(journal),jk,32), resume=jl!=DOESNT_EXIST;
+    int rl=state(root,32,rk,32), bl=state(bound,32,tk,32), had_root=rl==32;
+    if(rl!=32&&rl!=DOESNT_EXIST)rollback(SBUF("root read"),RC_STATE_ERR);
+    if(resume) {
+        if(jl!=67+n||journal[0]!=1||journal[1]>1||!id_equal(journal+2,id)||journal[66]!=n||!recovery_name_equal(journal+67,name,n))
+            rollback(SBUF("recovery journal read"),RC_STATE_ERR);
+        had_root=journal[1]; RECOVERY_COPY(root,journal+34,32);
+        if(bl!=DOESNT_EXIST&&(bl!=32||!id_equal(bound,id)))rollback(SBUF("recovery identity changed"),RC_STATE_ERR);
+    } else {
+        if(repair&&!owner&&bl==DOESNT_EXIST&&rl==DOESNT_EXIST) {
+            // An absent root/map alone does not prove cleanup completed.
+            uint8_t k[32], probe[1];
+            make_records_key(k,name,dot,name+dot+1,n-dot-1);
+            if(state(probe,1,k,32)!=DOESNT_EXIST)rollback(SBUF("orphan records require recovery"),RC_STATE_ERR);
+            make_label_of_key(k,id); if(state(probe,1,k,32)!=DOESNT_EXIST)rollback(SBUF("orphan identity"),RC_STATE_ERR);
+            make_uri_key(k,id); if(state(probe,1,k,32)!=DOESNT_EXIST)rollback(SBUF("orphan identity"),RC_STATE_ERR);
+            make_pending_key(k,id); if(state(probe,1,k,32)!=DOESNT_EXIST)rollback(SBUF("registration not settled"),RC_ALREADY_PENDING);
+            async_key(k,"mnt",id); if(state(probe,1,k,32)!=DOESNT_EXIST)rollback(SBUF("registration not settled"),RC_ALREADY_PENDING);
+            async_key(k,"ofr",id); if(state(probe,1,k,32)!=DOESNT_EXIST)rollback(SBUF("registration not settled"),RC_ALREADY_PENDING);
+            async_key(k,"rfd",id); if(state(probe,1,k,32)!=DOESNT_EXIST)rollback(SBUF("registration not settled"),RC_ALREADY_PENDING);
+            return 0;
+        }
+        if(bl==DOESNT_EXIST&&had_root) {
+            // Only the original bare-name URI can supply a legacy forward map.
+            uint8_t preimage[88],account[20],expected[32]; preimage[0]=0; preimage[1]=85;
+            if(hook_account(account,20)!=20)rollback(SBUF("issuer read"),RC_STATE_ERR);
+            RECOVERY_COPY(preimage+2,account,20); XN_COPY(preimage+22,name,n);
+            if(util_sha512h(expected,32,preimage,22+n)!=32||!id_equal(expected,id))rollback(SBUF("legacy token mismatch"),RC_STATE_ERR);
+        } else if(bl!=32||!id_equal(bound,id))rollback(SBUF("token map mismatch"),RC_STATE_ERR);
+        make_label_of_key(lk,id);
+        int len=state(journal,sizeof(journal),lk,32);
+        if(len!=n||!recovery_name_equal(journal,name,n))rollback(SBUF("reverse mismatch"),RC_STATE_ERR);
+    }
+    uint8_t pk[32]; make_pending_key(pk,id); int pl=state(pending,32,pk,32);
+    if(pl!=32&&pl!=DOESNT_EXIST)rollback(SBUF("pending read"),RC_STATE_ERR);
+    async_key(lk,"rfd",id);
+    if(state(hash,32,lk,32)!=DOESNT_EXIST)rollback(SBUF("refund requires recovery"),RC_ALREADY_PENDING);
+    if(!owner&&pl!=DOESNT_EXIST&&(!resume||had_root))rollback(SBUF("registration not settled"),RC_ALREADY_PENDING);
+    if(owner&&!resume) {
+        if(had_root&&pl!=DOESNT_EXIST)rollback(SBUF("pending conflicts with root"),RC_STATE_ERR);
+        if(!had_root) {
+            async_key(lk,"ofr",id);
+            // In recovery, ownership may have moved again since the failed buy.
+            // Custody must have left the issuer; the caller cannot select Owner.
+            if(is_owner_of_hook(owner)||pl!=32||(!repair&&!bytes_equal(owner,pending,20))||state(hash,32,lk,32)!=32)
+                rollback(SBUF("claim not finalized"),RC_STATE_ERR);
+        } else if(bytes_equal(root,owner,20)) return 2;
+    }
+    uint8_t idx[RECIDX_LEN]; int indexed=load_records_index(idx,name,dot,name+dot+1,n-dot-1);
+    if(!resume&&indexed) {
+        if(idx[RECIDX_OFF_TEXT_CNT]>15||(((int)idx[1]<<8)|idx[2])>15)rollback(SBUF("index corrupt"),RC_STATE_ERR);
+        uint8_t pre[37],slotkey[32],stored[72]; pre[0]='t';pre[1]='x';pre[2]='i';pre[3]=':';
+        RECOVERY_COPY(pre+4,rk,32);
+        for(int i=0;GUARD(16),i<idx[RECIDX_OFF_TEXT_CNT];i++) {
+            int off=34+i*6;
+            if(idx[off]!=255){if(idx[off]>=SWEEP_TEXT_KEYS_COUNT)rollback(SBUF("index corrupt"),RC_STATE_ERR);continue;}
+            pre[36]=idx[off+1];
+            if(pre[36]>=15||util_sha512h(slotkey,32,pre,37)!=32)rollback(SBUF("custom slot key"),RC_STATE_ERR);
+            int size=state(stored,72,slotkey,32);
+            if(size<32||size>72)rollback(SBUF("custom slot missing"),RC_STATE_ERR);
+        }
+    }
+    if(!resume) {
+        journal[0]=1; journal[1]=had_root; RECOVERY_COPY(journal+2,id,32);
+        RECOVERY_COPY(journal+34,root,32); journal[66]=n; XN_COPY(journal+67,name,n);
+        if(state_set(journal,67+n,jk,32)!=67+n)rollback(SBUF("recovery journal write"),RC_STATE_ERR);
+    }
+    if(had_root) {
+        uint8_t po[32], prev[32]; make_primary_of_key(po,root);
+        int len=state(prev,32,po,32);
+        if(len!=DOESNT_EXIST&&len!=32)rollback(SBUF("primary read"),RC_STATE_ERR);
+        if(len==32&&id_equal(prev,rk)&&state_set(zero,0,po,32)<0)rollback(SBUF("primary clear"),RC_STATE_ERR);
+    }
+    if(indexed) {
+        if(!clear_indexed_records(idx,name,dot,name+dot+1,n-dot-1,rk,resume))rollback(SBUF("records clear"),RC_STATE_ERR);
+        uint8_t ik[32]; make_records_key(ik,name,dot,name+dot+1,n-dot-1);
+        if(state_set(zero,0,ik,32)<0)rollback(SBUF("index clear"),RC_STATE_ERR);
+    }
+    make_label_of_key(lk,id);
+    if(!had_root&&(!clear_pending(id)||!erase_async("mnt",id)||!erase_async("ofr",id)))rollback(SBUF("pending clear"),RC_STATE_ERR);
+    if(owner) {
+        RECOVERY_COPY(root,owner,20); root[20]=0;
+        if(!had_root) {
+            int64_t now=ledger_last_time(); if(now<0)rollback(SBUF("ledger time"),RC_STATE_ERR);
+#pragma clang loop unroll(full)
+            for(int i=0;i<8;i++)root[21+i]=(uint64_t)now>>(56-i*8);
+            root[29]=root[30]=root[31]=0;
+        }
+        if(state_set(root,32,rk,32)!=32||state_set(id,32,tk,32)!=32||state_set(name,n,lk,32)!=n)
+            rollback(SBUF("identity write"),RC_STATE_ERR);
+        make_uri_key(lk,id);
+        if(state_set(name,n,lk,32)!=n)rollback(SBUF("reverse write"),RC_STATE_ERR);
+    } else {
+        if(state_set(zero,0,rk,32)<0||state_set(zero,0,lk,32)<0)rollback(SBUF("root clear"),RC_STATE_ERR);
+        make_uri_key(lk,id);
+        if(state_set(zero,0,lk,32)<0||state_set(zero,0,tk,32)<0)rollback(SBUF("identity clear"),RC_STATE_ERR);
+    }
+    // Last write: until this succeeds, all readers must quarantine the domain.
+    if(state_set(zero,0,jk,32)<0)rollback(SBUF("recovery journal clear"),RC_STATE_ERR);
+    return owner?(had_root?2:1):3;
+}
+
 static int equal_key20(const uint8_t *a,const uint8_t *b){
     const xn_word *x=(const xn_word*)a,*y=(const xn_word*)b;
     return !((x[0].value^y[0].value)|(x[1].value^y[1].value)|
@@ -1067,6 +1208,8 @@ int authorize_owner(const uint8_t *label, int llen,
         rollback(SBUF("not owner"),RC_NOT_OWNER);
 
     uint8_t token_key[32], token_id[32], native_owner[20], keylet[34]={0,85};
+    recovery_key(token_key,root_key_out);
+    if(state(token_id,32,token_key,32)!=DOESNT_EXIST)rollback(SBUF("domain needs reconciliation"),RC_STATE_ERR);
     if(!make_token_key(token_key,label,llen,tld,tlen)||state(token_id,32,token_key,32)!=32)
         rollback(SBUF("token identity missing"),RC_STATE_ERR);
 #pragma clang loop unroll(full)
@@ -1074,5 +1217,60 @@ int authorize_owner(const uint8_t *label, int llen,
     if(slot_set(keylet,34,20)!=20||slot_subfield(20,sfOwner,21)!=21||slot(native_owner,20,21)!=20)
         rollback(SBUF("native owner unavailable"),RC_STATE_ERR);
     if(!equal_key20(native_owner,sender20))rollback(SBUF("native owner mismatch"),RC_NOT_OWNER);
+    return 0;
+}
+
+static int64_t reject_domain_remit(void){
+    uint8_t ids[1026],key[32],name[70];
+    int n=otxn_field(ids,sizeof(ids),sfURITokenIDs);
+    if(n==DOESNT_EXIST)accept(SBUF("ignored"),0);
+    if(n<1)rollback(SBUF("invalid token vector"),RC_BAD_MEMO);
+    int off=0;
+    if(n%32){
+        int declared=ids[0];off=1;
+        if(ids[0]>=193&&ids[0]<=240){declared=193+(ids[0]-193)*256+ids[1];off=2;}
+        if(ids[0]>240||declared!=n-off)rollback(SBUF("invalid token vector"),RC_BAD_MEMO);
+    }
+    int size=n-off;
+    if(size<32||size>1024||size%32)rollback(SBUF("invalid token vector"),RC_BAD_MEMO);
+    for(int i=0;GUARD(33),i<32;i++){
+        if(i*32>=size)break;
+        make_label_of_key(key,ids+off+i*32);
+        int len=state(name,70,key,32);
+        if(len>0)rollback(SBUF("use URITokenBuy"),65);
+        if(len!=DOESNT_EXIST)rollback(SBUF("token identity read"),RC_STATE_ERR);
+    }
+    accept(SBUF("unrelated remit"),0);
+}
+static int64_t lifecycle_dispatch(uint32_t ctx){
+    int64_t tt=otxn_type();
+    uint8_t id[32], owner[20]; int repair=0, live=1;
+    if(tt==95)return reject_domain_remit();
+    if(tt==ttINVOKE&&ctx==0){
+        uint8_t v[1],op[1],keylet[34]={0,85},issuer[20],account[20];
+        if(otxn_param(v,1,(uint32_t)"xn_v",4)!=1||v[0]!=2||otxn_param(op,1,(uint32_t)"op",2)!=1||op[0]!=17)accept(SBUF("next"),0);
+        if(otxn_param(id,32,(uint32_t)"token",5)!=32)rollback(SBUF("recovery token"),RC_BAD_MEMO);
+        COPY_TX_FIXED(keylet+2,id,32);
+        int64_t slot=slot_set(keylet,34,20);
+        if(slot==DOESNT_EXIST)live=0;
+        else {
+            if(slot!=20||tx_slot_field(20,sfOwner,owner,20)!=20||tx_slot_field(20,sfIssuer,issuer,20)!=20||hook_account(account,20)!=20)
+                rollback(SBUF("native token read"),RC_STATE_ERR);
+            if(!bytes_equal(account,issuer,20))rollback(SBUF("native issuer mismatch"),RC_STATE_ERR);
+        }
+        repair=1;
+    }else {
+        if(tt!=ttURITOKEN_BUY&&tt!=ttURITOKEN_BURN)accept(SBUF("ignored"),0);
+        if(ctx==0){if(hook_again()!=1)rollback(SBUF("again failed"),RC_STATE_ERR);accept(SBUF("await result"),0);}
+        if(execution_success()!=1)accept(SBUF("not successful"),0);
+        if(otxn_field(id,32,sfURITokenID)!=32)accept(SBUF("no utid"),0);
+        if(tt==ttURITOKEN_BUY){if(otxn_field(owner,20,sfAccount)!=20)rollback(SBUF("no buyer"),RC_STATE_ERR);}else live=0;
+    }
+    int result=lifecycle_update(id,live?owner:0,repair);
+    if(repair)accept(SBUF("reconciled"),0);
+    if(result==3)accept(SBUF("burned"),0);
+    if(result==2)accept(SBUF("transferred"),0);
+    if(result==1)accept(SBUF("claimed"),0);
+    accept(SBUF("not ours"),0);
     return 0;
 }

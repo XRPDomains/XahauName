@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "networkId": 21338,
+  "treasury": "rw5W1Ljeg7T4JionCu2hKzWeUus7XQ9qs",
+  "installTransaction": "F6C1A8F4EE7AD80E829A5C823B716F0F177E5F65DA30256FD7AEB69EB13593B1",
+  "installResult": "tesSUCCESS",
+  "installLedger": 13419939,
+  "feeDrops": "34912510",
+  "handlers": 10,
+  "statePreservedAtUpgrade": true,
+  "namespaceEntriesAfterCleanup": 62,
+  "liveChecks": 54,
+  "validatedTransactions": 37,
+  "smoke": {
+    "hash": "A640BB5C3EF089A0BE0CA4D53E174DDF84999FE796D620565A150ADACBA14B0F",
+    "result": "tesSUCCESS",
+    "executions": [
+      {
+        "handler": "issuance",
+        "hookHash": "DC91AA327C5378BB0C3BF503E402FF9C649F3D7F21C1C73E8F344F330F579255",
+        "hookResult": 3,
+        "hookReturnCode": "0",
+        "hookReturnString": "not v2"
+      },
+      {
+        "handler": "set-address",
+        "hookHash": "6C112933D64C5F392AC1383AE3C88FA11B217AC9F30A5678A98EFB5A7593948B",
+        "hookResult": 3,
+        "hookReturnCode": "0",
+        "hookReturnString": "not v2"
+      },
+      {
+        "handler": "authorization",
+        "hookHash": "7C65CED178A367F3F63F94092FD76EA0DBBFFA684DD578117E4ADC831F910B31",
+        "hookResult": 3,
+        "hookReturnCode": "0",
+        "hookReturnString": "not v2"
+      },
+      {
+        "handler": "set-text",
+        "hookHash": "057EB00B621E33B8EBC7717443C1616D4C3253E5ABF2D96572E082E8DDAC5E87",
+        "hookResult": 3,
+        "hookReturnCode": "0",
+        "hookReturnString": "not v2"
+      },
+      {
+        "handler": "clear-text",
+        "hookHash": "28633D7C5F98D63D787DD751D59BD04A00B3A43D786B6FAB638080A8A71D6E2C",
+        "hookResult": 3,
+        "hookReturnCode": "0",
+        "hookReturnString": "not v2"
+      },
+      {
+        "handler": "control",
+        "hookHash": "DE38495516763180AF071A067D7BE6C18CD728A82C6B471F45719E52566E4DAB",
+        "hookResult": 3,
+        "hookReturnCode": "0",
+        "hookReturnString": "not v2"
+      },
+      {
+        "handler": "admin",
+        "hookHash": "2F38A594CF3EC0C57251CB7B52ADC0F33396A21DDECEB079C166257E14692C8F",
+        "hookResult": 3,
+        "hookReturnCode": "0",
+        "hookReturnString": "not v2"
+      },
+      {
+        "handler": "profile",
+        "hookHash": "1E76CD67BFD97E68A13FEA5B48D9DD55802EF4947977BD3E6B152DDEFF67A7EB",
+        "hookResult": 3,
+        "hookReturnCode": "0",
+        "hookReturnString": "not v2"
+      }
+    ]
+  },
+  "claims": [
+    "BA53B151D193734714F237D39CBABBE00B5667AFB22F5D38B1CF9504AC2362D9"
+  ],
+  "transferClaims": [
+    "FB668F0F8D88B9BB1DCB02A2F32AB26E4F5829CA5D4D5057E5A1ABE77B72F593"
+  ],
+  "burns": [
+    "4206BAAF93320ACA9700F3C22F1A0719A075C12789FF6CBEC4216A906DD1E21E"
+  ],
+  "reconciliation": {
+    "consistentOwner": [
+      "A94F91E3BFF76723FB877E206BD3145DEC05834D10EAE75BAD4662960EAAAB02"
+    ],
+    "completedBurn": [
+      "BA5FA14396F4C5D5E874B4AF9E35EAF942909F412BB4D795A88CDB4F59DAF508"
+    ],
+    "completedBurnRepeat": [
+      "039772B6E000A0FBC6C44C96E6D3C026248F90C4587A44FFB9623A36835E734E"
+    ],
+    "controlledNativeFaultInjection": false
+  },
+  "resolvedSdkIssues": [
+    {
+      "action": "reconcile consistent native owner through SDK",
+      "hash": "70E642A55C3AF63F9FF08B3C071B5A90CB44F72F7640E00E94513DFB5929E65B",
+      "code": "HOOK_NOT_EXECUTED",
+      "engineResult": "tesSUCCESS"
+    }
+  ],
+  "cleanup": "both domains burned"
+}

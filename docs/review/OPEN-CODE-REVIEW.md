@@ -2,7 +2,7 @@
 
 Date: 2026-10-23. Release candidate 0.3.0: development/testnet only.
 
-Package-layout follow-up: SDK/indexer moved to `packages/`; source links below follow their current paths. The JSON coverage record preserves paths from the original reviewed snapshot. Workspace reorganization corrected the app README configuration description; OCR-04's SDK error-guidance issue remains open.
+Package-layout follow-up: SDK/indexer moved to `packages/`; source links below follow their current paths. The JSON coverage record preserves paths from the original reviewed snapshot. Workspace reorganization corrected the app README configuration description. Current fix status is tracked in the [follow-up](RECOVERY-AND-CLIENT-FIXES.md).
 
 ## Method and scope
 
@@ -12,7 +12,7 @@ The full active tree was compared against the remote's README-only initial commi
 
 ## Findings
 
-**2 high, 2 medium; no critical finding identified. All remain open.** No production source was changed by this review.
+**Original review snapshot: 2 high, 2 medium; no critical finding identified.** The review itself changed no production source. Subsequent fixes implement all four; OCR-02/03/04 have regression coverage, and OCR-01 adds on-chain recovery with the native fault-injection release gate still open. See the [fix follow-up](RECOVERY-AND-CLIENT-FIXES.md).
 
 ### OCR-01 / High / existing: weak processing cannot guarantee native rollback
 

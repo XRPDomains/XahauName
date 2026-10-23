@@ -3,7 +3,7 @@ const crypto = require('node:crypto');
 const moduleBytes = fs.readFileSync(`${__dirname}/probe.wasm`);
 const moduleObject = new WebAssembly.Module(moduleBytes);
 function setup(options = {}) {
-  let instance, offset = 131072, reserved = false;
+  let instance, offset = 131072, reserved = false, writes = 0;
   const guards = new Map(), calls = [], values = options.values || new Map(), slots = new Map();
   const codec=require('xahau');
   const address=require('xahau');
@@ -15,7 +15,7 @@ function setup(options = {}) {
     _g(id, max) { const n = (guards.get(id) || 0) + 1; guards.set(id,n); if (options.enforceGuards && n > max) throw { kind: 'guard', id, count: n, max }; return 1; },
     util_sha512h(out,len,input,n) { calls.push({ api: 'hash', outputLength: len }); if (len < 32) return -4n; bytes().set(crypto.createHash('sha512').update(bytes().slice(input,input+n)).digest().subarray(0,32),out); return 32n; },
     state(out,len,key,n) { calls.push({api:'state',keyLength:n}); const value=values.get(keyOf(key,n)); if(!value)return -5n; bytes().set(value.subarray(0,len),out); return BigInt(value.length); },
-    state_set(input,len,key,n) { calls.push({api:'state_set',keyLength:n,length:len}); if(options.failStateWrite || options.failWritePredicate?.(len,keyOf(key,n)))return -3n; if(len)values.set(keyOf(key,n),Buffer.from(bytes().slice(input,input+len))); else values.delete(keyOf(key,n)); return BigInt(len); },
+    state_set(input,len,key,n) { calls.push({api:'state_set',keyLength:n,length:len}); writes++; if(options.failStateWrite || writes===options.failWriteAt || options.failWritePredicate?.(len,keyOf(key,n)))return -3n; if(len)values.set(keyOf(key,n),Buffer.from(bytes().slice(input,input+len))); else values.delete(keyOf(key,n)); return BigInt(len); },
     hook_account(out,len) { bytes().fill(0x11,out,out+Math.min(len,20)); return 20n; },
     otxn_field(out,len,field) { const value=options.fields?.get(field); if(!value)return -5n; bytes().set(value.subarray(0,len),out); return BigInt(value.length); },
     rollback(p,n,code) { throw {kind:'rollback',code:Number(code),text:Buffer.from(bytes().slice(p,p+n)).toString().replace(/\0+$/,'')}; },
@@ -25,12 +25,13 @@ function setup(options = {}) {
     otxn_param(out,len,p,n){const name=Buffer.from(bytes().slice(p,p+n)).toString(),v=options.params?.get(name);if(v===undefined)return -5n;const b=Buffer.from(v);if(b.length>len)return -4n;bytes().set(b,out);return BigInt(b.length);},
     hook_again(){calls.push({api:'hook_again'});return options.againFailure?-9n:1n;},
     slot_set(p,n,s){
+      if(options.nativeReadError!==undefined)return BigInt(options.nativeReadError);
       if(n!==34)return -7n;
       const id=Buffer.from(bytes().slice(p+2,p+n)).toString('hex'),name=values.get(Buffer.concat([Buffer.from('lof:'),Buffer.from(id,'hex').subarray(0,28)]).toString('hex'));
       let native=options.nativeOwner;
       if(native===undefined&&name){const key=crypto.createHash('sha512').update(name).update(':root').digest().subarray(0,32).toString('hex');native=values.get(key)?.subarray(0,20);}
       if(!native)return -5n;
-      slots.set(s,new Map([[524290,Buffer.from(native)]]));return BigInt(s);
+      slots.set(s,new Map([[524290,Buffer.from(native)],[524292,Buffer.from(options.nativeIssuer??Buffer.alloc(20,0x11))]]));return BigInt(s);
     },
     otxn_type() { return BigInt(options.txType || 0); },
     ledger_seq(){return 1000n;}, ledger_last_time(){return 123456789n;},

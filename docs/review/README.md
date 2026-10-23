@@ -1,21 +1,37 @@
-# Assurance and review
+# Review and verification records
 
-[Workspace migration verification](WORKSPACES.md) covers the `packages/` layout, shared lock and isolated npm tarball consumer.
+Engineering reviews, verification scope, design assessments and deployment evidence. Product introductions are in component READMEs; normative behavior is defined by the [protocol](../SPEC.md), [API reference](../API.md) and [XNIP registry](../standards/README.md).
 
-Latest [full source Open Code Review report](OPEN-CODE-REVIEW.md): two high and two medium open findings with deterministic reproductions.
-
-Current [indexer implementation evidence and open gates](INDEXER.md) complement the original event/indexing proposal.
-
-Review material is kept here; normative protocol and API documents remain in docs/, standards in docs/standards/, and operational quickstarts next to their components.
+## Status and coverage
 
 | Document | Purpose |
 | --- | --- |
-| [Test matrix](TEST-MATRIX.md) | Automated coverage, missing gates and manual exceptions |
-| [Findings](FINDINGS.md) | Current correctness/reliability findings with disposition |
-| [Error UX](ERROR-UX.md) | User messages versus ledger/hook diagnostics |
-| [Events and indexing](EVENTS-AND-INDEXING.md) | Verified transport capabilities and proposed indexer design |
-| [Release 0.3.0](releases/0.3.0.md) | Deployment identity and original live evidence |
+| [Findings register](FINDINGS.md) | Current disposition of correctness and reliability findings |
+| [Test matrix](TEST-MATRIX.md) | Automated coverage and manual/native verification scope |
+| [Full source review](OPEN-CODE-REVIEW.md) | Review method, original findings and source coverage |
+| [Lifecycle/client follow-up](RECOVERY-AND-CLIENT-FIXES.md) | Implementation changes and verification evidence |
+| [Owner-only burn](OWNER-ONLY-BURN.md) | Native custody authorization, upgrade boundary and testnet rejection/success receipts |
 
-Large generated logs, screenshots, WASM and probe JSON stay under ignored hook/build/current/. Obsolete build/research trees and superseded reports have already been removed from the active repository. Do not add informal progress notes beside source. Keep one current finding register; retain a release report only when it preserves deployment/test evidence.
+## Architecture and integration assessments
 
-Status labels: verified unit/model, verified live, proposed, and open release gate. A passing model is not a claim of native fault-injection coverage. New checks in this review run without changing or redeploying hook C.
+| Document | Purpose |
+| --- | --- |
+| [Indexer implementation](INDEXER.md) | Implementation evidence and scaling/operations scope |
+| [Events and indexing](EVENTS-AND-INDEXING.md) | Ledger transport and event architecture assessment |
+| [Error presentation](ERROR-UX.md) | User-facing messages and ledger/hook diagnostics |
+| [Wallet Kit integration](WALLET-KIT-INTEGRATION.md) | Direct SDK versus manager/adapter signing, metadata ownership and acceptance scope |
+| [Ledger read performance](READ-PERFORMANCE.md) | Measured list/search latency, duplicate reads and snapshot loading |
+| [SDK/Wallet Kit RPC audit](SDK-RPC-AUDIT.md) | Primary/polling reductions, signing traces and proposed Kit changes |
+| [Workspace organization](WORKSPACES.md) | Package layout, dependencies and tarball verification |
+
+## Deployment and release evidence
+
+| Record | Scope |
+| --- | --- |
+| [Release 0.3.0](releases/0.3.0.md) | Original release identity and validation |
+| [Lifecycle recovery deployment](TESTNET-RECOVERY-DEPLOYMENT.md) | Recovery-extension deployment and live SDK validation |
+| [Public manifests](../../deployments/) | Installed identities and compact validation records |
+
+Reports record their own date, deployment and method. Use the findings register for current disposition; historical reports preserve their original scope. Unit/model checks, normal live transactions and controlled native fault injection are distinct kinds of evidence.
+
+Generated artifacts and detailed receipts stay in ignored `hook/build/current/`. Compact source-controlled records link to implementation and deployment identities.

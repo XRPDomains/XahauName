@@ -2,11 +2,11 @@ import { decodeAccountID, encodeAccountID } from 'xahau';
 import { XahauNameError } from './errors';
 import type { HookHandler } from './types';
 export const OPERATIONS = {
-    noop: 0, register: 1, buy: 2, setPrimary: 3, setAddr: 4, clearAddr: 5, setText: 6, clearText: 7, lock: 8, reset: 9, setPricing: 10, addTld: 11, removeTld: 12, pause: 13, unpause: 14, setURIBase: 16
+    noop: 0, register: 1, buy: 2, setPrimary: 3, setAddr: 4, clearAddr: 5, setText: 6, clearText: 7, lock: 8, reset: 9, setPricing: 10, addTld: 11, removeTld: 12, pause: 13, unpause: 14, setURIBase: 16, reconcile: 17
 } as const;
 export type Operation = keyof typeof OPERATIONS;
 export const HANDLERS: Record<Operation, HookHandler> = {
-    noop: 'control', register: 'issuance', buy: 'issuance', setPrimary: 'control', setAddr: 'set-address', clearAddr: 'set-address', setText: 'set-text', clearText: 'clear-text', lock: 'control', reset: 'control', setPricing: 'admin', addTld: 'admin', removeTld: 'admin', pause: 'admin', unpause: 'admin', setURIBase: 'admin'
+    noop: 'control', register: 'issuance', buy: 'issuance', setPrimary: 'control', setAddr: 'set-address', clearAddr: 'set-address', setText: 'set-text', clearText: 'clear-text', lock: 'control', reset: 'control', setPricing: 'admin', addTld: 'admin', removeTld: 'admin', pause: 'admin', unpause: 'admin', setURIBase: 'admin', reconcile: 'claim'
 };
 
 export function uriBaseBytes(value: string): Buffer {

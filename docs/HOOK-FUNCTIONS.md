@@ -13,8 +13,8 @@ Canonical source: [common helpers](../hook/src/common.h), [handler order](../hoo
 | clear-text | do_clear_text deletes value, descriptor and custom-name slot atomically |
 | control | do_set_primary preserves replacement/unset invariants; do_reset clears full profile while keeping ownership |
 | admin | do_set_pricing validates ten uint64 prices; do_tld writes explicit enable/tombstone; do_pause toggles issuance; do_set_uri_base validates base |
-| claim | hook handles native URITokenBuy; trigger_uritoken_buy finalizes initial claim or resets old records/primary for transfer; reject_domain_remit rejects bypass |
-| burn | trigger_uritoken_burn removes root, records, maps, pending/correlation where applicable |
+| claim | hook handles native URITokenBuy; lifecycle_dispatch handles claim/transfer and strong opcode17 reconciliation through lifecycle_update; reject_domain_remit rejects bypass |
+| burn | Strong entry checks transaction Account against native URIToken Owner, including issuer submissions; lifecycle_dispatch/lifecycle_update journal and clean root, records and maps after a confirmed native owner burn |
 | profile | do_set_profile validates version/masks/values/capacity and atomically updates ten Global Keys or legacy-v1 fields |
 
 ## Shared helper groups
@@ -23,7 +23,7 @@ Canonical source: [common helpers](../hook/src/common.h), [handler order](../hoo
 - Input validation: validate_name, parse_lower_field, parse_uint_field_strict, parse_bool_field, parse_hex20_field and bounded hex decoders read native HookParameters. Legacy function names do not imply JSON memo transport.
 - Authorization: require_owner checks root owner; authorize_owner additionally verifies native token owner. is_owner_of_hook is treasury administration. Legacy role-key helpers have no dispatched grant functionality.
 - Index mutation: load_records_index/save_records_index, recidx_add/remove variants and custom-name slots enforce capacity and enumerable cleanup. Failed reads/writes must abort.
-- Identity and cleanup: compute_uritoken_id, finalize_claim, clear_indexed_records and key equality helpers preserve full-ID mapping/native-owner invariants.
+- Identity and cleanup: compute_uritoken_id, lifecycle_update, clear_indexed_records and key equality helpers preserve full-ID mapping/native-owner invariants.
 - Async emission: emit_stage serializes one canonical native transaction, reserves emission, attaches details/fee and emits; emit_correlated persists the stage hash. async_key/erase_async and pending helpers support correlation/idempotency. execution_success reads metadata outcome; callback reason alone is not engine result.
 - URI policy: do_set_uri_base, reject_custom_uri and build_uri ensure owner-configured base plus canonical name. compute_uritoken_id hashes exact bytes.
 
@@ -43,11 +43,11 @@ Canonical source: [common helpers](../hook/src/common.h), [handler order](../hoo
 | require_owner / authorize_owner | Fill root key/value and enforce sender authority; violations rollback rather than returning an authorized fallback. Native token check is an additional invariant. |
 | load_records_index / save_records_index | Read/create the bounded index / checked persistence. Callers validate counts and must reject failed writes. |
 | recidx_add_* | Distinguish added, existing and exhausted index; custom slots preserve full text state key and key name. Deletion also clears associated slot state. |
-| clear_indexed_records | Bounded address/text/slot sweep; returns 1/0. Caller must rollback on failure. |
+| clear_indexed_records | Bounded address/text/slot sweep; returns 1/0. Missing custom slots are tolerated only with a preflighted recovery journal (`resume`). Caller must rollback on failure. |
 | write_pending / pending_exists / clear_pending | Explicit token-correlated settlement state. Clearing pending alone is not successful ownership settlement. |
 | execution_success | 1 for tesSUCCESS, 0 for known failure, negative when outcome cannot be established from slots. |
 | emit_stage / emit_correlated | RC_OK=0 or RC_EMIT_FAIL=60; never queue dependent mint and offer in parallel. Correlated emission also requires a successful stage-hash write. |
-| finalize_claim | Promotes a valid pending claim only after successful native buy; returns 1/0, with caller rollback required on failure. |
+| lifecycle_update | Journals/resumes native lifecycle cleanup; returns 0=no change, 1=initial claim, 2=transfer, 3=burn. State/identity failures rollback. Recovery derives current custody from slots, never the caller. |
 
 All parameter pointers refer to WASM memory. Every variable-length component carries an explicit byte count. State writes use exact key/value lengths; reserved padding is initialized. Internal C helper calls are not external protocol commands.
 
@@ -118,7 +118,11 @@ This list includes compatibility helpers compiled only when reachable. Definitio
 - `tx_slot_field`
 - `execution_success`
 - `erase_async`
-- `finalize_claim`
+- `lifecycle_update`
 - `equal_key20`
 - `require_owner`
 - `authorize_owner`
+
+## Lifecycle recovery extension (testnet)
+
+`recovery_key` derives the domain journal key; `recovery_name_equal` compares bounded canonical identity; `lifecycle_update` validates/resumes the durable journal and commits cleanup before deleting it; `lifecycle_dispatch` gates weak native outcomes and strong Invoke17, and reads native Owner/Issuer/existence using slots. Fixed-size journal copies are explicitly unrolled; dynamic loops keep unchanged guard limits. The old compatibility claim helper is unused; supported settlement runs through lifecycle_update. Claim HookOn adds Invoke99; burn remains46.

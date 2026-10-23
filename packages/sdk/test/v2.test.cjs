@@ -62,7 +62,7 @@ test('parameters encode exact native version, opcode and flag', () => {
     assert.equal(f.flag.toString('hex'), '00');
     assert.throws(() => parameters('setPrimary', { op: Buffer.from([2]) }));
 });
-test('existing operation IDs remain 0..14; URIBase uses 16 with 15 reserved', () => assert.deepEqual(Object.values(sdk.OPERATIONS), [...Array.from({ length: 15 }, (_, i) => i),16]));
+test('existing operation IDs remain 0..14; URIBase uses 16 and reconcile uses 17 with 15 reserved', () => assert.deepEqual(Object.values(sdk.OPERATIONS), [...Array.from({ length: 15 }, (_, i) => i),16,17]));
 test('strict native numeric/boolean boundaries', () => {
     assert.equal(coinBytes(65535).toString('hex'), '0000ffff');
     for (const n of [-1, 65536, 1.5, NaN])
@@ -364,11 +364,14 @@ test('buyAndClaim progresses through queued offer and verified final ownership',
     s.values.set(pricingKey(), price);
     let polls = 0;
     const submit = s.c.submit;
-    s.c.ledgerObject = async () => {
+    s.c.ledgerHash = async () => {
+        // Emitted state becomes visible in a new validated ledger, never by
+        // mutating the same immutable snapshot on a repeated object read.
         if (s.values.has(pendingKey(id)) && ++polls >= 2 && !s.tokens.has(id))
             s.tokens.set(id, token());
-        return s.tokens.get(id) ?? null;
+        return polls.toString(16).padStart(64,'0').toUpperCase();
     };
+    s.c.ledgerObject = async () => s.tokens.get(id) ?? null;
     s.c.submit = async (tx, o) => {
         if (tx.TransactionType === 'Payment')
             s.values.set(pendingKey(id), pending());
@@ -400,7 +403,29 @@ test('available domain reports prospective URL ID but no registered token',async
 test('a reserved domain mapping without token/pending is recoveryRequired',async()=>{const s=mappedFixture();s.tokens.clear();s.values.delete(rootKey('alice','xah'));assert.equal((await new sdk.RegistrarModule(s.c).getRegistrationStatus(domain)).stage,'recoveryRequired');});
 
 test('disconnect clears transport reconnect work even when socket is already closed',async()=>{const c=new sdk.XahauNameClient({wss:'wss://xahau-test.net',treasury,namespaceId:namespace});let n=0;c.client={isConnected:()=>false,disconnect:async()=>{n++;}};await c.disconnect();assert.equal(n,1);});
-test('failed connect cleans a closed transport and preserves original error',async()=>{const c=new sdk.XahauNameClient({wss:'wss://xahau-test.net',treasury,namespaceId:namespace});let n=0;c.client={isConnected:()=>false,connect:async()=>{throw Error('connection failed');},disconnect:async()=>{n++;}};await assert.rejects(c.connect(),/connection failed/);assert.equal(n,1);});
+test('failed connect cleans a closed transport and reports connection stage',async()=>{const c=new sdk.XahauNameClient({wss:'wss://xahau-test.net',treasury,namespaceId:namespace});let n=0;c.client={isConnected:()=>false,connect:async()=>{throw Error('connection failed');},disconnect:async()=>{n++;}};await assert.rejects(c.connect(),e=>e.code==='RPC_CONNECTION_FAILED'&&e.message==='connection failed'&&e.details.phase==='connect'&&e.details.endpoint==='wss://xahau-test.net');assert.equal(n,1);});
+test('connection timeout is configurable and rejects invalid timer values',()=>{
+    const config={wss:'wss://xahau-test.net',treasury,namespaceId:namespace};
+    assert.equal(new sdk.XahauNameClient(config).rawClient.connection.config.connectionTimeout,15000);
+    assert.equal(new sdk.XahauNameClient({...config,connectionTimeoutMs:25000}).rawClient.connection.config.connectionTimeout,25000);
+    for(const value of [0,-1,NaN,Infinity,1.5,2147483648])assert.throws(()=>new sdk.XahauNameClient({...config,connectionTimeoutMs:value}),e=>e.code==='INVALID_ARGUMENT');
+});
+test('concurrent connect callers share cleanup and can reconnect after failure without submitting',async()=>{
+    const c=new sdk.XahauNameClient({wss:'wss://xahau-test.net',treasury,namespaceId:namespace});
+    let calls=0,cleanups=0,reject;
+    c.client={isConnected:()=>false,connect:()=>{calls++;return new Promise((_resolve,r)=>{reject=r;});},disconnect:async()=>{cleanups++;}};
+    const a=c.connect(),b=c.connect();assert.equal(calls,1);
+    const checks=[assert.rejects(a,e=>e.code==='RPC_CONNECTION_FAILED'),assert.rejects(b,e=>e.code==='RPC_CONNECTION_FAILED')];
+    reject(Error('timeout'));await Promise.all(checks);assert.equal(cleanups,1);
+    c.client.connect=async()=>{calls++;};await c.connect();assert.equal(calls,2);
+});
+test('connect callers await deployment verification before reporting success',async()=>{
+    const hash='AA'.repeat(32),c=new sdk.XahauNameClient({wss:'wss://xahau-test.net',treasury,namespaceId:namespace,hookHashes:{control:hash}});
+    let verify,requests=0,finished=false;
+    c.client={isConnected:()=>true,request:async()=>{requests++;return new Promise(resolve=>{verify=resolve;});}};
+    const a=c.connect(),b=c.connect().then(()=>{finished=true;});await Promise.resolve();assert.equal(finished,false);assert.equal(requests,1);
+    verify({result:{account_objects:[{Hooks:[{Hook:{HookHash:hash}}]}]}});await Promise.all([a,b]);assert.equal(finished,true);
+});
 
 // Ledger-based complete record discovery, including legacy unnamed custom data.
 function profileFixture(){const s=ctx();s.values.set(rootKey('alice','xah'),root());const idx=Buffer.alloc(124);idx[0]=1;idx.writeUInt16BE(2,1);idx.writeUInt16BE(144,4);idx.writeUInt16BE(60,6);idx[3]=2;idx[34]=1;idx[35]=11;idx[40]=255;idx[41]=3;s.values.set(sdk.util.recordsKey('alice','xah'),idx);const name='custom.telegram',key=sdk.util.textKey('alice','xah',name);s.values.set(sdk.util.textSlotKey('alice','xah',3),Buffer.concat([Buffer.from(key,'hex'),Buffer.from(name)]));s.values.set(sdk.util.addrKey('alice','xah',144),Buffer.from('ab','hex'));s.values.set(sdk.util.addrKey('alice','xah',60),Buffer.from('cd','hex'));s.values.set(sdk.util.textKey('alice','xah','description'),Buffer.from('hello'));s.values.set(key,Buffer.from('telegram-value'));return {...s,idx,name,key};}
@@ -441,3 +466,9 @@ test('public owner and profile reads verify native ownership by default',async()
  await assert.rejects(client.describe(domain,{verifyOwner:undefined}),e=>e.code==='OWNERSHIP_MISMATCH');
  assert.equal(await client.getOwner(domain,{verifyOwner:false}),buyer);
 });
+
+for(const marker of ['pending','mnt','ofr','rfd'])test('registration never claims root plus '+marker,async()=>{const x=ctx();x.values.set(rootKey('alice','xah'),root());x.tokens.set(id,token(buyer));x.values.set(marker==='pending'?pendingKey(id):asyncKey(marker,id),marker==='pending'?pending():Buffer.alloc(32,1));assert.equal((await new sdk.RegistrarModule(x.c).getRegistrationStatus(domain)).stage,'recoveryRequired');});
+test('reconcile sends one strong Invoke, not a repeated native buy or burn',async()=>{const x=ctx();x.values.set(sdk.util.tokenKey('alice','xah'),Buffer.from(id,'hex'));await new sdk.RegistrarModule(x.c).reconcile(domain);assert.equal(x.sent.length,1);assert.equal(x.sent[0].tx.TransactionType,'Invoke');assert.equal(x.sent[0].tx.Destination,treasury);const p=Object.fromEntries(x.sent[0].tx.HookParameters.map(p=>[Buffer.from(p.HookParameter.HookParameterName,'hex').toString(),p.HookParameter.HookParameterValue]));assert.equal(p.op,'11');assert.equal(p.token,id);assert.equal(x.sent[0].options.handler,'claim');});
+test('journal retains identity after partial burn removes forward and reverse maps',async()=>{const x=ctx(),j=Buffer.alloc(67+domain.length);j[0]=1;j[1]=1;Buffer.from(id,'hex').copy(j,2);root().copy(j,34);j[66]=domain.length;j.write(domain,67);x.values.set(sdk.util.recoveryKey('alice','xah'),j);const r=new sdk.RegistrarModule(x.c);assert.equal((await r.getRegistrationStatus(domain)).stage,'recoveryRequired');await r.reconcile(domain);assert.equal(x.sent[0].tx.HookParameters.find(p=>p.HookParameter.HookParameterName==='746F6B656E').HookParameter.HookParameterValue,id);await assert.rejects(new sdk.ResolverModule(x.c).getOwner(domain),e=>e.code==='OWNERSHIP_MISMATCH');j[67]=0;await assert.rejects(r.reconcile(domain),e=>e.code==='BAD_STATE');});
+
+test('treasury reconciliation invokes its own hook without a self Destination',async()=>{const x=ctx(treasury);await new sdk.RegistrarModule(x.c).reconcile(domain);assert.equal(x.sent.length,1);assert.equal(x.sent[0].tx.TransactionType,'Invoke');assert.equal(x.sent[0].tx.Destination,undefined);});

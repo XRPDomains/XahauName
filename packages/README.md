@@ -1,49 +1,38 @@
-# Packages
+# XahauName packages
 
-Public developer libraries live under `packages/*`; npm automatically links these workspaces during a root install. The test application is a private workspace. The C hook and its isolated Docker compiler remain under `hook/`.
+Developer libraries for integrating XahauName into wallets, applications and data services. The packages share network/deployment configuration and are maintained as npm workspaces.
 
-| Folder | npm package | Purpose |
+## Libraries
+
+| Package | Use it for | Main source |
 | --- | --- | --- |
-| [sdk](sdk/README.md) | `@xahauname/sdk` | Ledger reads, record standards, transactions and wallet integration |
-| [indexer](indexer/README.md) | `@xahauname/indexer` | Validated replay, SQLite read model and event API |
+| [@xahauname/sdk](sdk/README.md) | Resolve names and profiles, submit domain operations, encode records and connect a signer | [sdk/src/index.ts](sdk/src/index.ts) |
+| [@xahauname/indexer](indexer/README.md) | Replay validated ledgers, maintain a read model and deliver events | [indexer/src/index.ts](indexer/src/index.ts) |
 
-Run commands from the repository root:
+The SDK can read the ledger directly. The indexer adds a query/event layer and uses the SDK's configuration and domain conventions. Wallet signing remains with the application and its signer.
+
+The [domain manager](../test-app/README.md) is a private application workspace that demonstrates SDK and Wallet Kit integration. The [C hooks](../hook/README.md) have a separate Docker toolchain.
+
+## Workspace development
+
+Run from the repository root:
 
 ```sh
 npm ci
 npm run packages:build
 npm run packages:test
-npm run app:test
 npm run app:dev
-npm run release:check
 ```
 
-There is one root `package-lock.json`. Do not add lockfiles to individual workspaces. `hook/toolchain/package-lock.json` is intentionally independent because Docker builds that compiler in isolation.
+One root lockfile covers the client workspaces, and npm links sibling packages during installation. Libraries export CommonJS, ESM and TypeScript declarations.
 
-## Adding a library
+## Integration guides
 
-Add `packages/<name>/package.json` with a unique `@xahauname/` name, the current root version, build/test scripts, an explicit files allowlist, CJS/ESM/types exports, MIT license and README. Set `repository.directory` to its repository path and `publishConfig` to public access on `https://registry.npmjs.org/`. Reference sibling libraries using ordinary semver versions; avoid file/link/workspace protocols in publishable dependency declarations. Run root `npm install` to update the shared lock.
+- [SDK quickstart](sdk/README.md#quickstart) and [complete API](../docs/API.md).
+- [Indexer quickstart](indexer/README.md#quickstart) and [HTTP/event reference](../docs/INDEXER.md).
+- [Shared network configuration](../docs/NETWORKS.md).
+- [Architecture and source guide](../docs/ARCHITECTURE.md).
 
-`release:check` discovers packages automatically, builds in dependency order, validates synchronized metadata/internal dependency versions and checks npm tarball contents. It does not build the frontend or publish anything.
+## Package maintenance
 
-## Synchronized release preparation
-
-```sh
-npm run release:version -- 0.3.1
-npm run packages:test
-npm run app:test
-npm run repo:test
-npm run app:typecheck
-npm run release:check
-```
-
-The version command updates the root, package/application versions, sibling dependency ranges and shared lock. It creates no Git commit, tag or npm publication. Review changelogs and deployment compatibility separately; synchronized npm versions do not imply a hook upgrade.
-
-Only after explicit maintainer authorization and the open [review gates](../docs/review/OPEN-CODE-REVIEW.md) are resolved should a release be published. SDK must be published before indexer because indexer declares the SDK peer dependency:
-
-```sh
-npm publish --workspace @xahauname/sdk
-npm publish --workspace @xahauname/indexer
-```
-
-These commands publish to npm. They are documentation, not part of build, CI or the current reorganization. The root and test app are private; never publish the full repository. Configure registry authentication/trusted publishing separately; no registry tokens belong in Git.
+The [workspace maintenance guide](../docs/PACKAGES.md) covers adding a package, dependency declarations, synchronized versions, tarball checks and publication order. Build/package commands operate on libraries; the browser production build has its own [hosting workflow](../test-app/DEPLOY.md).

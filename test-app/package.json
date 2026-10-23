@@ -9,12 +9,13 @@
     "preview": "vite preview --host 127.0.0.1",
     "test": "node --import tsx --test tests/*.test.ts",
     "test:browser": "node --import tsx tests/browser-smoke.cjs",
+    "test:screenshots": "node --import tsx tests/browser-smoke.cjs --screenshots",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@ensdomains/address-encoder": "^2.0.1",
     "@xahauname/sdk": "0.3.0",
-    "@xrpl-wallet-kit/client": "0.2.1",
+    "@xrpl-wallet-kit/client": "0.2.2",
     "buffer": "6.0.3",
     "xahau": "4.2.0"
   },

@@ -6,8 +6,12 @@ export function mediaURL(value:unknown):string|null {
 export function metadataURL(uri:string,domain:string,legacyBase?:string|null){return mediaURL(uri)??(uri===domain&&legacyBase?mediaURL(legacyBase+domain):null);}
 export type Metadata = {image:string|null;url:string;name?:string};
 const cache=new Map<string,{until:number;value:Promise<Metadata|null>}>();
+// Keep proxy/custom transports isolated while sharing their concurrent requests.
+const transportCaches=new WeakMap<typeof fetch,typeof cache>();
 export function fetchMetadata(uri:string, options:{fetch?:typeof fetch}={}):Promise<Metadata|null>{
-    const url=mediaURL(uri);if(!url)return Promise.resolve(null);const cacheKey=options.fetch?null:url;const old=cacheKey?cache.get(cacheKey):undefined;if(old&&old.until>Date.now())return old.value;
+    const url=mediaURL(uri);if(!url)return Promise.resolve(null);
+    let store=cache;if(options.fetch){let scoped=transportCaches.get(options.fetch);if(!scoped){scoped=new Map();transportCaches.set(options.fetch,scoped);}store=scoped;}
+    const old=store.get(url);if(old&&old.until>Date.now())return old.value;
     const value=(async()=>{const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),8000);try{
         const response=await (options.fetch??fetch)(url,{signal:controller.signal,credentials:'omit',referrerPolicy:'no-referrer'});if(!response.ok)throw new Error('Metadata unavailable');
         if(Number(response.headers.get('content-length'))>262144)throw new Error('Metadata too large');
@@ -16,5 +20,7 @@ export function fetchMetadata(uri:string, options:{fetch?:typeof fetch}={}):Prom
         const all=new Uint8Array(size);let offset=0;for(const chunk of chunks){all.set(chunk,offset);offset+=chunk.length;}const json=JSON.parse(new TextDecoder().decode(all));
         return {image:mediaURL(json.image),url,name:typeof json.name==='string'?json.name:undefined};
     }catch{return null;}finally{clearTimeout(timeout);}})();
-    if(cacheKey){if(cache.size>=100)cache.delete(cache.keys().next().value!);cache.set(cacheKey,{until:Date.now()+300000,value});}return value;
+    if(store.size>=100)store.delete(store.keys().next().value!);
+    const entry={until:Date.now()+300000,value};store.set(url,entry);
+    void value.then(result=>{if(store.get(url)===entry)entry.until=Date.now()+(result?300000:5000);});return value;
 }

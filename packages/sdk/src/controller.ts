@@ -2,14 +2,15 @@ import { tldKey } from './util';
 import { parameters, invalid } from './protocol';
 import type { ClientContext } from './context';
 import { XahauNameError } from './errors';
+import type {ReadOptions} from './types';
 export class ControllerModule {
     constructor(private ctx: ClientContext, private hardcodedTlds: readonly string[]) {
     }
     async hasRole(role: string, address: string): Promise<boolean> {
         return role.toLowerCase() === 'admin' && address === this.ctx.treasury;
     }
-    async isTldEnabled(tld: string): Promise<boolean> {
-        const lower = tld.toLowerCase(), buf = await this.ctx.readState(tldKey(lower));
+    async isTldEnabled(tld: string,options?:ReadOptions): Promise<boolean> {
+        const lower = tld.toLowerCase(), buf = await this.ctx.readState(tldKey(lower),options);
         return buf ? buf[0] === 1 : this.hardcodedTlds.includes(lower);
     }
     listTlds(extraKnown: string[] = []): string[] {

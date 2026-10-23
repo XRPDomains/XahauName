@@ -2,15 +2,11 @@
 
 Reviewed: 2026-10-23. Scope: installed hook 0.3.0, SDK/UI error and verification paths, tests and event/indexer feasibility. Hook C and deployed artifacts were not changed by this review.
 
-## F-01 / P1 / OPEN: weak lifecycle failure needs native reconciliation
+## F-01 / P1 / IMPLEMENTED; NATIVE VALIDATION OPEN: weak lifecycle reconciliation
 
-Claim and burn call hook_again from ctx0 and update domain state in ctx1/2. A weak rollback cannot undo an already applied native token transaction. Current model tests check that the C routine reports failure; they do not prove the native buy/burn was undone or demonstrate a complete recovery command.
+The candidate deployed to testnet on 2026-10-23 adds a durable cleanup journal and permissionless strong Invoke17 reconciliation, plus SDK/indexer quarantine and an explicit SDK recovery method. Production-WASM fault probes retain partial weak writes and exercise repair/replay. This is source/model evidence, not native-ledger fault-injection proof. The installed testnet hash set and SDK preset have been updated; native fault-injection proof remains open.
 
-Consequence: native owner/deletion and root/records may disagree after a weak failure. The SDK must refuse verified identity, avoid success messaging and surface recoveryRequired. This is an availability/consistency gap, even where native-owner authorization blocks stale-owner writes. Owner enumeration currently fails closed if it encounters inconsistent identity; a future recovery list should avoid hiding all healthy domains.
-
-Required before production: controlled native-ledger fault injection at claim root/index/primary writes and burn cleanup deletes; inspect actual native outcome and committed HookState; implement and prove an idempotent repair/reconciliation path or revise the phase design. Test replay, unauthorized recovery and re-registration after failed burn cleanup. Do not weaken required cleanup semantics to hide the gap.
-
-The [official strong/weak model](https://xahau.network/docs/hooks/concepts/weak-and-strong/) documents this rollback boundary. The protocol wording has been corrected; successful live happy paths remain valid evidence within that scope.
+Required before production: controlled native failures at journal, primary/index/root/identity boundaries; inspect actual native outcome, committed HookState and strong recovery retry. Failed mint/refund settlement and pre-journal lost evidence remain operator cases. See [fix details and evidence](RECOVERY-AND-CLIENT-FIXES.md).
 
 ## F-02 / P1 / FIXED in working tree: missing validation flag could pass a receipt
 

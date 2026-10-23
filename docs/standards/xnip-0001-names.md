@@ -16,7 +16,7 @@ Token identity MUST use the canonical forward mapping written by the hook. A min
 
 Mint/offer is pending until recipient claim. A reader MUST distinguish available, reserved/pending and owned states. Transfer through native buy resets all records and previous primary; Remit bypass is rejected. Burn removes mappings and records. No expiry/renewal is implied.
 
-Absent identity returns null. Malformed/contradictory mappings fail closed; raw root presence alone is not native-owner proof. Treasury upgrade/reset and issuer-burn powers remain, so this convention does not promise immutable control.
+Absent identity returns null. Malformed/contradictory mappings fail closed; raw root presence alone is not native-owner proof. The installed chain MUST reject a burn whose sender is not the native token Owner, including issuer-originated burns. Treasury upgrade/reset powers remain. The retained native burnable flag supports strong transfer validation, and an upgrade that removes the burn restriction could restore issuer burning; this convention does not promise immutable control.
 
 ## Compatibility and tests
 

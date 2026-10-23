@@ -13,6 +13,8 @@ export interface XahauNameConfig {
     cacheTtlMs?: number;
     hardcodedTlds?: readonly string[];
     maxFeeXAH?: string;
+    /** WebSocket connection timeout in milliseconds. Default: 15000. */
+    connectionTimeoutMs?: number;
 }
 /** External signer must support Xahau and wait for validated ledger metadata. */
 export interface TxSigner {
@@ -30,6 +32,25 @@ export interface ReadOptions {
     ledgerHash?: string;
     /** Public client owner/profile reads default true; false explicitly requests unverified state. Low-level APIs retain documented defaults. */
     verifyOwner?: boolean;
+}
+export interface OwnedDomainSummary {
+    domain:string;
+    tokenId:string;
+    uri:string;
+    primary:boolean;
+}
+export interface PortfolioSnapshot {
+    address:string;
+    ledgerHash:string;
+    domains:OwnedDomainSummary[];
+    /** Owned primary candidate; use getVerifiedPrimaryName for forward-confirmed identity. */
+    primary:string|null;
+}
+export interface DomainQuote {
+    status:RegistrationStatus;
+    priceDrops:bigint;
+    tldEnabled:boolean;
+    ledgerHash:string;
 }
 export interface RootRecord {
     owner: string;
@@ -55,6 +76,13 @@ export interface FullProfile extends RootRecord {
     unnamedTexts: Record<string, string>;
     /** False when legacy custom key names cannot be discovered from current state. */
     textKeysComplete: boolean;
+}
+export interface ProfileSnapshot {
+    ledgerHash:string;
+    profile:FullProfile;
+    tokenId:string;
+    uri:string;
+    transferOffer:{destination:string;amountDrops:string}|null;
 }
 export interface RecordKeys {
     addrs: number[];
@@ -166,6 +194,8 @@ export interface SetProfileArgs extends LabelTldArgs {
 
 export interface IncomingDomain {
     domain:string;
+    /** Verified native token URI, reusable for display without another ledger read. */
+    uri?:string;
     uritokenId:string;
     sender:string;
     recipient:string;

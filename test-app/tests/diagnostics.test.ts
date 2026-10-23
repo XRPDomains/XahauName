@@ -1,6 +1,38 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {explainError} from '../../packages/sdk/src/diagnostics';
+test('Wallet Kit rejection and network codes are mapped without relying on provider-specific message text',()=>{
+ for(const code of ['SIGN_REJECTED','CONNECTION_REJECTED']){const result=explainError({code});assert.equal(result.stage,'wallet');assert.equal(result.title,'Wallet request declined');}
+ for(const code of ['NETWORK_MISMATCH','NETWORK_NOT_SUPPORTED']){const result=explainError({code});assert.equal(result.stage,'wallet');assert.equal(result.title,'Check your wallet');}
+});
+test('wallet expiry verification failure is reported at the wallet stage',()=>{
+ const info=explainError({code:'SIGN_FAILED',message:'Xahau verification failed: Signed fields changed: LastLedgerSequence'});
+ assert.equal(info.stage,'wallet');assert.equal(info.title,'Wallet changed the transaction expiry');assert.equal(info.recovery,'check-status');assert.match(info.message,/Refresh the domain status/);
+});
+test('wallet verification failure keeps unknown submission outcomes and provider hashes',()=>{
+ const hash='AB'.repeat(32),info=explainError({code:'SIGN_FAILED',message:'Xahau verification failed: Signed fields changed: LastLedgerSequence',details:{providerHash:hash,outcomeUnknown:true}});
+ assert.equal(info.txHash,hash);assert.equal(info.stage,'wallet');assert.equal(info.recovery,'check-status');assert.match(info.message,/Do not send another purchase payment/);
+ assert.equal(explainError({code:'SIGN_FAILED',message:'other verification failure'}).title,'Wallet verification failed');
+});
+test('reported five-second connection timeout is classified as connection failure',()=>{
+    const result=explainError(new Error("Error: connect() timed out after 5000 ms. If your internet connection is working, the xahaud server may be blocked or inaccessible."));
+    assert.equal(result.title,'Unable to connect to Xahau');assert.equal(result.stage,'connection');assert.equal(result.recovery,'reconnect');assert.match(result.message,/try again/);assert.doesNotMatch(result.message,/Open Activity|payment|operator/);
+});
+test('structured connection failures and raw disconnect errors offer reconnection',()=>{
+    for(const error of [{code:'RPC_CONNECTION_FAILED'}, {name:'ConnectionError'}, {name:'DisconnectedError'}, {name:'NotConnectedError'}]){
+        const result=explainError(error);assert.equal(result.stage,'connection');assert.equal(result.recovery,'reconnect');assert.equal(result.message,'Could not load on-chain data. Please try again.');
+    }
+});
+test('connection failure after submission retains confirmation uncertainty and transaction hash',()=>{
+    const hash='AB'.repeat(32),result=explainError({code:'RPC_CONNECTION_FAILED',details:{txHash:hash}});
+    assert.equal(result.stage,'confirmation');assert.equal(result.recovery,'check-status');assert.equal(result.txHash,hash);assert.match(result.message,/Do not send another purchase payment/);
+});
+test('ledger-not-connected UNKNOWN_ERROR is a brief connection error unless submission is uncertain',()=>{
+ const error={code:'UNKNOWN_ERROR',message:'You need to be connected to a ledger'};
+ const info=explainError(error);assert.equal(info.stage,'connection');assert.equal(info.recovery,'reconnect');assert.doesNotMatch(info.message,/payment|Activity/);
+ const hash='AB'.repeat(32),submitted=explainError({...error,txHash:hash});assert.equal(submitted.txHash,hash);assert.equal(submitted.stage,'confirmation');
+ assert.equal(explainError({...error,details:{outcomeUnknown:true}}).stage,'confirmation');
+});
 for (const code of ['tecUNFUNDED_PAYMENT','tecINSUFFICIENT_RESERVE','terINSUF_FEE_B','tecINSUFF_FEE']) {
     test('friendly available-XAH explanation for '+code,()=>{
         const result=explainError({code,message:'technical failure'});
@@ -54,3 +86,5 @@ test('registration recovery never suggests buying again',()=>{
     const r=explainError({code:'REGISTRATION_FAILED',details:{stage:'recoveryRequired'}});
     assert.equal(r.recovery,'operator');assert.match(r.message,/Do not pay again/);
 });
+
+for(const code of ['actNotFound','tecUNFUNDED_PAYMENT','WRONG_NETWORK','NOT_CONNECTED','NO_SIGNER'])test('diagnostics respect configured network for '+code,()=>{const r=explainError({code});assert.doesNotMatch(r.message,/testnet|test XAH|faucet/i);assert.match(r.message,/network/);});

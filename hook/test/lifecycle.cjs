@@ -6,7 +6,7 @@ const owner=Buffer.alloc(20,0x11),buyer=Buffer.alloc(20,0x22),sha=b=>crypto.crea
 const results=[];function test(name,f){try{f();results.push({name,pass:true});}catch(e){results.push({name,pass:false,error:e.stack||String(e)});}}
 function setup(k,o){return require(root+'/'+k+'/runtime.cjs').setup({...o,enforceGuards:true});}
 function params(op,data={}){const p=new Map([['xn_v',Buffer.from([2])],['op',Buffer.from([op])],['label',Buffer.from('alice')],['tld',Buffer.from('xah')]]);for(const [k,v]of Object.entries(data))p.set(k,Buffer.isBuffer(v)?v:Buffer.from(v));return p;}
-function chain(op,data={},options={}){const values=options.values||new Map(),all=[];const amount=Buffer.alloc(8);amount.writeBigUInt64BE(0x4000000000000000n+BigInt(options.drops??12));const fields=options.fields||new Map([[524289,options.sender||owner],[393217,amount]]);for(const k of active){const t=setup(k,{...options,values,fields,params:options.params||params(op,data)}),r=t.invoke('hook',0);all.push({k,t,r});if(r.kind==='rollback'||r.kind==='guard')return {values,all,r,failed:k};}return {values,all,r:all.at(-1).r};}
+function chain(op,data={},options={}){const values=options.values||new Map(),before=new Map([...values].map(([k,v])=>[k,Buffer.from(v)])),all=[];const amount=Buffer.alloc(8);amount.writeBigUInt64BE(0x4000000000000000n+BigInt(options.drops??12));const fields=options.fields||new Map([[524289,options.sender||owner],[393217,amount]]);for(const k of active){const t=setup(k,{...options,values,fields,params:options.params||params(op,data)}),r=t.invoke('hook',0);all.push({k,t,r});if(r.kind==='rollback'||r.kind==='guard'){values.clear();for(const [key,value]of before)values.set(key,value);return {values,all,r,failed:k};}}return {values,all,r:all.at(-1).r};}
 function fields(json){const f=new Map([[65538,Buffer.from([0,({URITokenMint:45,URITokenCreateSellOffer:48,Payment:0})[json.TransactionType]])],[524289,Buffer.from(addr.decodeAccountID(json.Account))]]);if(json.URI)f.set(458757,Buffer.concat([Buffer.from([json.URI.length/2]),Buffer.from(json.URI,'hex')]));if(json.URITokenID)f.set(327716,Buffer.from(json.URITokenID,'hex'));if(json.InvoiceID)f.set(327697,Buffer.from(json.InvoiceID,'hex'));return f;}
 function cb(s,e,o={}){const t=setup('issuance',{values:s.values,fields:fields(e.json),txid:e.hash,...o});return{t,r:t.invoke('cbak',o.reason||0)};}
 function start(){const s=chain(1,{recipient:buyer.toString('hex')},{values:new Map([[sha('_uri_base_v1').toString('hex'),Buffer.from(metadataBase)]])});assert(!s.failed,JSON.stringify(s.all.map(x=>[x.k,x.r])));const mint=s.all[0].t.emitted[0];assert(mint);return{values:s.values,mint};}
@@ -118,4 +118,92 @@ test('rewriting legacy hash-only slot adds its name without extra index slots',(
 for(const kind of ['transfer','burn','reset','clear'])test(kind+' handles mixed legacy and named custom slots',()=>{const s=claimed();ok(setTextRecord(s,'custom.legacy'));ok(setTextRecord(s,'custom.named'));s.values.set(slotKey(0),s.values.get(slotKey(0)).subarray(0,32));if(kind==='clear'){ok(clearTextRecord(s,'custom.legacy'));ok(clearTextRecord(s,'custom.named'));}else if(kind==='reset')ok(chain(9,{},{sender:buyer,txType:99,values:s.values}));else{const t=setup(kind==='transfer'?'claim':'burn',{values:s.values,fields:new Map([[327716,id],[524289,kind==='transfer'?nextOwner:buyer]]),txType:kind==='transfer'?47:46,result:0});assert.equal(t.invoke('hook',kind==='transfer'?2:1).text,kind==='transfer'?'transferred':'burned');}assertTextGone(s,['custom.legacy','custom.named']);});
 test('legacy name backfill failure rejects before record value update',()=>{const s=claimed();ok(setTextRecord(s,'custom.legacy','original'));s.values.set(slotKey(0),s.values.get(slotKey(0)).subarray(0,32));const r=chain(6,{key:'custom.legacy',value:'changed'},{sender:buyer,txType:99,values:s.values,failWritePredicate:(n,k)=>k===slotKey(0)});expectRollback(r,20);assert.equal(s.values.get(sha('alice.xah:text:custom.legacy').toString('hex')).toString(),'original');});
 
+
+const recoverykey=Buffer.concat([Buffer.from('rcv:'),Buffer.from(rootkey,'hex').subarray(0,28)]).toString('hex');
+function reconcile(s,nativeOwner=nextOwner,extra={}){const before=new Map([...s.values].map(([k,v])=>[k,Buffer.from(v)]));const r=chain(17,{token:id},{txType:99,values:s.values,nativeOwner,...extra});if(r.failed){s.values.clear();for(const [k,v]of before)s.values.set(k,v);}return r;}
+function readyClaim(){const s=start(),m=cb(s,s.mint),offer=m.t.emitted[0];assert.equal(m.r.text,'offer queued');assert.equal(cb(s,offer).r.text,'awaiting claim');return s;}
+function populated(){const s=transferSetup();for(const key of ['custom.one','custom.two','custom.three'])ok(setTextRecord(s,key));return s;}
+for(const kind of ['claim','transfer','burn']){
+ const make=kind==='claim'?readyClaim:populated;
+ const target=kind==='claim'?buyer:nextOwner,part=kind==='burn'?'burn':'claim',tt=kind==='burn'?46:47;
+ const sample=make(),base=setup(part,{values:sample.values,fields:new Map([[327716,id],[524289,target]]),txType:tt,result:0});assert.equal(base.invoke('hook',1).kind,'accept');
+ const count=base.calls.filter(c=>c.api==='state_set').length;
+ for(let at=1;at<=count;at++)test(kind+' resumes after weak state write failure '+at+'/'+count,()=>{
+  const s=make(),t=setup(part,{values:s.values,fields:new Map([[327716,id],[524289,target]]),txType:tt,result:0,failWriteAt:at});
+  assert.equal(t.invoke('hook',1).kind,'rollback'); // Deliberately retain partial weak writes.
+  if(at>1){assert(s.values.has(recoverykey));const write=chain(6,{key:'description',value:'unsafe'},{txType:99,sender:buyer,values:s.values,nativeOwner:target});assert(write.failed);}
+  const r=reconcile(s,kind==='burn'?null:target);if(r.failed)throw new Error(JSON.stringify({kind,at,map:s.values.get(tokenMapKey)?.toString('hex'),journal:s.values.get(recoverykey)?.toString('hex'),r:r.r}));ok(r);assert.equal(r.all.find(x=>x.k==='claim').r.text,'reconciled');assert(!s.values.has(recoverykey));
+  assert(!s.values.has(pkey));for(const tag of ['mnt','ofr','rfd'])assert(!s.values.has(Buffer.concat([Buffer.from(tag+':'),id.subarray(0,28)]).toString('hex')));
+  if(kind==='burn'){for(const k of [rootkey,tokenMapKey,primarykey,sha('alice.xah:records').toString('hex')])assert(!s.values.has(k));}
+  else{assert(s.values.get(rootkey).subarray(0,20).equals(target));assert.equal(s.values.get(rootkey)[20],0);}
+  if(kind!=='claim'){assertTextGone(s,['description','custom.one','custom.two','custom.three']);assert(!s.values.has(primarykey));assert(!s.values.has(sha('alice.xah:addr:144').toString('hex')));}
+  const before=JSON.stringify([...s.values]);ok(reconcile(s,kind==='burn'?null:target));assert.equal(JSON.stringify([...s.values]),before);
+ });
+}
+test('reconciliation rejects wrong domain and substituted token ID',()=>{for(const data of [{label:'other',token:id},{token:Buffer.alloc(32,0x55)}]){const s=populated(),before=JSON.stringify([...s.values]);const r=chain(17,data,{txType:99,values:s.values,nativeOwner:nextOwner});assert.equal(r.r.kind,'rollback');assert.equal(JSON.stringify([...s.values]),before);}});
+test('reconciliation rejects foreign native issuer',()=>{const s=populated();expectRollback(reconcile(s,nextOwner,{nativeIssuer:Buffer.alloc(20,0x99)}),20);});
+test('reconciliation cannot promote a treasury token before claim',()=>{const s=readyClaim();expectRollback(reconcile(s,owner),20);assert(!s.values.has(rootkey));assert(s.values.has(pkey));});
+test('reconciliation cannot discard an unclaimed registration refund obligation',()=>{const s=readyClaim();expectRollback(reconcile(s,null),55);assert(s.values.has(pkey));});
+test('failed strong recovery preserves journal and can be retried',()=>{const s=populated(),t=setup('burn',{values:s.values,fields:new Map([[327716,id],[524289,buyer]]),txType:46,result:0,failWriteAt:4});assert.equal(t.invoke('hook',1).kind,'rollback');const before=JSON.stringify([...s.values]);expectRollback(reconcile(s,null,{failWriteAt:2}),20);assert.equal(JSON.stringify([...s.values]),before);ok(reconcile(s,null));});
+
+test('corrupt custom slot is rejected before a resumable journal can be created',()=>{const s=populated();s.values.delete(slotKey(0));const t=setup('claim',{values:s.values,fields:new Map([[327716,id],[524289,nextOwner]]),txType:47,result:0});assert.equal(t.invoke('hook',1).kind,'rollback');assert(!s.values.has(recoverykey));expectRollback(reconcile(s,nextOwner),20);});
+for(const kind of ['transfer','burn'])test(kind+' maximum-length domain and 15 addresses/custom texts resumes safely',()=>{
+ const label='a'.repeat(57),tld='abcdefgh',name=label+'.'+tld,rk=sha(name+':root').toString('hex'),tid=sha(Buffer.concat([Buffer.from([0,85]),owner,Buffer.from(name)])),values=new Map(),rv=Buffer.alloc(32);buyer.copy(rv);values.set(rk,rv);values.set(sha(name+':token').toString('hex'),tid);for(const tag of ['lof:','uri:'])values.set(Buffer.concat([Buffer.from(tag),tid.subarray(0,28)]).toString('hex'),Buffer.from(name));
+ for(let i=0;i<15;i++){const ct=Buffer.alloc(4);ct.writeUInt32BE(i*1000);ok(chain(4,{label,tld,coinType:ct,addr:'ab'.repeat(128)},{txType:99,sender:buyer,values}));ok(chain(6,{label,tld,key:'custom.'+i,value:'v'},{txType:99,sender:buyer,values}));}
+ const t=setup(kind==='burn'?'burn':'claim',{values,fields:new Map([[327716,tid],[524289,nextOwner]]),txType:kind==='burn'?46:47,result:0,failWriteAt:20});assert.equal(t.invoke('hook',1).kind,'rollback');ok(chain(17,{label,tld,token:tid},{txType:99,values,nativeOwner:kind==='burn'?null:nextOwner}));assert(!values.has(sha(name+':records').toString('hex')));for(let i=0;i<15;i++){assert(!values.has(sha(name+':addr:'+i*1000).toString('hex')));assert(!values.has(sha(name+':text:custom.'+i).toString('hex')));}
+});
+
+test('treasury recipient cannot manufacture a claim before native custody changes',()=>{const s=readyClaim();owner.copy(s.values.get(pkey),0);expectRollback(reconcile(s,owner),20);assert(!s.values.has(rootkey));});
+test('journal write failure can recover the latest native owner after another transfer',()=>{const s=readyClaim(),t=setup('claim',{values:s.values,fields:new Map([[327716,id],[524289,buyer]]),txType:47,result:0,failWriteAt:1});assert.equal(t.invoke('hook',1).kind,'rollback');assert(!s.values.has(recoverykey));ok(reconcile(s,nextOwner));assert(s.values.get(rootkey).subarray(0,20).equals(nextOwner));assert(!s.values.has(pkey));});
+test('claimed token burned during interrupted initial finalization can settle without a false refund',()=>{const s=readyClaim(),t=setup('claim',{values:s.values,fields:new Map([[327716,id],[524289,buyer]]),txType:47,result:0,failWriteAt:2});assert.equal(t.invoke('hook',1).kind,'rollback');assert(s.values.has(recoverykey));assert(s.values.has(pkey));ok(reconcile(s,null));assert(!s.values.has(rootkey));assert(!s.values.has(pkey));assert(!s.values.has(recoverykey));});
+
+test('native slot error cannot be mistaken for token absence',()=>{const s=populated(),before=JSON.stringify([...s.values]);expectRollback(reconcile(s,nextOwner,{nativeReadError:-9}),20);assert.equal(JSON.stringify([...s.values]),before);});
+test('recovery leaves the old owners newer primary domain intact',()=>{const s=populated(),t=setup('claim',{values:s.values,fields:new Map([[327716,id],[524289,nextOwner]]),txType:47,result:0,failWriteAt:2});assert.equal(t.invoke('hook',1).kind,'rollback');ok(primary(s,Buffer.from([1]),{label:'beta'}));ok(reconcile(s,nextOwner));assertPrimary(s,betakey);});
+test('recovery uses current native owner after a second transfer during partial cleanup',()=>{const s=populated(),t=setup('claim',{values:s.values,fields:new Map([[327716,id],[524289,nextOwner]]),txType:47,result:0,failWriteAt:4});assert.equal(t.invoke('hook',1).kind,'rollback');const latest=Buffer.alloc(20,0x44);ok(reconcile(s,latest));assert(s.values.get(rootkey).subarray(0,20).equals(latest));});
+test('corrupt recovery journal fails closed',()=>{const s=populated(),t=setup('burn',{values:s.values,fields:new Map([[327716,id],[524289,buyer]]),txType:46,result:0,failWriteAt:2});assert.equal(t.invoke('hook',1).kind,'rollback');s.values.get(recoverykey)[1]=2;const before=JSON.stringify([...s.values]);expectRollback(reconcile(s,null),20);assert.equal(JSON.stringify([...s.values]),before);});
+// Burn authorization must execute before native application, not in weak cleanup.
+function strongBurn(s,sender,nativeOwner,extra={}){
+ const before=JSON.stringify([...s.values]),t=setup('burn',{values:s.values,fields:new Map([[327716,id],[524289,sender]]),txType:46,nativeOwner,...extra});
+ const r=t.invoke('hook',0);
+ assert.equal(JSON.stringify([...s.values]),before,'strong burn must not change protocol state');
+ return {t,r};
+}
+test('issuer cannot burn a token held by a domain owner',()=>{
+ const s=claimed(),{t,r}=strongBurn(s,owner,buyer);
+ assert.equal(r.kind,'rollback');assert.equal(r.code,12);assert.equal(r.text,'only token owner may burn');
+ assert(!t.calls.some(c=>c.api==='hook_again'));
+});
+test('issuer cannot use stale root ownership to burn a transferred native token',()=>{
+ const s=claimed();owner.copy(s.values.get(rootkey));
+ assert.equal(strongBurn(s,owner,nextOwner).r.code,12);
+});
+test('third party cannot burn a domain even when root names that third party',()=>{
+ const s=claimed();nextOwner.copy(s.values.get(rootkey));
+ assert.equal(strongBurn(s,nextOwner,buyer).r.code,12);
+});
+test('native owner may burn even while root is awaiting transfer reconciliation',()=>{
+ const s=claimed(),{t,r}=strongBurn(s,nextOwner,nextOwner);
+ assert.equal(r.kind,'accept');assert.equal(r.text,'await result');
+ assert.equal(t.calls.filter(c=>c.api==='hook_again').length,1);
+});
+test('treasury may burn its own unclaimed token for registration recovery',()=>{
+ const s=start(),{r}=strongBurn(s,owner,owner);
+ assert.equal(r.kind,'accept');assert.equal(r.text,'await result');
+});
+test('issuer cannot burn a claimed native token even if root is missing',()=>{
+ const s=claimed();s.values.delete(rootkey);
+ assert.equal(strongBurn(s,owner,buyer).r.code,12);
+});
+for(const nativeReadError of [-5,-9])test('strong burn fails closed on native slot error '+nativeReadError,()=>{
+ const {t,r}=strongBurn(claimed(),owner,buyer,{nativeReadError});
+ assert.equal(r.kind,'rollback');assert.equal(r.code,20);assert(!t.calls.some(c=>c.api==='hook_again'));
+});
+for(const missing of [327716,524289])test('strong burn rejects missing native transaction field '+missing,()=>{
+ const fields=new Map([[327716,id],[524289,owner]]);fields.delete(missing);
+ const {r}=strongBurn(claimed(),owner,buyer,{fields});assert.equal(r.kind,'rollback');assert.equal(r.code,3);
+});
+test('weak owner burn cleanup does not require an already deleted token slot',()=>{
+ const s=claimed(),t=setup('burn',{values:s.values,fields:new Map([[327716,id],[524289,buyer]]),txType:46,nativeReadError:-5,result:0});
+ assert.equal(t.invoke('hook',1).text,'burned');assert(!s.values.has(rootkey));
+});
 fs.writeFileSync(root+'/test-results.json',JSON.stringify(results,null,2)+'\n');console.log(JSON.stringify(results,null,2));if(results.some(x=>!x.pass))process.exitCode=1;

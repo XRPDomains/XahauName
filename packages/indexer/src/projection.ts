@@ -13,6 +13,13 @@ export function knownNames(state: Materialized): Set<string> {
     const names = new Set(Object.keys(state.domains));
     for (const [key, value] of Object.entries(state.state)) {
         const prefix = Buffer.from(key, 'hex').subarray(0, 4).toString();
+        if (prefix === 'rcv:') {
+            const journal = Buffer.from(value,'hex');
+            if(journal.length>=70&&journal[0]===1&&journal.length===67+journal[66]) {
+                const name=canonicalName(journal.subarray(67).toString()); if(name)names.add(name);
+            }
+            continue;
+        }
         if (prefix !== 'lof:' && prefix !== 'uri:') continue;
         const name = canonicalName(Buffer.from(value, 'hex').toString());
         if (name) names.add(name);
@@ -43,23 +50,36 @@ export async function projectDomain(name: string, state: Materialized, cfg: Depl
     domainFields(label, tld);
     const idHex = state.state[util.tokenKey(label, tld)];
     if (idHex && !/^[A-F0-9]{64}$/.test(idHex)) return {domain: name, status: 'recoveryRequired', reason: 'Invalid domain token mapping'};
-    const id = idHex ?? util.computeUritokenId(cfg.treasury, label, tld), token = state.tokens[id];
+    const rawJournal=state.state[util.recoveryKey(label,tld)];
+    let journalId:string|undefined;
+    if(rawJournal!==undefined) {
+        const j=Buffer.from(rawJournal,'hex'),nameBytes=Buffer.from(name);
+        if(j.length!==67+nameBytes.length||j[0]!==1||j[1]>1||j[66]!==nameBytes.length||!j.subarray(67).equals(nameBytes))
+            return {domain:name,status:'recoveryRequired',reason:'Malformed lifecycle journal'};
+        journalId=j.subarray(2,34).toString('hex').toUpperCase();
+        if(idHex&&idHex!==journalId)return {domain:name,status:'recoveryRequired',reason:'Journal identity conflicts with token mapping'};
+    }
+    const id = idHex ?? journalId ?? util.computeUritokenId(cfg.treasury, label, tld), token = state.tokens[id];
     const pending = state.state[util.pendingKey(id)];
-    if (pending && pending.length !== 64) return {domain: name, tokenId: id, status: 'recoveryRequired', reason: 'Malformed pending state'};
+    if (pending !== undefined && !/^[A-F0-9]{64}$/.test(pending)) return {domain: name, tokenId: id, status: 'recoveryRequired', reason: 'Malformed pending state'};
     const recipient = pending?.length === 64 ? util.hexToAddress(pending.slice(0, 40)) : undefined;
     const base = {domain: name, tokenId: id, nativeOwner: token?.Owner, recipient,
         offer: token?.Amount !== undefined ? {destination: token.Destination, amount: token.Amount, seller: token.Owner} : null};
-    if (state.recovery[name]) return {...base, status: 'recoveryRequired', reason: state.recovery[name]};
+    if (state.recovery[name]) return {...base, status: 'recoveryRequired', reason: state.recovery[name],
+        recoverySnapshot: state.domains[name]?.recoverySnapshot ?? (state.domains[name]?.status === 'claimed' ? state.domains[name] : undefined)};
+    if (state.state[util.recoveryKey(label,tld)] !== undefined) return {...base,status:'recoveryRequired',reason:'Unfinished lifecycle journal'};
     if (token && (typeof token.URI !== 'string' || !/^(?:[a-f0-9]{2})+$/i.test(token.URI) ||
         util.computeUritokenIdFromURI(cfg.treasury, Buffer.from(token.URI, 'hex').toString()) !== id))
         return {...base, status: 'recoveryRequired', reason: 'Native token URI/ID mismatch'};
     let root;
     try {root = await resolver.getRoot(name);} catch {return {...base, status: 'recoveryRequired', reason: 'Malformed root state'};}
+    const refund = state.state[util.asyncKey('rfd', id)];
+    if (root && (pending !== undefined || refund !== undefined || state.state[util.asyncKey('mnt', id)] !== undefined || state.state[util.asyncKey('ofr', id)] !== undefined))
+        return {...base, status: 'recoveryRequired', reason: 'Finalized root conflicts with registration tracking state'};
     if (!root) {
         if (pending) {
             if (token && token.Owner !== cfg.treasury) return {...base, status: 'recoveryRequired', reason: 'Claim changed native owner without finalized root'};
-            const refund = state.state[util.asyncKey('rfd', id)];
-            return {...base, status: refund ? 'refundPending' : token?.Amount !== undefined ? 'awaitingClaim' : 'pending',
+            return {...base, status: refund ? 'refundPending' : token?.Owner === cfg.treasury && token.Amount === '0' && token.Destination === recipient ? 'awaitingClaim' : 'pending',
                 amountDrops: Buffer.from(pending, 'hex').readBigUInt64BE(20).toString()};
         }
         if (token) return {...base, status: 'recoveryRequired', reason: 'Native token exists without finalized root or pending registration'};

@@ -260,3 +260,6 @@ export function asyncKey(kind: 'mnt' | 'ofr' | 'rfd', id: string): string {
     if (!/^[a-f0-9]{64}$/i.test(id)) throw new Error('Invalid URITokenID');
     return Buffer.concat([Buffer.from(kind + ':'), Buffer.from(id, 'hex').subarray(0, 28)]).toString('hex').toUpperCase();
 }
+
+/** Durable weak-phase cleanup journal; its presence quarantines ownership. */
+export function recoveryKey(label:string,tld:string):string {return Buffer.concat([Buffer.from('rcv:'),Buffer.from(rootKey(label,tld),'hex').subarray(0,28)]).toString('hex').toUpperCase();}

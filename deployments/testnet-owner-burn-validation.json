@@ -1,0 +1,63 @@
+{
+  "networkID": 21338,
+  "verifiedAt": "2026-10-23T17:22:02.427Z",
+  "result": "PASS",
+  "domain": "ownerburn2775916699.xah",
+  "installTransaction": "7A89D09D0495D7AEDC8E924C837A027762A38D8DD8EA26618321307A10B4450B",
+  "beforeIssuerBurnSimulation": "tesSUCCESS",
+  "issuerDenied": {
+    "txHash": "F6B92E293AC0E7AD4669948D523C0D1799683890DBF288EBEB912C7BD0FA689B",
+    "result": "tecHOOK_REJECTED",
+    "hookExecutions": [
+      {
+        "Flags": 1,
+        "HookAccount": "rw5W1Ljeg7T4JionCu2hKzWeUus7XQ9qs",
+        "HookEmitCount": 0,
+        "HookExecutionIndex": 0,
+        "HookHash": "8C8A63292B7D0EA55FA7B099F4608DA398FDF228A8A50550709F7BBAE3840621",
+        "HookInstructionCount": "3e2",
+        "HookResult": 2,
+        "HookReturnCode": "c",
+        "HookReturnString": "6F6E6C7920746F6B656E206F776E6572206D6179206275726E00",
+        "HookStateChangeCount": 0
+      }
+    ]
+  },
+  "remitBypassRejected": true,
+  "transferClaim": {
+    "txHash": "849CD442AE86F4909AB23E821A5E99A6A7C9FFFB2EAD56AB7D35A830F208936A",
+    "result": "tesSUCCESS",
+    "hookReturnCode": 0,
+    "hookReturnString": "transferred",
+    "hookExecutions": [
+      {
+        "account": "rw5W1Ljeg7T4JionCu2hKzWeUus7XQ9qs",
+        "hash": "1E5558D0215788908DD52C5963F56D91D5A52AFF2B6BCDFDE8EFBF0A6454925B",
+        "returnCode": "0",
+        "returnString": "await result"
+      },
+      {
+        "account": "rw5W1Ljeg7T4JionCu2hKzWeUus7XQ9qs",
+        "hash": "1E5558D0215788908DD52C5963F56D91D5A52AFF2B6BCDFDE8EFBF0A6454925B",
+        "returnCode": "0",
+        "returnString": "transferred"
+      }
+    ]
+  },
+  "oldOwnerBurnRejected": "tecNO_PERMISSION",
+  "ownerBurn": {
+    "txHash": "2D366746B361B72924D75D56A504F9438283D4B60DFC6B235A29B3156A2DED4B",
+    "result": "tesSUCCESS",
+    "hookReturnCode": 0,
+    "hookReturnString": "burned",
+    "hookExecutions": [
+      {
+        "account": "rw5W1Ljeg7T4JionCu2hKzWeUus7XQ9qs",
+        "hash": "8C8A63292B7D0EA55FA7B099F4608DA398FDF228A8A50550709F7BBAE3840621",
+        "returnCode": "0",
+        "returnString": "burned"
+      }
+    ]
+  },
+  "stateRestored": true
+}
