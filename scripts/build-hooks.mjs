@@ -1,0 +1,30 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import crypto from 'node:crypto';
+import os from 'node:os';
+import {fileURLToPath} from 'node:url';
+import {spawnSync} from 'node:child_process';
+const repo=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
+const parts=JSON.parse(fs.readFileSync(path.join(repo,'hook/config/handlers.json'),'utf8'));
+const arg=process.argv.indexOf('--part'),selected=arg<0?parts:[process.argv[arg+1]];
+const docker=process.env.DOCKER_BIN??(process.platform==='win32'?path.join(process.env.LOCALAPPDATA,'Programs/DockerDesktop/resources/bin/docker.exe'):'docker');
+const checker=process.env.GUARD_CHECKER??path.join(os.tmpdir(),'xahauname-hooks-toolchain/guard/guard_checker');
+const hash=b=>crypto.createHash('sha256').update(b).digest('hex');
+const run=(cmd,args)=>{const r=spawnSync(cmd,args,{cwd:repo,encoding:'utf8',maxBuffer:16*1024*1024});if(r.error)throw r.error;return r;};
+const wsl=p=>'/mnt/'+p[0].toLowerCase()+'/'+p.slice(3).replaceAll('\\','/');
+for(const part of selected){
+ if(!parts.includes(part))throw new Error('Unknown handler');
+ const out=path.join(repo,'hook/build/current',part),src=path.join(out,'src');fs.mkdirSync(src,{recursive:true});
+ const common=fs.readFileSync(path.join(repo,'hook/src/common.h')),handler=fs.readFileSync(path.join(repo,'hook/src/handlers',part+'.c'));
+ fs.writeFileSync(path.join(src,'common.h'),common);fs.writeFileSync(path.join(src,'xahau-name-hook.c'),handler);
+ const compiled=run(docker,['run','--rm','--network','none','--mount','type=bind,source='+src+',target=/src,readonly','--mount','type=bind,source='+out+',target=/out','--mount','type=bind,source='+path.join(repo,'hook/toolchain/compile-hook.mjs')+',target=/opt/toolchain/compile-hook.mjs,readonly','xahauname-hook-toolchain:cli-3.0.0']);
+ fs.writeFileSync(path.join(out,'compiler.log'),compiled.stdout+compiled.stderr);
+ if(compiled.status!==0)throw new Error(part+' compilation failed: '+compiled.stdout+compiled.stderr);
+ const wasm=fs.readFileSync(path.join(out,'xahau-name-hook.cleaned.wasm'));
+ if(!WebAssembly.validate(wasm)||wasm.length>=65536)throw new Error(part+' invalid or oversized WASM');
+ const checked=process.platform==='win32'?run('wsl',['-d','Ubuntu','--',wsl(checker),wsl(path.join(out,'xahau-name-hook.cleaned.wasm'))]):run(checker,[path.join(out,'xahau-name-hook.cleaned.wasm')]);
+ const log=checked.stdout+checked.stderr;fs.writeFileSync(path.join(out,'guard-check.log'),log);
+ if(checked.status!==0||!log.includes('Hook validation successful!'))throw new Error(part+' guard validation failed: '+log);
+ const proof={part,bytes:wasm.length,sha256:hash(wasm),sourceSha256:hash(Buffer.concat([common,handler])),guardPassed:true,instructionCounts:[...log.matchAll(/execution count: (\d+)/g)].map(m=>Number(m[1]))};
+ fs.writeFileSync(path.join(out,'proof.json'),JSON.stringify(proof,null,2)+'\n');console.log(JSON.stringify(proof));
+}

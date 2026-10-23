@@ -1,0 +1,27 @@
+{
+  "name": "xahauname-test-app",
+  "version": "0.3.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "node scripts/build.mjs",
+    "preview": "vite preview --host 127.0.0.1",
+    "test": "node --import tsx --test tests/*.test.ts",
+    "test:browser": "node --import tsx tests/browser-smoke.cjs"
+  },
+  "dependencies": {
+    "@ensdomains/address-encoder": "^2.0.1",
+    "@xahauname/sdk": "file:../sdk",
+    "@xrpl-wallet-kit/client": "0.2.1",
+    "buffer": "6.0.3",
+    "xahau": "4.2.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.0",
+    "@types/node": "^22.0.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.5.0",
+    "vite": "^6.4.1"
+  }
+}

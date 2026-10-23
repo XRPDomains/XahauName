@@ -1,0 +1,919 @@
+{
+  "validated": true,
+  "hash": "EBFC6AD3CA45C7BA9CC4E055567594BE2A61860B65E309518C27B4516C07BAF9",
+  "ledgerIndex": 13416855,
+  "ledgerHash": "CB9E4317283ECF7CE48093006CD7DA807605766BBEEA5E5DA21564B61F0F4448",
+  "tx": {
+    "Account": "rHSypss6AqPRFvaocnYz2xnZ7k8TizLg6c",
+    "Amount": "0",
+    "Fee": "44791",
+    "Flags": 0,
+    "LastLedgerSequence": 13416873,
+    "NetworkID": 21338,
+    "Sequence": 846055911,
+    "SigningPubKey": "ED0C1ED9F222163B7614DB2CB6F40A41B426D5EAD9D7D5CA4BB36DF3F97A12C9EE",
+    "TransactionType": "URITokenBuy",
+    "TxnSignature": "CC04CF4B624C5228CB2F6B55956B8641C7CFC67D283F395AED176F59C62B0CF26E9CEE580ED759AF231DFABA040D07FE1E24A5D262683C8EED12DBE3B7A7DF0E",
+    "URITokenID": "369313F9064B3BE0490A2C0C377E2F82593CA0CB135A3F94C91B900C766C4226",
+    "ctid": "C0CCB9970004535A",
+    "date": 846056102,
+    "hash": "EBFC6AD3CA45C7BA9CC4E055567594BE2A61860B65E309518C27B4516C07BAF9",
+    "inLedger": 13416855,
+    "ledger_index": 13416855,
+    "meta": {
+      "AffectedNodes": [
+        {
+          "DeletedNode": {
+            "FinalFields": {
+              "Flags": 0,
+              "HookStateData": "7765627369746520696E746567726174696F6E",
+              "HookStateKey": "DDE7C01DC0467B78B22B5D8DBF71A87012D2FAA8AB3589C870AA974AD38FBB80",
+              "OwnerNode": "2",
+              "PreviousTxnID": "D95A69DD2239BD07465DC59C934CD3849AC134D816FD3F4F5B7785DAAE9E85DE",
+              "PreviousTxnLgrSeq": 13416812
+            },
+            "LedgerEntryType": "HookState",
+            "LedgerIndex": "2F186EFDD5C676DA7FAA51C4D6CA84B3982F428C604CA58BAF9B4C9DB01BE376"
+          }
+        },
+        {
+          "DeletedNode": {
+            "FinalFields": {
+              "Flags": 0,
+              "HookStateData": "787270646F6D61696E73",
+              "HookStateKey": "F06B49C159AC713B53BB73A85672979A4508D19BF72EA9B8AFB46A430822D26F",
+              "OwnerNode": "2",
+              "PreviousTxnID": "65E4B42B85500CC9A5DF9DE3B7476E3234C4140659ADCDB3AB05272CF94141E2",
+              "PreviousTxnLgrSeq": 13416814
+            },
+            "LedgerEntryType": "HookState",
+            "LedgerIndex": "30AB4EAD8F9007C4EC80557E0147ACF8FBE4E519514EA2886C2DB7225D534665"
+          }
+        },
+        {
+          "ModifiedNode": {
+            "FinalFields": {
+              "Flags": 1,
+              "Issuer": "rw5W1Ljeg7T4JionCu2hKzWeUus7XQ9qs",
+              "Owner": "rHSypss6AqPRFvaocnYz2xnZ7k8TizLg6c",
+              "OwnerNode": "0",
+              "URI": "68747470733A2F2F787270646F6D61696E732E78797A2F6170692F6E6674646F6D61696E732F6D657461646174612F72656C65617365323734303730313336392E786168"
+            },
+            "LedgerEntryType": "URIToken",
+            "LedgerIndex": "369313F9064B3BE0490A2C0C377E2F82593CA0CB135A3F94C91B900C766C4226",
+            "PreviousFields": {
+              "Amount": "0",
+              "Destination": "rHSypss6AqPRFvaocnYz2xnZ7k8TizLg6c",
+              "Owner": "r3ntcoBspgWEUgC1xkyEwLS28zkCeuAFp"
+            },
+            "PreviousTxnID": "0897E54E9896106536F9B61F0160D585FF8CB0D11ED84B950F5B6A0802D341A9",
+            "PreviousTxnLgrSeq": 13416853
+          }
+        },
+        {
+          "DeletedNode": {
+            "FinalFields": {
+              "Flags": 0,
+              "HookStateData": "0100050B53590090003C01F500C300C3000000000000000000000000000000000000000661766174010B646573630F07646973700305656D616905086B6579770D086C6F6361110570686F6E020375726C00FF0000000000070A636F6D2E0E0B636F6E74000000000000000000000000000000000000000000000000",
+              "HookStateKey": "C72161111748476AC9F2EA5C502C0093A58BC168F917C5A73D5E890DD9D4B8EF",
+              "OwnerNode": "2",
+              "PreviousTxnID": "C340AFDC58452865A33A706D125D0E5E45A33FD5223073DE66A40634D42BE829",
+              "PreviousTxnLgrSeq": 13416843
+            },
+            "LedgerEntryType": "HookState",
+            "LedgerIndex": "4237782F081E79C4443C621374EFE02DB4160BC76BC776BBE2249BC993BBB369"
+          }
+        },
+        {
+          "DeletedNode": {
+            "FinalFields": {
+              "Flags": 0,
+              "HookStateData": "410000000000000000000000000000000000000000",
+              "HookStateKey": "EEE9B8193373F37440CA00EB4F15E9D8979409F13A23F51554CFF98120B6C21D",
+              "OwnerNode": "2",
+              "PreviousTxnID": "E4B2F8CBDF79C3F3A135C568DD8C31C189EAE6C6793D6579C12069AF69D07B79",
+              "PreviousTxnLgrSeq": 13416826
+            },
+            "LedgerEntryType": "HookState",
+            "LedgerIndex": "4CD67A31E831E1D6EF654243DD22C10B2D661BC400F39F5356CA91AD45BC6796"
+          }
+        },
+        {
+          "ModifiedNode": {
+            "FinalFields": {
+              "Flags": 0,
+              "HookStateData": "B46B2C4539801F80A12CAEA023C42277A401AB3B0000000000326DCA05000000",
+              "HookStateKey": "51D9926DC102CA23725D4C85F056E253F4CE5BF93F3211EE014578E9984A5DBD",
+              "OwnerNode": "2"
+            },
+            "LedgerEntryType": "HookState",
+            "LedgerIndex": "4F1B60B3AD9447F60E7F2E32B8E548F7E065CD5357D25E3E6D0AE53774DA9B92",
+            "PreviousFields": {
+              "HookStateData": "0156FE6063AA574F001148D2B81374BBD558C3280100000000326DCA05000000"
+            },
+            "PreviousTxnID": "6A9C2C92B1C5ADA70BF327642B05D69AC9518C46A883F36D9854FB9F4D425348",
+            "PreviousTxnLgrSeq": 13416833
+          }
+        },
+        {
+          "ModifiedNode": {
+            "FinalFields": {
+              "Account": "r3ntcoBspgWEUgC1xkyEwLS28zkCeuAFp",
+              "AccountIndex": "83a2",
+              "Balance": "35505617",
+              "Flags": 0,
+              "OwnerCount": 0,
+              "Sequence": 846055923,
+              "TouchCount": "16"
+            },
+            "LedgerEntryType": "AccountRoot",
+            "LedgerIndex": "4FAC1E483A658D55D656BAAB4B7F3BBBAB7E3FC32AA244A606743D05AF36B29B",
+            "PreviousFields": {
+              "OwnerCount": 1,
+              "TouchCount": "15"
+            },
+            "PreviousTxnID": "0897E54E9896106536F9B61F0160D585FF8CB0D11ED84B950F5B6A0802D341A9",
+            "PreviousTxnLgrSeq": 13416853
+          }
+        },
+        {
+          "DeletedNode": {
+            "FinalFields": {
+              "Flags": 0,
+              "HookStateData": "DDE7C01DC0467B78B22B5D8DBF71A87012D2FAA8AB3589C870AA974AD38FBB80637573746F6D2E70726F6A656374",
+              "HookStateKey": "369D974D34E8EBD1B3D237E09B01CB2414A4FA72A2EA237A67163A57CB082EF0",
+              "OwnerNode": "2",
+              "PreviousTxnID": "D95A69DD2239BD07465DC59C934CD3849AC134D816FD3F4F5B7785DAAE9E85DE",
+              "PreviousTxnLgrSeq": 13416812
+            },
+            "LedgerEntryType": "HookState",
+            "LedgerIndex": "5379C25975506D706DF7DEEED4775048F4D9751830EB39E88FD065FAF60044A5"
+          }
+        },
+        {
+          "DeletedNode": {
+            "FinalFields": {
+              "Flags": 0,
+              "HookStateData": "2B3834393031323334353637",
+              "HookStateKey": "845B29751F495D7B25E91BC016C6D2664675F3B5E804A3CF6317C9768719A857",
+              "OwnerNode": "2",
+              "PreviousTxnID": "99A9DABFC79517777B74A032055298A129060F718A54195B076CBA63AE397867",
+              "PreviousTxnLgrSeq": 13416806
+            },
+            "LedgerEntryType": "HookState",
+            "LedgerIndex": "636390875B410EFDC6FE8A23B60F6C8F35D4BADA8A5A7031D67F3360762ADFAB"
+          }
+        },
+        {
+          "DeletedNode": {
+            "FinalFields": {
+              "Flags": 0,
+              "HookStateData": "78616861752C20746573746E6574",
+              "HookStateKey": "325A48A76D72B316A3C2FEAA0276F190AF554E06124A396C3AC9A844D11F34B5",
+              "OwnerNode": "2",
+              "PreviousTxnID": "99A9DABFC79517777B74A032055298A129060F718A54195B076CBA63AE397867",
+              "PreviousTxnLgrSeq": 13416806
+            },
+            "LedgerEntryType": "HookState",
+            "LedgerIndex": "649898F30BA4AAF74F1C2ED46BFA81F3112F1FC6E213E834CC9908408571E39C"
+          }
+        },
+        {
+          "DeletedNode": {
+            "FinalFields": {
+              "Flags": 0,
+              "HookStateData": "314159265DD8DBB310642F98F50C066173C1259B",
+              "HookStateKey": "D6F633F9738BDA4E9C087083AD2E1474E4F8843E3A24141CB87C3CC7C47B4161",
+              "OwnerNode": "2",
+              "PreviousTxnID": "69C379FEB073139FFE552FE1D24E670EC6C404CE06F953A6110EEB3D4C551986",
+              "PreviousTxnLgrSeq": 13416822
+            },
+            "LedgerEntryType": "HookState",
+            "LedgerIndex": "6F666F768F9C3593FBFB33A6871CDC22037007A71B219C961635209DD5300B73"
+          }
+        },
+        {
+          "DeletedNode": {
+            "FinalFields": {
+              "Flags": 0,
+              "HookStateData": "697066733A2F2F62616679626569626A366C6978787A7174736234357973646A6E757076716B75666764767A71626E766D6877326B663763666B6573793772376434",
+              "HookStateKey": "1110F9D9EC06B095B7EC17B0DDB7F375AE88214E494A6DFBAFBD624BF1D4571F",
+              "OwnerNode": "2",
+              "PreviousTxnID": "C340AFDC58452865A33A706D125D0E5E45A33FD5223073DE66A40634D42BE829",
+              "PreviousTxnLgrSeq": 13416843
+            },
+            "LedgerEntryType": "HookState",
+            "LedgerIndex": "71361B717ECA56042EF5CD17886A6FB587033FF0FA3A051F22287FC2E281DC83"
+          }
+        },
+        {
+          "ModifiedNode": {
+            "FinalFields": {
+              "Flags": 0,
+              "Owner": "r3ntcoBspgWEUgC1xkyEwLS28zkCeuAFp",
+              "RootIndex": "73C386322A1BC50D6FD8855DE4A7DB30AAD2AFEE39DB9C1A8815EE1B29F827F5"
+            },
+            "LedgerEntryType": "DirectoryNode",
+            "LedgerIndex": "73C386322A1BC50D6FD8855DE4A7DB30AAD2AFEE39DB9C1A8815EE1B29F827F5",
+            "PreviousTxnID": "33662879DF3903BC8856165B5AC9DE51210763A0B8D35ED21345B2E9C036917F",
+            "PreviousTxnLgrSeq": 13416803
+          }
+        },
+        {
+          "DeletedNode": {
+            "FinalFields": {
+              "Flags": 0,
+              "HookStateData": "68747470733A2F2F6578616D706C652E636F6D2F6176617461722E706E67",
+              "HookStateKey": "13ABB59813AC12A17DFCE7D021DCD4E7ADF65FD6756CD3EE65B943E9A59FA5B2",
+              "OwnerNode": "2",
+              "PreviousTxnID": "99A9DABFC79517777B74A032055298A129060F718A54195B076CBA63AE397867",
+              "PreviousTxnLgrSeq": 13416806
+            },
+            "LedgerEntryType": "HookState",
+            "LedgerIndex": "746F3FD39746A5FFAF286F4F952943F6A14ED540D79037E37F35E41F8770139D"
+          }
+        },
+        {
+          "DeletedNode": {
+            "FinalFields": {
+              "Flags": 0,
+              "HookStateData": "52656C65617365323734303730313336392E786168",
+              "HookStateKey": "FEB8F1D2215C728C4D37DFF9FBF2F15CCC65ECB5BAA53BB17CC3F08BEBFF2EFC",
+              "OwnerNode": "2",
+              "PreviousTxnID": "99A9DABFC79517777B74A032055298A129060F718A54195B076CBA63AE397867",
+              "PreviousTxnLgrSeq": 13416806
+            },
+            "LedgerEntryType": "HookState",
+            "LedgerIndex": "79AECA99F97F083B50AA851EA73154628C83197CC94E66A22426FFE600A3F431"
+          }
+        },
+        {
+          "ModifiedNode": {
+            "FinalFields": {
+              "Account": "rHSypss6AqPRFvaocnYz2xnZ7k8TizLg6c",
+              "AccountIndex": "83a3",
+              "Balance": "29955209",
+              "Flags": 0,
+              "OwnerCount": 1,
+              "Sequence": 846055912,
+              "TouchCount": "4"
+            },
+            "LedgerEntryType": "AccountRoot",
+            "LedgerIndex": "9F237A36FB6E8437C58762B454C8953B63C0A39A24DED935FBF26E5305B85503",
+            "PreviousFields": {
+              "Balance": "30000000",
+              "OwnerCount": 0,
+              "Sequence": 846055911,
+              "TouchCount": "3"
+            },
+            "PreviousTxnID": "0897E54E9896106536F9B61F0160D585FF8CB0D11ED84B950F5B6A0802D341A9",
+            "PreviousTxnLgrSeq": 13416853
+          }
+        },
+        {
+          "ModifiedNode": {
+            "FinalFields": {
+              "Account": "rw5W1Ljeg7T4JionCu2hKzWeUus7XQ9qs",
+              "AccountIndex": "828f",
+              "Balance": "758077546",
+              "Flags": 1107296256,
+              "HookNamespaces": [
+                "843FD169518D98F576681E803EFA541B60437C60B2F4EED2E5A0D17828CCE6D1"
+              ],
+              "HookStateCount": 66,
+              "OwnerCount": 76,
+              "Sequence": 845893811,
+              "TouchCount": "15e"
+            },
+            "LedgerEntryType": "AccountRoot",
+            "LedgerIndex": "AB0D820E0F1E77C5E4D57B39675B1D5CF92D5223A1BDBBC7DCF298296FE987DC",
+            "PreviousFields": {
+              "HookStateCount": 85,
+              "OwnerCount": 95,
+              "TouchCount": "15d"
+            },
+            "PreviousTxnID": "0897E54E9896106536F9B61F0160D585FF8CB0D11ED84B950F5B6A0802D341A9",
+            "PreviousTxnLgrSeq": 13416853
+          }
+        },
+        {
+          "ModifiedNode": {
+            "FinalFields": {
+              "Flags": 0,
+              "IndexNext": "0",
+              "IndexPrevious": "1",
+              "Owner": "rw5W1Ljeg7T4JionCu2hKzWeUus7XQ9qs",
+              "RootIndex": "5A4FA6C33D4D604820F3056952F6A19853CCE998CE1B61DA4B982B243095988D"
+            },
+            "LedgerEntryType": "DirectoryNode",
+            "LedgerIndex": "ACF9434B9D8843CFBA0E8B741C44DB26AE289C475F20F9122F5F1EFACCE488AA",
+            "PreviousTxnID": "C340AFDC58452865A33A706D125D0E5E45A33FD5223073DE66A40634D42BE829",
+            "PreviousTxnLgrSeq": 13416843
+          }
+        },
+        {
+          "DeletedNode": {
+            "FinalFields": {
+              "Flags": 0,
+              "HookStateData": "486F20436869204D696E682043697479",
+              "HookStateKey": "59948491DE624BBF58BDC3125FD5A7C7D9705E717DDA3D0637A18FD27211E828",
+              "OwnerNode": "2",
+              "PreviousTxnID": "99A9DABFC79517777B74A032055298A129060F718A54195B076CBA63AE397867",
+              "PreviousTxnLgrSeq": 13416806
+            },
+            "LedgerEntryType": "HookState",
+            "LedgerIndex": "B23EFA9B24FFC10CB54E014551EBF534A736065129DD4D7ED217D207B937F70F"
+          }
+        },
+        {
+          "DeletedNode": {
+            "FinalFields": {
+              "Flags": 0,
+              "HookStateData": "0000000000000000000000000000000000000000000000000000000000000000",
+              "HookStateKey": "96F1D9E49E755CAAD780C4E075F5624F329DABE2D477418522DC19C0DCBCC35D",
+              "OwnerNode": "2",
+              "PreviousTxnID": "8F5DC409CBF4D2AD440AF82CB15F4D1B51B17C63001991A69732A8C5C49A9CD0",
+              "PreviousTxnLgrSeq": 13416824
+            },
+            "LedgerEntryType": "HookState",
+            "LedgerIndex": "B2D5AC1979AD970F8B8539F97C0E7212B3424F09E2EDCBF8EC4BE13AB13F3D0A"
+          }
+        },
+        {
+          "CreatedNode": {
+            "LedgerEntryType": "DirectoryNode",
+            "LedgerIndex": "BAAC723A4B551577E8FD738B0477DA414CA3ECAD140658B18A18036060E3F359",
+            "NewFields": {
+              "Owner": "rHSypss6AqPRFvaocnYz2xnZ7k8TizLg6c",
+              "RootIndex": "BAAC723A4B551577E8FD738B0477DA414CA3ECAD140658B18A18036060E3F359"
+            }
+          }
+        },
+        {
+          "DeletedNode": {
+            "FinalFields": {
+              "Flags": 0,
+              "HookStateData": "51D9926DC102CA23725D4C85F056E253F4CE5BF93F3211EE014578E9984A5DBD",
+              "HookStateKey": "386A1329A1DD791DF2F976F87B26A9B068EAE1DB698AE428546DE1A5D9F9F3F5",
+              "OwnerNode": "2",
+              "PreviousTxnID": "6A9C2C92B1C5ADA70BF327642B05D69AC9518C46A883F36D9854FB9F4D425348",
+              "PreviousTxnLgrSeq": 13416833
+            },
+            "LedgerEntryType": "HookState",
+            "LedgerIndex": "BBC010EDB47CCB756AD8827047BE003B58E57A66010777366E84E4822B0E742F"
+          }
+        },
+        {
+          "DeletedNode": {
+            "FinalFields": {
+              "Flags": 0,
+              "HookStateData": "00B46B2C4539801F80A12CAEA023C42277A401AB3B",
+              "HookStateKey": "4DB9749AA9D536453F527DEA558C172B17FFF4B82E9FB2B711BEF464BC310ED5",
+              "OwnerNode": "2",
+              "PreviousTxnID": "687A3CCC94CEC5903DC967D1C184646BD88665239E35303BA44783BC6D9A73BE",
+              "PreviousTxnLgrSeq": 13416818
+            },
+            "LedgerEntryType": "HookState",
+            "LedgerIndex": "CDA539F58C4AFA4CBCF5A6025FB17FB0D65EF5176E381174DC49BE751ECA2159"
+          }
+        },
+        {
+          "DeletedNode": {
+            "FinalFields": {
+              "Flags": 0,
+              "HookStateData": "6F776E6572406578616D706C652E636F6D",
+              "HookStateKey": "86D28274CDC2E140C53B8B5FD15B72AD8099ECC4B6676924BEDC311DDFD01F83",
+              "OwnerNode": "2",
+              "PreviousTxnID": "99A9DABFC79517777B74A032055298A129060F718A54195B076CBA63AE397867",
+              "PreviousTxnLgrSeq": 13416806
+            },
+            "LedgerEntryType": "HookState",
+            "LedgerIndex": "F06C4BB7E82D2158F620D8C47FF315D913B08BA728D69CEC38FA94592BA18983"
+          }
+        },
+        {
+          "DeletedNode": {
+            "FinalFields": {
+              "Flags": 0,
+              "HookStateData": "000156FE6063AA574F001148D2B81374BBD558C328",
+              "HookStateKey": "AF50375D6CAF1954BC04731878C246D17AD9939FC1D813D2F7EAEEBF4EE6B29A",
+              "OwnerNode": "2",
+              "PreviousTxnID": "AEA0132D06D529EF4AFCB6B56C89A9647A1068D58D3685929F9719D96AF336EA",
+              "PreviousTxnLgrSeq": 13416841
+            },
+            "LedgerEntryType": "HookState",
+            "LedgerIndex": "F44980396F43366DAC4A053A700CD657703E7FF4037B5445EC63CC78F90A21FB"
+          }
+        },
+        {
+          "DeletedNode": {
+            "FinalFields": {
+              "Flags": 0,
+              "HookStateData": "68747470733A2F2F6578616D706C652E636F6D",
+              "HookStateKey": "9B08D3928AA127966111E477B1780DD6C194C5AB1D7BCC262E1A13B4549A2387",
+              "OwnerNode": "2",
+              "PreviousTxnID": "99A9DABFC79517777B74A032055298A129060F718A54195B076CBA63AE397867",
+              "PreviousTxnLgrSeq": 13416806
+            },
+            "LedgerEntryType": "HookState",
+            "LedgerIndex": "FC9CCCBB2062AE44BDE3FCFFE6EE8C533BFD6660FF6738A6FB6C4F3E38A9DC3D"
+          }
+        },
+        {
+          "DeletedNode": {
+            "FinalFields": {
+              "Flags": 0,
+              "HookStateData": "557064617465642062696F",
+              "HookStateKey": "CD9FD14805C5DFCC216929D58BAFFFE6137A9C8FABC743A51A524D8077679A44",
+              "OwnerNode": "2",
+              "PreviousTxnID": "4AC01742707278E71C0F1F64E7D7E13762EE2E486AFBE65D98DC1C13D5BBEC5D",
+              "PreviousTxnLgrSeq": 13416810
+            },
+            "LedgerEntryType": "HookState",
+            "LedgerIndex": "FE561024A625916D39DF17D196A395CB4AFC8B2700D01DE3A600798CC0E78614"
+          }
+        }
+      ],
+      "HookExecutions": [
+        {
+          "HookExecution": {
+            "Flags": 5,
+            "HookAccount": "rw5W1Ljeg7T4JionCu2hKzWeUus7XQ9qs",
+            "HookEmitCount": 0,
+            "HookExecutionIndex": 0,
+            "HookHash": "B78A116E9FED0F6F9532871C53B07E8D1FBB8FAEA0A0ADC2E639638DDD3D089A",
+            "HookInstructionCount": "29",
+            "HookResult": 3,
+            "HookReturnCode": "0",
+            "HookReturnString": "617761697420726573756C7400",
+            "HookStateChangeCount": 0
+          }
+        },
+        {
+          "HookExecution": {
+            "Flags": 0,
+            "HookAccount": "rw5W1Ljeg7T4JionCu2hKzWeUus7XQ9qs",
+            "HookEmitCount": 0,
+            "HookExecutionIndex": 1,
+            "HookHash": "B78A116E9FED0F6F9532871C53B07E8D1FBB8FAEA0A0ADC2E639638DDD3D089A",
+            "HookInstructionCount": "1b50",
+            "HookResult": 3,
+            "HookReturnCode": "0",
+            "HookReturnString": "7472616E7366657272656400",
+            "HookStateChangeCount": 25
+          }
+        }
+      ],
+      "TransactionIndex": 4,
+      "TransactionResult": "tesSUCCESS"
+    },
+    "validated": true
+  },
+  "meta": {
+    "AffectedNodes": [
+      {
+        "DeletedNode": {
+          "FinalFields": {
+            "Flags": 0,
+            "HookStateData": "7765627369746520696E746567726174696F6E",
+            "HookStateKey": "DDE7C01DC0467B78B22B5D8DBF71A87012D2FAA8AB3589C870AA974AD38FBB80",
+            "OwnerNode": "2",
+            "PreviousTxnID": "D95A69DD2239BD07465DC59C934CD3849AC134D816FD3F4F5B7785DAAE9E85DE",
+            "PreviousTxnLgrSeq": 13416812
+          },
+          "LedgerEntryType": "HookState",
+          "LedgerIndex": "2F186EFDD5C676DA7FAA51C4D6CA84B3982F428C604CA58BAF9B4C9DB01BE376"
+        }
+      },
+      {
+        "DeletedNode": {
+          "FinalFields": {
+            "Flags": 0,
+            "HookStateData": "787270646F6D61696E73",
+            "HookStateKey": "F06B49C159AC713B53BB73A85672979A4508D19BF72EA9B8AFB46A430822D26F",
+            "OwnerNode": "2",
+            "PreviousTxnID": "65E4B42B85500CC9A5DF9DE3B7476E3234C4140659ADCDB3AB05272CF94141E2",
+            "PreviousTxnLgrSeq": 13416814
+          },
+          "LedgerEntryType": "HookState",
+          "LedgerIndex": "30AB4EAD8F9007C4EC80557E0147ACF8FBE4E519514EA2886C2DB7225D534665"
+        }
+      },
+      {
+        "ModifiedNode": {
+          "FinalFields": {
+            "Flags": 1,
+            "Issuer": "rw5W1Ljeg7T4JionCu2hKzWeUus7XQ9qs",
+            "Owner": "rHSypss6AqPRFvaocnYz2xnZ7k8TizLg6c",
+            "OwnerNode": "0",
+            "URI": "68747470733A2F2F787270646F6D61696E732E78797A2F6170692F6E6674646F6D61696E732F6D657461646174612F72656C65617365323734303730313336392E786168"
+          },
+          "LedgerEntryType": "URIToken",
+          "LedgerIndex": "369313F9064B3BE0490A2C0C377E2F82593CA0CB135A3F94C91B900C766C4226",
+          "PreviousFields": {
+            "Amount": "0",
+            "Destination": "rHSypss6AqPRFvaocnYz2xnZ7k8TizLg6c",
+            "Owner": "r3ntcoBspgWEUgC1xkyEwLS28zkCeuAFp"
+          },
+          "PreviousTxnID": "0897E54E9896106536F9B61F0160D585FF8CB0D11ED84B950F5B6A0802D341A9",
+          "PreviousTxnLgrSeq": 13416853
+        }
+      },
+      {
+        "DeletedNode": {
+          "FinalFields": {
+            "Flags": 0,
+            "HookStateData": "0100050B53590090003C01F500C300C3000000000000000000000000000000000000000661766174010B646573630F07646973700305656D616905086B6579770D086C6F6361110570686F6E020375726C00FF0000000000070A636F6D2E0E0B636F6E74000000000000000000000000000000000000000000000000",
+            "HookStateKey": "C72161111748476AC9F2EA5C502C0093A58BC168F917C5A73D5E890DD9D4B8EF",
+            "OwnerNode": "2",
+            "PreviousTxnID": "C340AFDC58452865A33A706D125D0E5E45A33FD5223073DE66A40634D42BE829",
+            "PreviousTxnLgrSeq": 13416843
+          },
+          "LedgerEntryType": "HookState",
+          "LedgerIndex": "4237782F081E79C4443C621374EFE02DB4160BC76BC776BBE2249BC993BBB369"
+        }
+      },
+      {
+        "DeletedNode": {
+          "FinalFields": {
+            "Flags": 0,
+            "HookStateData": "410000000000000000000000000000000000000000",
+            "HookStateKey": "EEE9B8193373F37440CA00EB4F15E9D8979409F13A23F51554CFF98120B6C21D",
+            "OwnerNode": "2",
+            "PreviousTxnID": "E4B2F8CBDF79C3F3A135C568DD8C31C189EAE6C6793D6579C12069AF69D07B79",
+            "PreviousTxnLgrSeq": 13416826
+          },
+          "LedgerEntryType": "HookState",
+          "LedgerIndex": "4CD67A31E831E1D6EF654243DD22C10B2D661BC400F39F5356CA91AD45BC6796"
+        }
+      },
+      {
+        "ModifiedNode": {
+          "FinalFields": {
+            "Flags": 0,
+            "HookStateData": "B46B2C4539801F80A12CAEA023C42277A401AB3B0000000000326DCA05000000",
+            "HookStateKey": "51D9926DC102CA23725D4C85F056E253F4CE5BF93F3211EE014578E9984A5DBD",
+            "OwnerNode": "2"
+          },
+          "LedgerEntryType": "HookState",
+          "LedgerIndex": "4F1B60B3AD9447F60E7F2E32B8E548F7E065CD5357D25E3E6D0AE53774DA9B92",
+          "PreviousFields": {
+            "HookStateData": "0156FE6063AA574F001148D2B81374BBD558C3280100000000326DCA05000000"
+          },
+          "PreviousTxnID": "6A9C2C92B1C5ADA70BF327642B05D69AC9518C46A883F36D9854FB9F4D425348",
+          "PreviousTxnLgrSeq": 13416833
+        }
+      },
+      {
+        "ModifiedNode": {
+          "FinalFields": {
+            "Account": "r3ntcoBspgWEUgC1xkyEwLS28zkCeuAFp",
+            "AccountIndex": "83a2",
+            "Balance": "35505617",
+            "Flags": 0,
+            "OwnerCount": 0,
+            "Sequence": 846055923,
+            "TouchCount": "16"
+          },
+          "LedgerEntryType": "AccountRoot",
+          "LedgerIndex": "4FAC1E483A658D55D656BAAB4B7F3BBBAB7E3FC32AA244A606743D05AF36B29B",
+          "PreviousFields": {
+            "OwnerCount": 1,
+            "TouchCount": "15"
+          },
+          "PreviousTxnID": "0897E54E9896106536F9B61F0160D585FF8CB0D11ED84B950F5B6A0802D341A9",
+          "PreviousTxnLgrSeq": 13416853
+        }
+      },
+      {
+        "DeletedNode": {
+          "FinalFields": {
+            "Flags": 0,
+            "HookStateData": "DDE7C01DC0467B78B22B5D8DBF71A87012D2FAA8AB3589C870AA974AD38FBB80637573746F6D2E70726F6A656374",
+            "HookStateKey": "369D974D34E8EBD1B3D237E09B01CB2414A4FA72A2EA237A67163A57CB082EF0",
+            "OwnerNode": "2",
+            "PreviousTxnID": "D95A69DD2239BD07465DC59C934CD3849AC134D816FD3F4F5B7785DAAE9E85DE",
+            "PreviousTxnLgrSeq": 13416812
+          },
+          "LedgerEntryType": "HookState",
+          "LedgerIndex": "5379C25975506D706DF7DEEED4775048F4D9751830EB39E88FD065FAF60044A5"
+        }
+      },
+      {
+        "DeletedNode": {
+          "FinalFields": {
+            "Flags": 0,
+            "HookStateData": "2B3834393031323334353637",
+            "HookStateKey": "845B29751F495D7B25E91BC016C6D2664675F3B5E804A3CF6317C9768719A857",
+            "OwnerNode": "2",
+            "PreviousTxnID": "99A9DABFC79517777B74A032055298A129060F718A54195B076CBA63AE397867",
+            "PreviousTxnLgrSeq": 13416806
+          },
+          "LedgerEntryType": "HookState",
+          "LedgerIndex": "636390875B410EFDC6FE8A23B60F6C8F35D4BADA8A5A7031D67F3360762ADFAB"
+        }
+      },
+      {
+        "DeletedNode": {
+          "FinalFields": {
+            "Flags": 0,
+            "HookStateData": "78616861752C20746573746E6574",
+            "HookStateKey": "325A48A76D72B316A3C2FEAA0276F190AF554E06124A396C3AC9A844D11F34B5",
+            "OwnerNode": "2",
+            "PreviousTxnID": "99A9DABFC79517777B74A032055298A129060F718A54195B076CBA63AE397867",
+            "PreviousTxnLgrSeq": 13416806
+          },
+          "LedgerEntryType": "HookState",
+          "LedgerIndex": "649898F30BA4AAF74F1C2ED46BFA81F3112F1FC6E213E834CC9908408571E39C"
+        }
+      },
+      {
+        "DeletedNode": {
+          "FinalFields": {
+            "Flags": 0,
+            "HookStateData": "314159265DD8DBB310642F98F50C066173C1259B",
+            "HookStateKey": "D6F633F9738BDA4E9C087083AD2E1474E4F8843E3A24141CB87C3CC7C47B4161",
+            "OwnerNode": "2",
+            "PreviousTxnID": "69C379FEB073139FFE552FE1D24E670EC6C404CE06F953A6110EEB3D4C551986",
+            "PreviousTxnLgrSeq": 13416822
+          },
+          "LedgerEntryType": "HookState",
+          "LedgerIndex": "6F666F768F9C3593FBFB33A6871CDC22037007A71B219C961635209DD5300B73"
+        }
+      },
+      {
+        "DeletedNode": {
+          "FinalFields": {
+            "Flags": 0,
+            "HookStateData": "697066733A2F2F62616679626569626A366C6978787A7174736234357973646A6E757076716B75666764767A71626E766D6877326B663763666B6573793772376434",
+            "HookStateKey": "1110F9D9EC06B095B7EC17B0DDB7F375AE88214E494A6DFBAFBD624BF1D4571F",
+            "OwnerNode": "2",
+            "PreviousTxnID": "C340AFDC58452865A33A706D125D0E5E45A33FD5223073DE66A40634D42BE829",
+            "PreviousTxnLgrSeq": 13416843
+          },
+          "LedgerEntryType": "HookState",
+          "LedgerIndex": "71361B717ECA56042EF5CD17886A6FB587033FF0FA3A051F22287FC2E281DC83"
+        }
+      },
+      {
+        "ModifiedNode": {
+          "FinalFields": {
+            "Flags": 0,
+            "Owner": "r3ntcoBspgWEUgC1xkyEwLS28zkCeuAFp",
+            "RootIndex": "73C386322A1BC50D6FD8855DE4A7DB30AAD2AFEE39DB9C1A8815EE1B29F827F5"
+          },
+          "LedgerEntryType": "DirectoryNode",
+          "LedgerIndex": "73C386322A1BC50D6FD8855DE4A7DB30AAD2AFEE39DB9C1A8815EE1B29F827F5",
+          "PreviousTxnID": "33662879DF3903BC8856165B5AC9DE51210763A0B8D35ED21345B2E9C036917F",
+          "PreviousTxnLgrSeq": 13416803
+        }
+      },
+      {
+        "DeletedNode": {
+          "FinalFields": {
+            "Flags": 0,
+            "HookStateData": "68747470733A2F2F6578616D706C652E636F6D2F6176617461722E706E67",
+            "HookStateKey": "13ABB59813AC12A17DFCE7D021DCD4E7ADF65FD6756CD3EE65B943E9A59FA5B2",
+            "OwnerNode": "2",
+            "PreviousTxnID": "99A9DABFC79517777B74A032055298A129060F718A54195B076CBA63AE397867",
+            "PreviousTxnLgrSeq": 13416806
+          },
+          "LedgerEntryType": "HookState",
+          "LedgerIndex": "746F3FD39746A5FFAF286F4F952943F6A14ED540D79037E37F35E41F8770139D"
+        }
+      },
+      {
+        "DeletedNode": {
+          "FinalFields": {
+            "Flags": 0,
+            "HookStateData": "52656C65617365323734303730313336392E786168",
+            "HookStateKey": "FEB8F1D2215C728C4D37DFF9FBF2F15CCC65ECB5BAA53BB17CC3F08BEBFF2EFC",
+            "OwnerNode": "2",
+            "PreviousTxnID": "99A9DABFC79517777B74A032055298A129060F718A54195B076CBA63AE397867",
+            "PreviousTxnLgrSeq": 13416806
+          },
+          "LedgerEntryType": "HookState",
+          "LedgerIndex": "79AECA99F97F083B50AA851EA73154628C83197CC94E66A22426FFE600A3F431"
+        }
+      },
+      {
+        "ModifiedNode": {
+          "FinalFields": {
+            "Account": "rHSypss6AqPRFvaocnYz2xnZ7k8TizLg6c",
+            "AccountIndex": "83a3",
+            "Balance": "29955209",
+            "Flags": 0,
+            "OwnerCount": 1,
+            "Sequence": 846055912,
+            "TouchCount": "4"
+          },
+          "LedgerEntryType": "AccountRoot",
+          "LedgerIndex": "9F237A36FB6E8437C58762B454C8953B63C0A39A24DED935FBF26E5305B85503",
+          "PreviousFields": {
+            "Balance": "30000000",
+            "OwnerCount": 0,
+            "Sequence": 846055911,
+            "TouchCount": "3"
+          },
+          "PreviousTxnID": "0897E54E9896106536F9B61F0160D585FF8CB0D11ED84B950F5B6A0802D341A9",
+          "PreviousTxnLgrSeq": 13416853
+        }
+      },
+      {
+        "ModifiedNode": {
+          "FinalFields": {
+            "Account": "rw5W1Ljeg7T4JionCu2hKzWeUus7XQ9qs",
+            "AccountIndex": "828f",
+            "Balance": "758077546",
+            "Flags": 1107296256,
+            "HookNamespaces": [
+              "843FD169518D98F576681E803EFA541B60437C60B2F4EED2E5A0D17828CCE6D1"
+            ],
+            "HookStateCount": 66,
+            "OwnerCount": 76,
+            "Sequence": 845893811,
+            "TouchCount": "15e"
+          },
+          "LedgerEntryType": "AccountRoot",
+          "LedgerIndex": "AB0D820E0F1E77C5E4D57B39675B1D5CF92D5223A1BDBBC7DCF298296FE987DC",
+          "PreviousFields": {
+            "HookStateCount": 85,
+            "OwnerCount": 95,
+            "TouchCount": "15d"
+          },
+          "PreviousTxnID": "0897E54E9896106536F9B61F0160D585FF8CB0D11ED84B950F5B6A0802D341A9",
+          "PreviousTxnLgrSeq": 13416853
+        }
+      },
+      {
+        "ModifiedNode": {
+          "FinalFields": {
+            "Flags": 0,
+            "IndexNext": "0",
+            "IndexPrevious": "1",
+            "Owner": "rw5W1Ljeg7T4JionCu2hKzWeUus7XQ9qs",
+            "RootIndex": "5A4FA6C33D4D604820F3056952F6A19853CCE998CE1B61DA4B982B243095988D"
+          },
+          "LedgerEntryType": "DirectoryNode",
+          "LedgerIndex": "ACF9434B9D8843CFBA0E8B741C44DB26AE289C475F20F9122F5F1EFACCE488AA",
+          "PreviousTxnID": "C340AFDC58452865A33A706D125D0E5E45A33FD5223073DE66A40634D42BE829",
+          "PreviousTxnLgrSeq": 13416843
+        }
+      },
+      {
+        "DeletedNode": {
+          "FinalFields": {
+            "Flags": 0,
+            "HookStateData": "486F20436869204D696E682043697479",
+            "HookStateKey": "59948491DE624BBF58BDC3125FD5A7C7D9705E717DDA3D0637A18FD27211E828",
+            "OwnerNode": "2",
+            "PreviousTxnID": "99A9DABFC79517777B74A032055298A129060F718A54195B076CBA63AE397867",
+            "PreviousTxnLgrSeq": 13416806
+          },
+          "LedgerEntryType": "HookState",
+          "LedgerIndex": "B23EFA9B24FFC10CB54E014551EBF534A736065129DD4D7ED217D207B937F70F"
+        }
+      },
+      {
+        "DeletedNode": {
+          "FinalFields": {
+            "Flags": 0,
+            "HookStateData": "0000000000000000000000000000000000000000000000000000000000000000",
+            "HookStateKey": "96F1D9E49E755CAAD780C4E075F5624F329DABE2D477418522DC19C0DCBCC35D",
+            "OwnerNode": "2",
+            "PreviousTxnID": "8F5DC409CBF4D2AD440AF82CB15F4D1B51B17C63001991A69732A8C5C49A9CD0",
+            "PreviousTxnLgrSeq": 13416824
+          },
+          "LedgerEntryType": "HookState",
+          "LedgerIndex": "B2D5AC1979AD970F8B8539F97C0E7212B3424F09E2EDCBF8EC4BE13AB13F3D0A"
+        }
+      },
+      {
+        "CreatedNode": {
+          "LedgerEntryType": "DirectoryNode",
+          "LedgerIndex": "BAAC723A4B551577E8FD738B0477DA414CA3ECAD140658B18A18036060E3F359",
+          "NewFields": {
+            "Owner": "rHSypss6AqPRFvaocnYz2xnZ7k8TizLg6c",
+            "RootIndex": "BAAC723A4B551577E8FD738B0477DA414CA3ECAD140658B18A18036060E3F359"
+          }
+        }
+      },
+      {
+        "DeletedNode": {
+          "FinalFields": {
+            "Flags": 0,
+            "HookStateData": "51D9926DC102CA23725D4C85F056E253F4CE5BF93F3211EE014578E9984A5DBD",
+            "HookStateKey": "386A1329A1DD791DF2F976F87B26A9B068EAE1DB698AE428546DE1A5D9F9F3F5",
+            "OwnerNode": "2",
+            "PreviousTxnID": "6A9C2C92B1C5ADA70BF327642B05D69AC9518C46A883F36D9854FB9F4D425348",
+            "PreviousTxnLgrSeq": 13416833
+          },
+          "LedgerEntryType": "HookState",
+          "LedgerIndex": "BBC010EDB47CCB756AD8827047BE003B58E57A66010777366E84E4822B0E742F"
+        }
+      },
+      {
+        "DeletedNode": {
+          "FinalFields": {
+            "Flags": 0,
+            "HookStateData": "00B46B2C4539801F80A12CAEA023C42277A401AB3B",
+            "HookStateKey": "4DB9749AA9D536453F527DEA558C172B17FFF4B82E9FB2B711BEF464BC310ED5",
+            "OwnerNode": "2",
+            "PreviousTxnID": "687A3CCC94CEC5903DC967D1C184646BD88665239E35303BA44783BC6D9A73BE",
+            "PreviousTxnLgrSeq": 13416818
+          },
+          "LedgerEntryType": "HookState",
+          "LedgerIndex": "CDA539F58C4AFA4CBCF5A6025FB17FB0D65EF5176E381174DC49BE751ECA2159"
+        }
+      },
+      {
+        "DeletedNode": {
+          "FinalFields": {
+            "Flags": 0,
+            "HookStateData": "6F776E6572406578616D706C652E636F6D",
+            "HookStateKey": "86D28274CDC2E140C53B8B5FD15B72AD8099ECC4B6676924BEDC311DDFD01F83",
+            "OwnerNode": "2",
+            "PreviousTxnID": "99A9DABFC79517777B74A032055298A129060F718A54195B076CBA63AE397867",
+            "PreviousTxnLgrSeq": 13416806
+          },
+          "LedgerEntryType": "HookState",
+          "LedgerIndex": "F06C4BB7E82D2158F620D8C47FF315D913B08BA728D69CEC38FA94592BA18983"
+        }
+      },
+      {
+        "DeletedNode": {
+          "FinalFields": {
+            "Flags": 0,
+            "HookStateData": "000156FE6063AA574F001148D2B81374BBD558C328",
+            "HookStateKey": "AF50375D6CAF1954BC04731878C246D17AD9939FC1D813D2F7EAEEBF4EE6B29A",
+            "OwnerNode": "2",
+            "PreviousTxnID": "AEA0132D06D529EF4AFCB6B56C89A9647A1068D58D3685929F9719D96AF336EA",
+            "PreviousTxnLgrSeq": 13416841
+          },
+          "LedgerEntryType": "HookState",
+          "LedgerIndex": "F44980396F43366DAC4A053A700CD657703E7FF4037B5445EC63CC78F90A21FB"
+        }
+      },
+      {
+        "DeletedNode": {
+          "FinalFields": {
+            "Flags": 0,
+            "HookStateData": "68747470733A2F2F6578616D706C652E636F6D",
+            "HookStateKey": "9B08D3928AA127966111E477B1780DD6C194C5AB1D7BCC262E1A13B4549A2387",
+            "OwnerNode": "2",
+            "PreviousTxnID": "99A9DABFC79517777B74A032055298A129060F718A54195B076CBA63AE397867",
+            "PreviousTxnLgrSeq": 13416806
+          },
+          "LedgerEntryType": "HookState",
+          "LedgerIndex": "FC9CCCBB2062AE44BDE3FCFFE6EE8C533BFD6660FF6738A6FB6C4F3E38A9DC3D"
+        }
+      },
+      {
+        "DeletedNode": {
+          "FinalFields": {
+            "Flags": 0,
+            "HookStateData": "557064617465642062696F",
+            "HookStateKey": "CD9FD14805C5DFCC216929D58BAFFFE6137A9C8FABC743A51A524D8077679A44",
+            "OwnerNode": "2",
+            "PreviousTxnID": "4AC01742707278E71C0F1F64E7D7E13762EE2E486AFBE65D98DC1C13D5BBEC5D",
+            "PreviousTxnLgrSeq": 13416810
+          },
+          "LedgerEntryType": "HookState",
+          "LedgerIndex": "FE561024A625916D39DF17D196A395CB4AFC8B2700D01DE3A600798CC0E78614"
+        }
+      }
+    ],
+    "HookExecutions": [
+      {
+        "HookExecution": {
+          "Flags": 5,
+          "HookAccount": "rw5W1Ljeg7T4JionCu2hKzWeUus7XQ9qs",
+          "HookEmitCount": 0,
+          "HookExecutionIndex": 0,
+          "HookHash": "B78A116E9FED0F6F9532871C53B07E8D1FBB8FAEA0A0ADC2E639638DDD3D089A",
+          "HookInstructionCount": "29",
+          "HookResult": 3,
+          "HookReturnCode": "0",
+          "HookReturnString": "617761697420726573756C7400",
+          "HookStateChangeCount": 0
+        }
+      },
+      {
+        "HookExecution": {
+          "Flags": 0,
+          "HookAccount": "rw5W1Ljeg7T4JionCu2hKzWeUus7XQ9qs",
+          "HookEmitCount": 0,
+          "HookExecutionIndex": 1,
+          "HookHash": "B78A116E9FED0F6F9532871C53B07E8D1FBB8FAEA0A0ADC2E639638DDD3D089A",
+          "HookInstructionCount": "1b50",
+          "HookResult": 3,
+          "HookReturnCode": "0",
+          "HookReturnString": "7472616E7366657272656400",
+          "HookStateChangeCount": 25
+        }
+      }
+    ],
+    "TransactionIndex": 4,
+    "TransactionResult": "tesSUCCESS"
+  }
+}

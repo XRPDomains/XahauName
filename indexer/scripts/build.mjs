@@ -1,0 +1,10 @@
+import {createRequire} from 'node:module';
+import {fileURLToPath} from 'node:url';
+import {dirname, join} from 'node:path';
+import {spawnSync} from 'node:child_process';
+import {writeFileSync} from 'node:fs';
+const require = createRequire(import.meta.url), root = join(dirname(fileURLToPath(import.meta.url)), '..');
+const result = spawnSync(process.execPath, [require.resolve('typescript/bin/tsc'), '-p', join(root, 'tsconfig.json')], {stdio: 'inherit'});
+if (result.status !== 0) process.exit(result.status ?? 1);
+const names = Object.keys(require(join(root, 'dist/index.js')));
+writeFileSync(join(root, 'dist/index.mjs'), "import api from './index.js';\n" + names.map(n => `export const ${n} = api.${n};`).join('\n') + '\n');

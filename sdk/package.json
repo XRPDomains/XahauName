@@ -1,0 +1,59 @@
+{
+  "name": "@xahauname/sdk",
+  "version": "0.3.0",
+  "description": "Native-v2 XahauName client with URIToken registration, claims and direct ledger resolution",
+  "keywords": [
+    "xahau",
+    "xrpl",
+    "name-service",
+    "ens",
+    "hooks",
+    "uritoken",
+    "domain"
+  ],
+  "license": "MIT",
+  "author": "Redstone (XRPDomains)",
+  "homepage": "https://github.com/XRPDomains/XahauName",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/XRPDomains/XahauName.git",
+    "directory": "sdk"
+  },
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "PACKAGE.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node scripts/test.mjs",
+    "lint": "tsc --noEmit",
+    "test:testnet": "node scripts/test.mjs --testnet"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.5.0"
+  },
+  "dependencies": {
+    "@ensdomains/address-encoder": "^1.1.4",
+    "@noble/hashes": "^1.8.0",
+    "multiformats": "9.9.0",
+    "xahau": "4.2.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

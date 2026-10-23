@@ -1,0 +1,8 @@
+import {setDefaultResultOrder} from 'node:dns';
+setDefaultResultOrder('ipv4first');
+import fs from 'node:fs';import path from 'node:path';import crypto from 'node:crypto';import os from 'node:os';import {fileURLToPath} from 'node:url';import {spawnSync} from 'node:child_process';
+const repo=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..'),manifest=JSON.parse(fs.readFileSync(path.join(repo,'hook/toolchain/guard-sources.json'))),dest=process.env.GUARD_SOURCE_DIR??path.join(os.tmpdir(),'xahauname-hooks-toolchain/guard');fs.mkdirSync(dest,{recursive:true});
+for(const row of manifest.files){const existing=path.join(dest,row.file);if(fs.existsSync(existing)&&crypto.createHash('sha256').update(fs.readFileSync(existing)).digest('hex')===row.sha256)continue;const url='https://raw.githubusercontent.com/Xahau/xahaud/'+manifest.revision+'/'+manifest.path+'/'+row.file;const r=await fetch(url);if(!r.ok)throw new Error('Cannot download '+row.file);const b=Buffer.from(await r.arrayBuffer());if(crypto.createHash('sha256').update(b).digest('hex')!==row.sha256)throw new Error('Checker source checksum mismatch');fs.writeFileSync(path.join(dest,row.file),b);}
+const wsl=p=>'/mnt/'+p[0].toLowerCase()+'/'+p.slice(3).replaceAll('\\','/');
+const args=['guard_checker.cpp','--std=c++17','-O2','-o','guard_checker'];
+const r=process.platform==='win32'?spawnSync('wsl',['-d','Ubuntu','--cd',wsl(dest),'--','g++',...args],{stdio:'inherit'}):spawnSync('g++',args,{cwd:dest,stdio:'inherit'});if(r.status!==0)process.exit(r.status??1);console.log('Guard checker ready: '+path.join(dest,'guard_checker'));

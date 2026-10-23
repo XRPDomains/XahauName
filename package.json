@@ -1,0 +1,25 @@
+{
+  "name": "xahau-name",
+  "version": "0.3.0",
+  "private": true,
+  "description": "Native name service on Xahau",
+  "license": "MIT",
+  "homepage": "https://github.com/XRPDomains/XahauName",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/XRPDomains/XahauName.git"
+  },
+  "scripts": {
+    "hook:build": "node scripts/build-hooks.mjs",
+    "hook:test": "node scripts/test-hooks.mjs",
+    "hook:check-deploy": "node hook/test/deployment.cjs",
+    "sdk:build": "npm --prefix sdk run build",
+    "sdk:test": "npm --prefix sdk test",
+    "indexer:build": "npm --prefix indexer run build",
+    "indexer:test": "npm --prefix indexer test",
+    "indexer:start": "npm --prefix indexer start",
+    "app:dev": "npm --prefix test-app run dev",
+    "app:test": "npm --prefix test-app test",
+    "check": "node scripts/check-repository.mjs"
+  }
+}

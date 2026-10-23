@@ -1,0 +1,37 @@
+name: CI
+on: [push, pull_request]
+jobs:
+  clients:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --prefix sdk
+      - run: npm ci --prefix test-app
+      - run: npm ci --prefix indexer
+      - run: npm run sdk:test
+      - run: npm --prefix sdk run lint
+      - run: npm run indexer:test
+      - run: npm run app:test
+      - run: node test-app/node_modules/typescript/bin/tsc --noEmit -p test-app/tsconfig.json
+      - run: npm run check
+  hooks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --prefix sdk
+      - run: docker build -t xahauname-hook-toolchain:cli-3.0.0 hook/toolchain
+      - run: node scripts/setup-guard.mjs
+      - run: npm run hook:build
+      - run: npm run hook:test
+      - run: npm run hook:check-deploy
+      - uses: actions/upload-artifact@v4
+        with:
+          name: testnet-hook-artifacts
+          path: hook/build/current/
+          retention-days: 7

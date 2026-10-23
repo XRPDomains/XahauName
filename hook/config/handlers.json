@@ -1,0 +1,12 @@
+[
+  "issuance",
+  "set-address",
+  "authorization",
+  "set-text",
+  "clear-text",
+  "control",
+  "admin",
+  "claim",
+  "burn",
+  "profile"
+]

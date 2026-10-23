@@ -1,0 +1,2 @@
+import {spawnSync} from 'node:child_process';import {fileURLToPath} from 'node:url';import {dirname,join} from 'node:path';
+const root=join(dirname(fileURLToPath(import.meta.url)),'..');const steps=process.argv.includes('--testnet')?[['scripts/build.mjs'],['test/testnet.cjs']]:[['scripts/build.mjs'],['test/run-keys.cjs'],['--test','test/v2.test.cjs','test/networks.test.cjs']];for(const args of steps){const r=spawnSync(process.execPath,args,{cwd:root,stdio:'inherit'});if(r.status!==0)process.exit(r.status??1);}

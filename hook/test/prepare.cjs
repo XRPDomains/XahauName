@@ -1,0 +1,5 @@
+const fs=require('fs');const root=require('node:path').resolve(__dirname,'../build/current');function leb(n){const a=[];do{let b=n&127;n>>>=7;if(n)b|=128;a.push(b);}while(n);return Buffer.from(a);}function read(b,p){let n=0,s=0,v;do{v=b[p++];n+=(v&127)*2**s;s+=7;}while(v&128);return[n,p];}function memoryExport(b){let p=8;const out=[b.subarray(0,8)];while(p<b.length){const type=b[p++];let n;[n,p]=read(b,p);let payload=b.subarray(p,p+n);p+=n;if(type===7){let q,count;[count,q]=read(payload,0);payload=Buffer.concat([leb(count+1),payload.subarray(q),Buffer.from([6]),Buffer.from('memory'),Buffer.from([2,0])]);}out.push(Buffer.from([type]),leb(payload.length),payload);}return Buffer.concat(out);}
+const runtime=fs.readFileSync(__dirname+'/runtime.cjs','utf8');
+for(const kind of JSON.parse(fs.readFileSync(require('node:path').resolve(__dirname,'../config/handlers.json')))){
+ const dir=root+'/'+kind;fs.writeFileSync(dir+'/probe.wasm',memoryExport(fs.readFileSync(dir+'/xahau-name-hook.cleaned.wasm')));fs.writeFileSync(dir+'/runtime.cjs',runtime);
+}

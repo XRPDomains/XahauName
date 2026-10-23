@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Generated artifacts and local evidence
+build/
+dist/
+release/
+coverage/
+playwright-report/
+test-results/
+*.wasm
+*.wasm.hex
+*.log
+*.zip
+indexer/data/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.before.*.bak
+
+# Private environment and signing material
+.env*
+!.env.example
+*.seed
+*.secret
+*.pem
+*.key
+
+# Editors and operating system
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db

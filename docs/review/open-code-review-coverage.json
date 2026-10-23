@@ -1,0 +1,1121 @@
+{
+  "schemaVersion": 1,
+  "tool": "Open Code Review delegate",
+  "reviewSnapshot": "575786aaa91f071ea454d0abfe15bf9aebfd7fb8",
+  "total_files": 180,
+  "reviewed_files": 118,
+  "skipped_files": [],
+  "coverage_rate": 1,
+  "selectionExcluded": [
+    {
+      "path": ".github/ISSUE_TEMPLATE/bug.md",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/feature.md",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": ".github/PULL_REQUEST_TEMPLATE.md",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "README.md",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "docs/API.md",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "docs/HOOK-FUNCTIONS.md",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "docs/NETWORKS.md",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "docs/README.md",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "docs/SPEC.md",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "docs/WALLET-INTEGRATION.md",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "docs/review/ERROR-UX.md",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "docs/review/EVENTS-AND-INDEXING.md",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "docs/review/FINDINGS.md",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "docs/review/INDEXER.md",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "docs/review/README.md",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "docs/review/TEST-MATRIX.md",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "docs/review/releases/0.3.0.md",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "docs/standards/README.md",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "docs/standards/TEMPLATE.md",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "docs/standards/xnip-0000-process.md",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "docs/standards/xnip-0001-names.md",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "docs/standards/xnip-0002-records.md",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "docs/standards/xnip-0003-addresses.md",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "docs/standards/xnip-0004-primary.md",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "docs/standards/xnip-0005-avatar.md",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "hook/DEPLOY-TESTNET.md",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "hook/README.md",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "hook/deploy/.env.example",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "hook/toolchain/package-lock.json",
+      "reason": "default_path"
+    },
+    {
+      "path": "indexer/.env.example",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "indexer/README.md",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "indexer/package-lock.json",
+      "reason": "default_path"
+    },
+    {
+      "path": "indexer/test/fixtures/profile.json",
+      "reason": "default_path"
+    },
+    {
+      "path": "indexer/test/fixtures/transfer.json",
+      "reason": "default_path"
+    },
+    {
+      "path": "sdk/CHANGELOG.md",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "sdk/PACKAGE.md",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "sdk/README.md",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "sdk/package-lock.json",
+      "reason": "default_path"
+    },
+    {
+      "path": "sdk/test/keys.test.ts",
+      "reason": "default_path"
+    },
+    {
+      "path": "test-app/.env.example",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "test-app/DEPLOY.md",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "test-app/README.md",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "test-app/package-lock.json",
+      "reason": "default_path"
+    },
+    {
+      "path": "test-app/public/web.config",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "test-app/src/icons/LICENSE.txt",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "test-app/src/icons/README.md",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "test-app/src/icons/btc.svg",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "test-app/src/icons/eth.svg",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "test-app/src/icons/sol.svg",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "test-app/src/icons/trx.svg",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "test-app/src/icons/xrp.svg",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "test-app/tests/balance-domain.test.ts",
+      "reason": "default_path"
+    },
+    {
+      "path": "test-app/tests/content-media.test.ts",
+      "reason": "default_path"
+    },
+    {
+      "path": "test-app/tests/diagnostics.test.ts",
+      "reason": "default_path"
+    },
+    {
+      "path": "test-app/tests/domain-manager.test.ts",
+      "reason": "default_path"
+    },
+    {
+      "path": "test-app/tests/ens-standards.test.ts",
+      "reason": "default_path"
+    },
+    {
+      "path": "test-app/tests/incoming.test.ts",
+      "reason": "default_path"
+    },
+    {
+      "path": "test-app/tests/primary-standard.test.ts",
+      "reason": "default_path"
+    },
+    {
+      "path": "test-app/tests/profile-batch.test.ts",
+      "reason": "default_path"
+    },
+    {
+      "path": "test-app/tests/sdk-management.test.ts",
+      "reason": "default_path"
+    },
+    {
+      "path": "test-app/tests/wallet-signer.test.ts",
+      "reason": "default_path"
+    }
+  ],
+  "checklist": [
+    {
+      "path": ".gitattributes",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 1,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 2,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": ".gitignore",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 1,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "LICENSE",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 1,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "deployments/testnet-validation.json",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 3,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "deployments/testnet.json",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 3,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "hook/.gitignore",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 1,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "hook/build.ps1",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 4,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "hook/build.sh",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 1,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "hook/config/handlers.json",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 3,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "hook/deploy/masks.cjs",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "hook/deploy/testnet.cjs",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "hook/src/common.h",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 1,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "hook/src/handlers/admin.c",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 6,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "hook/src/handlers/authorization.c",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 6,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "hook/src/handlers/burn.c",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 6,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "hook/src/handlers/claim.c",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 6,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "hook/src/handlers/clear-text.c",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 6,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "hook/src/handlers/control.c",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 6,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "hook/src/handlers/issuance.c",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 6,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "hook/src/handlers/profile.c",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 6,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "hook/src/handlers/set-address.c",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 6,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "hook/src/handlers/set-text.c",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 6,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "hook/test/deployment.cjs",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Test contract/fixture inspection and applicable suite execution; live-write scripts inspected without submission"
+    },
+    {
+      "path": "hook/test/lifecycle.cjs",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Test contract/fixture inspection and applicable suite execution; live-write scripts inspected without submission"
+    },
+    {
+      "path": "hook/test/policy.cjs",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Test contract/fixture inspection and applicable suite execution; live-write scripts inspected without submission"
+    },
+    {
+      "path": "hook/test/prepare.cjs",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Test contract/fixture inspection and applicable suite execution; live-write scripts inspected without submission"
+    },
+    {
+      "path": "hook/test/profile-batch.cjs",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Test contract/fixture inspection and applicable suite execution; live-write scripts inspected without submission"
+    },
+    {
+      "path": "hook/test/runtime.cjs",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Test contract/fixture inspection and applicable suite execution; live-write scripts inspected without submission"
+    },
+    {
+      "path": "hook/test/validation.cjs",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Test contract/fixture inspection and applicable suite execution; live-write scripts inspected without submission"
+    },
+    {
+      "path": "hook/toolchain/.dockerignore",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 1,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "hook/toolchain/Dockerfile",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 1,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "hook/toolchain/compile-hook.mjs",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "hook/toolchain/configure-compiler.mjs",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "hook/toolchain/guard-sources.json",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 3,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "hook/toolchain/package.json",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 7,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "indexer/LICENSE",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 1,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "indexer/examples/server.cjs",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "indexer/package.json",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 7,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "indexer/scripts/build.mjs",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "indexer/src/decoder.ts",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "indexer/src/index.ts",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "indexer/src/projection.ts",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "indexer/src/source.ts",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "indexer/src/storage.ts",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "indexer/src/types.ts",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "indexer/test/capture-fixtures.cjs",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Test contract/fixture inspection and applicable suite execution; live-write scripts inspected without submission"
+    },
+    {
+      "path": "indexer/test/evidence.test.cjs",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Test contract/fixture inspection and applicable suite execution; live-write scripts inspected without submission"
+    },
+    {
+      "path": "indexer/test/fixtures.cjs",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Test contract/fixture inspection and applicable suite execution; live-write scripts inspected without submission"
+    },
+    {
+      "path": "indexer/test/indexer.test.cjs",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Test contract/fixture inspection and applicable suite execution; live-write scripts inspected without submission"
+    },
+    {
+      "path": "indexer/test/server.test.cjs",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Test contract/fixture inspection and applicable suite execution; live-write scripts inspected without submission"
+    },
+    {
+      "path": "indexer/test/source.test.cjs",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Test contract/fixture inspection and applicable suite execution; live-write scripts inspected without submission"
+    },
+    {
+      "path": "indexer/test/testnet.cjs",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Test contract/fixture inspection and applicable suite execution; live-write scripts inspected without submission"
+    },
+    {
+      "path": "indexer/tsconfig.json",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 3,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "package.json",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 7,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "scripts/build-hooks.mjs",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "scripts/check-repository.mjs",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "scripts/setup-guard.mjs",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "scripts/test-hooks.mjs",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "sdk/LICENSE",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 1,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "sdk/package.json",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 7,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "sdk/scripts/build.mjs",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "sdk/scripts/test.mjs",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "sdk/src/addresses.ts",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "sdk/src/confirmation.ts",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "sdk/src/constants.ts",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "sdk/src/content.ts",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "sdk/src/context.ts",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "sdk/src/controller.ts",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "sdk/src/deployments.ts",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "sdk/src/diagnostics.ts",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "sdk/src/errors.ts",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "sdk/src/identity.ts",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "sdk/src/index.ts",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "sdk/src/indexer.ts",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "sdk/src/metadata.ts",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "sdk/src/networks.ts",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "sdk/src/protocol.ts",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "sdk/src/purchase.ts",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "sdk/src/receipts.ts",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "sdk/src/registrar.ts",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "sdk/src/resolver.ts",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "sdk/src/text-records.ts",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "sdk/src/treasury.ts",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "sdk/src/types.ts",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "sdk/src/util.ts",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "sdk/src/wallet-kit.ts",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "sdk/test/live.cjs",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Test contract/fixture inspection and applicable suite execution; live-write scripts inspected without submission"
+    },
+    {
+      "path": "sdk/test/networks.test.cjs",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Test contract/fixture inspection and applicable suite execution; live-write scripts inspected without submission"
+    },
+    {
+      "path": "sdk/test/run-keys.cjs",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Test contract/fixture inspection and applicable suite execution; live-write scripts inspected without submission"
+    },
+    {
+      "path": "sdk/test/testnet.cjs",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Test contract/fixture inspection and applicable suite execution; live-write scripts inspected without submission"
+    },
+    {
+      "path": "sdk/test/v2.test.cjs",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Test contract/fixture inspection and applicable suite execution; live-write scripts inspected without submission"
+    },
+    {
+      "path": "sdk/test/verify-failures.cjs",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Test contract/fixture inspection and applicable suite execution; live-write scripts inspected without submission"
+    },
+    {
+      "path": "sdk/test/verify-release.cjs",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Test contract/fixture inspection and applicable suite execution; live-write scripts inspected without submission"
+    },
+    {
+      "path": "sdk/test/verify-streams.cjs",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Test contract/fixture inspection and applicable suite execution; live-write scripts inspected without submission"
+    },
+    {
+      "path": "sdk/tsconfig.json",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 3,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "test-app/index.html",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 1,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "test-app/package.json",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 7,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "test-app/scripts/build.mjs",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "test-app/scripts/package.ps1",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 4,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "test-app/src/app.ts",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "test-app/src/config.ts",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "test-app/src/domain-input.ts",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "test-app/src/main.ts",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "test-app/src/metadata.ts",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "test-app/src/network-icons.ts",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "test-app/src/purchase.ts",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "test-app/src/records.ts",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "test-app/src/styles.css",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 1,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "test-app/src/views.ts",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "test-app/src/wallet-balance.ts",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "test-app/src/wallet-signer.ts",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "test-app/tests/browser-smoke.cjs",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Test contract/fixture inspection and applicable suite execution; live-write scripts inspected without submission"
+    },
+    {
+      "path": "test-app/tests/incoming-browser.cjs",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Test contract/fixture inspection and applicable suite execution; live-write scripts inspected without submission"
+    },
+    {
+      "path": "test-app/tests/static-subpath.cjs",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Test contract/fixture inspection and applicable suite execution; live-write scripts inspected without submission"
+    },
+    {
+      "path": "test-app/tests/wallet-balance-fixture.ts",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Test contract/fixture inspection and applicable suite execution; live-write scripts inspected without submission"
+    },
+    {
+      "path": "test-app/tsconfig.json",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 3,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    },
+    {
+      "path": "test-app/vite.config.ts",
+      "status": "added",
+      "reviewStatus": "reviewed",
+      "ruleGroup": 5,
+      "method": "Code/configuration inspection, cross-module contracts and applicable static/model checks"
+    }
+  ],
+  "findings": [
+    {
+      "path": "hook/src/handlers/claim.c",
+      "start_line": 108,
+      "end_line": 108,
+      "severity": "high",
+      "category": "bug",
+      "content": "Weak claim/burn finalization cannot roll back an applied native transaction; existing F-01 recovery gate remains open."
+    },
+    {
+      "path": "indexer/src/projection.ts",
+      "start_line": 70,
+      "end_line": 78,
+      "severity": "high",
+      "category": "bug",
+      "content": "Existing root plus leftover pending is returned as claimed after bootstrap; SDK reports recoveryRequired for the same snapshot."
+    },
+    {
+      "path": "sdk/src/wallet-kit.ts",
+      "start_line": 35,
+      "end_line": 35,
+      "severity": "medium",
+      "category": "security",
+      "content": "maxFeeDrops checks only an input Fee; wallet-filled over-limit fees are accepted when Fee was omitted."
+    },
+    {
+      "path": "sdk/src/diagnostics.ts",
+      "start_line": 44,
+      "end_line": 48,
+      "severity": "medium",
+      "category": "bug",
+      "content": "Mainnet-configured clients still receive testnet-only funding and wallet instructions."
+    }
+  ]
+}
