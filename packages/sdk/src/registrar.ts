@@ -6,7 +6,11 @@ import type { ClientContext } from './context';
 import type { BuyArgs, RegisterArgs, PriceTable, ReadOptions, WaitOptions, RegistrationStatus } from './types';
 import { fetchMetadata, metadataURL } from './metadata';
 import { XahauNameError, isTransientRpcError } from './errors';
+import {beforeDeadline,positiveMilliseconds} from './deadline';
+import {mapReads,snapshotContext} from './read-snapshot';
+import {STATE_LAYOUTS} from './state-layouts.generated';
 export class RegistrarModule {
+    private incomingHistory=new Map<string,{max:number;min:number;hash:string;bytes:number;offers:import('./types').IncomingDomain[]}>();
     constructor(private ctx: ClientContext) {
     }
     async getPricing(options?: ReadOptions): Promise<PriceTable | null> {
@@ -115,10 +119,10 @@ export class RegistrarModule {
         }
         const status: RegistrationStatus = { domain: name, uritokenId: id, stage: 'available', ledgerHash: opts.ledgerHash };
         if (pending) {
-            if (pending.length !== 32)
+            if (pending.length !== STATE_LAYOUTS.pending.length)
                 throw new XahauNameError('Invalid pending record', 'BAD_STATE');
-            status.recipient = encodeAccountID(pending.subarray(0, 20));
-            status.amountDrops = pending.readBigUInt64BE(20);
+            status.recipient = encodeAccountID(pending.subarray(STATE_LAYOUTS.pending.destination, STATE_LAYOUTS.pending.amountDrops));
+            status.amountDrops = pending.readBigUInt64BE(STATE_LAYOUTS.pending.amountDrops);
         }
         if (token) {
             status.tokenOwner = token.Owner;
@@ -171,8 +175,7 @@ export class RegistrarModule {
     }
     private async wait(domain: string, stage: 'awaitingClaim' | 'claimed', options: WaitOptions): Promise<RegistrationStatus> {
         const timeout = options.timeoutMs ?? 60000, interval = options.pollIntervalMs ?? 1000;
-        if (!Number.isFinite(timeout) || timeout <= 0 || !Number.isFinite(interval) || interval <= 0)
-            invalid('Invalid polling timeout/interval');
+        positiveMilliseconds(timeout,'polling timeout');positiveMilliseconds(interval,'polling interval');
         const deadline = Date.now() + timeout;
         let completedLedger:string|undefined,lastState:RegistrationStatus|undefined;
         while (true) {
@@ -180,12 +183,12 @@ export class RegistrarModule {
                 throw new XahauNameError('Polling aborted', 'ABORTED');
             let state=lastState;
             try{
-                const ledgerHash=await this.ctx.ledgerHash();
+                const ledgerHash=await beforeDeadline(()=>this.ctx.ledgerHash(),deadline,options.signal);
                 if(options.signal?.aborted)throw new XahauNameError('Polling aborted','ABORTED');
                 // A validated ledger is immutable. Do not reread every lifecycle
                 // key until its hash changes; failed reads are still retried.
                 if(ledgerHash!==completedLedger){
-                    state=await this.getRegistrationStatus(domain,{ledgerHash});
+                    state=await beforeDeadline(()=>this.getRegistrationStatus(domain,{ledgerHash}),deadline,options.signal);
                     completedLedger=ledgerHash;lastState=state;
                 }
             }catch(error){if(!isTransientRpcError(error))throw error;}
@@ -236,18 +239,25 @@ export class RegistrarModule {
         decodeAccountID(address);
         options.signal?.throwIfAborted();
         const opts = {...options, bypassCache:true, ledgerHash:options.ledgerHash ?? await this.ctx.ledgerHash()};
-        const ledger = await this.ctx.request({command:'ledger',ledger_hash:opts.ledgerHash,transactions:false,expand:false});
+        const cached=this.incomingHistory.get(address);
+        if(cached?.hash===opts.ledgerHash)return {offers:structuredClone(cached.offers),ledgerHash:opts.ledgerHash,historyMinLedger:cached.min};
+        const ctx=snapshotContext(this.ctx,opts.ledgerHash),registrar=new RegistrarModule(ctx);
+        const ledger = await ctx.request({command:'ledger',ledger_hash:opts.ledgerHash,transactions:false,expand:false});
         const max = Number(ledger.ledger_index ?? ledger.ledger?.ledger_index);
         if (!Number.isSafeInteger(max) || max < 1) throw new XahauNameError('Invalid validated ledger index','BAD_RESPONSE');
-        const ids = new Set<string>(), markers = new Set<string>();
-        let marker: unknown, historyMinLedger = 0;
-        for (let page=0; ; page++) {
+        if(cached?.max===max)throw new XahauNameError('Validated history checkpoint changed','BAD_RESPONSE');
+        const previous=cached&&cached.max<max?cached:undefined;
+        const ids = new Set<string>(previous?.offers.map(offer=>offer.uritokenId)), markers = new Set<string>();
+        let marker: unknown, historyMinLedger = previous?.min??0;
+        for (let page=0; !previous || previous.max<max; page++) {
             options.signal?.throwIfAborted();
             if(page>=100) throw new XahauNameError('Incoming offer history exceeds pagination limit','HISTORY_LIMIT');
-            const result = await this.ctx.request({command:'account_tx',account:address,ledger_index_min:-1,ledger_index_max:max,binary:false,forward:false,limit:200,...(marker?{marker}:{})});
+            const result = await ctx.request({command:'account_tx',account:address,ledger_index_min:previous?previous.max+1:-1,ledger_index_max:max,binary:false,forward:false,limit:200,...(marker?{marker}:{})});
             options.signal?.throwIfAborted();
             if(!Array.isArray(result.transactions)) throw new XahauNameError('Invalid account history response','BAD_RESPONSE');
-            historyMinLedger = Math.max(historyMinLedger, Number(result.ledger_index_min)||0);
+            if(previous&&Number(result.ledger_index_min)>previous.max+1)throw new XahauNameError('Incoming offer history has a gap; use an archival RPC or indexer','HISTORY_LIMIT');
+            if(result.ledger_index_max!==undefined&&Number(result.ledger_index_max)<max)throw new XahauNameError('Incoming offer history is not complete through the requested ledger','HISTORY_LIMIT');
+            if(!previous)historyMinLedger = Math.max(historyMinLedger, Number(result.ledger_index_min)||0);
             for(const item of result.transactions) {
                 if(item.validated !== true) continue;
                 const tx=item.tx_json ?? item.tx ?? {}, meta=item.meta;
@@ -258,6 +268,7 @@ export class RegistrarModule {
                     if(n?.LedgerEntryType==='URIToken' && fields?.Destination===address && typeof n.LedgerIndex==='string' && /^[a-f0-9]{64}$/i.test(n.LedgerIndex))ids.add(n.LedgerIndex.toUpperCase());
                 }
             }
+            if(ids.size>20000)throw new XahauNameError('Incoming offer discovery exceeds the supported size; use an indexer','HISTORY_LIMIT');
             marker=result.marker;
             if(!marker)break;
             const key=JSON.stringify(marker);
@@ -265,17 +276,25 @@ export class RegistrarModule {
             markers.add(key);
         }
         const offers:import('./types').IncomingDomain[]=[];
-        for(const id of ids) {
+        await mapReads([...ids],async id=>{
             options.signal?.throwIfAborted();
-            const token=await this.ctx.ledgerObject(id,opts);
-            if(!token || token.Issuer!==this.ctx.treasury || token.Destination!==address || token.Amount!=='0' || token.Owner===address)continue;
-            const domain=await domainOfToken(this.ctx,{...token,index:id},opts);
-            if(!domain)continue;
-            const state=await this.getRegistrationStatus(domain,opts);
+            const token=await ctx.ledgerObject(id,opts);
+            if(!token || token.Issuer!==this.ctx.treasury || token.Destination!==address || token.Amount!=='0' || token.Owner===address)return;
+            const domain=await domainOfToken(ctx,{...token,index:id},opts);
+            if(!domain)return;
+            const state=await registrar.getRegistrationStatus(domain,opts);
             const kind=state.stage==='awaitingClaim' && state.recipient===address ? 'registration' : state.stage==='claimed' && state.owner===token.Owner ? 'transfer' : null;
             if(kind)offers.push({domain,uri:Buffer.from(token.URI,'hex').toString('utf8'),uritokenId:id,sender:token.Owner,recipient:address,kind});
-        }
+        });
+        if(offers.length>20000)throw new XahauNameError('Incoming offers exceed the supported discovery size; use an indexer','HISTORY_LIMIT');
+        this.incomingHistory.delete(address);
         offers.sort((a,b)=>a.domain.localeCompare(b.domain));
+        const bytes=Buffer.byteLength(JSON.stringify(offers))+256;
+        if(bytes<=1024*1024){
+            const retainedBytes=()=>[...this.incomingHistory.values()].reduce((sum,entry)=>sum+entry.bytes,0);
+            while(this.incomingHistory.size>=32||retainedBytes()+bytes>1024*1024)this.incomingHistory.delete(this.incomingHistory.keys().next().value!);
+            this.incomingHistory.set(address,{max,min:historyMinLedger,hash:opts.ledgerHash,bytes,offers:structuredClone(offers)});
+        }
         return {offers,ledgerHash:opts.ledgerHash,historyMinLedger};
     }
     /** Revalidates the offer immediately before requesting one recipient signature. */

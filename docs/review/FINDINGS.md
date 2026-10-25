@@ -1,8 +1,10 @@
 # Current assurance findings
 
-Reviewed: 2026-10-23. Scope: installed hook 0.3.0, SDK/UI error and verification paths, tests and event/indexer feasibility. Hook C and deployed artifacts were not changed by this review.
+Reviewed: 2026-10-24. Scope: hook 0.3.0, SDK/UI verification paths, performance, tests and indexing. The [full follow-up audit](FULL-AUDIT-2026-10-24.md) recorded eight Medium findings (OCR2-01..08). All eight have local implementation fixes and regression coverage; see [repair evidence](AUDIT-REPAIRS-2026-10-24.md). Hook consolidation rebuilt all ten candidate artifacts; the installed deployment is unchanged. No new Critical/High vulnerability was confirmed; F-01 native assurance remains open.
 
 ## F-01 / P1 / IMPLEMENTED; NATIVE VALIDATION OPEN: weak lifecycle reconciliation
+
+The latest refactor is [installed and smoke-verified on testnet](TESTNET-AUDIT-DEPLOYMENT.md). This does not close the native fault-injection gate.
 
 The candidate deployed to testnet on 2026-10-23 adds a durable cleanup journal and permissionless strong Invoke17 reconciliation, plus SDK/indexer quarantine and an explicit SDK recovery method. Production-WASM fault probes retain partial weak writes and exercise repair/replay. This is source/model evidence, not native-ledger fault-injection proof. The installed testnet hash set and SDK preset have been updated; native fault-injection proof remains open.
 

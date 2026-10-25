@@ -1,7 +1,8 @@
 import {XahauNameError} from './errors';
 import {mediaURL} from './metadata';
 /** ENSIP-5 final Global Keys, deliberately separate from the immutable profile-v1 wire order. */
-export const ENS_GLOBAL_TEXT_KEYS = ['avatar','description','display','email','keywords','mail','notice','location','phone','url'] as const;
+export {PROFILE_TEXT_KEYS as ENS_GLOBAL_TEXT_KEYS} from "./protocol.generated";
+import {PROFILE_TEXT_KEYS as ENS_GLOBAL_TEXT_KEYS} from "./protocol.generated";
 export type GlobalTextKey = typeof ENS_GLOBAL_TEXT_KEYS[number];
 export const ENS_SERVICE_TEXT_KEYS = ['com.github','com.peepeth','com.linkedin','com.twitter','io.keybase','org.telegram'] as const;
 /** The ten Global Keys match profile-v2 batch order. */

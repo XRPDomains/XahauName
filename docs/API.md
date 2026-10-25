@@ -12,11 +12,15 @@ new XahauNameClient(config) requires wss, treasury and exactly one namespaceId/n
 
 connect() validates configured network and installed handler hashes. Concurrent calls share one connection attempt. Optional `connectionTimeoutMs` sets the WebSocket connection timeout (default 15000 ms). Connection failures use `RPC_CONNECTION_FAILED`; `explainError()` returns stage `connection` and recovery `reconnect` when no transaction hash is available. Reconnecting does not retry a transaction. disconnect() closes the connection. A TxSigner must return a validated transaction result with hash, engineResult and metadata. createWalletKitSigner implements this contract without depending on Kit internals.
 
+`connectionAttempts` optionally allows two transport attempts (default one). Only transient transport/connect failures retry, using a fresh socket; network/deployment mismatches and transaction submission never retry this way. The domain manager uses two 6-second handshake attempts and avoids background balance refresh while disconnected. An open socket is not considered ready by the read facade until its ongoing network/deployment verification finishes.
+
 ReadOptions supports ledgerHash, bypassCache, verifyOwner. Multi-read identity/profile routines pin a validated ledger. Do not mix snapshots from different ledgers when displaying identity. Public client.getOwner/describe (and the deprecated owner resolve alias) verify native ownership by default. Passing verifyOwner:false is an explicit unverified read. Low-level resolver.getOwner/describe retain their legacy state-only default; pass verifyOwner:true for identity use. Generic raw-state methods do not prove native ownership by themselves.
 
 Concurrent identical object/state requests with an explicit ledger hash may share an in-flight RPC; results are cloned and the entry is discarded on completion. This also applies with `bypassCache:true`, since the pinned ledger is immutable. Unpinned reads, fees, queues and submissions are never coalesced this way. `waitForOffer()` and `waitForClaimed()` poll the validated head and rescan lifecycle state only when its hash changes; transient failed scans can retry without waiting for another ledger. Timeout/cancellation and fresh write checks still apply.
 
 ## Client reads
+
+New integrations can use [the verified named-argument read API](READ-API.md). It adds bounded read sessions, decoded selected records, forward-confirmed primary candidates and pinned collection pagination while keeping the methods below compatible. Cache budgets default to 512 entries / approximately 1 MiB, with six aggregate RPC reads; zero TTL/budget disables storage. Facade deadlines default to 15 seconds, including stalled RPC waits.
 
 `client.setSigner(signer | null)` attaches or detaches a signing session on the existing connected client. It clears the state cache without opening or closing a WebSocket. Recreate the Wallet Kit signer on account/network changes; normal submission network and session checks still apply.
 

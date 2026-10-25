@@ -55,3 +55,53 @@ Acceptance cases include delayed approval across ledgers, changed queue/fee, exp
 Validation: 95 SDK tests and 225 application tests passed; application TypeScript checking passed. Signing tests are mocked provider/ledger acceptance, not live extension signing or native hook execution. No transactions were submitted.
 
 The subsequent readonly browser profile sample passed with 13 ledger-data RPCs and zero duplicates on both loads. Elapsed time was 10227 ms with initial connection/verification and 5007 ms with the existing connection. The latter included one additional background RPC in the total (14), outside the 13 profile-data requests. Compared with earlier samples, wall-clock latency remains variable despite deduplication; these changes do not establish a stable public-endpoint speedup. On-demand connection browser checks also passed.
+
+## Read API and performance follow-up — 2026-10-24
+
+Read-only Node measurements used `wss://xahau-test.net`, domain `sdklive13386530.xah`, the installed deployment and `cacheTtlMs:0`. No browser, screenshots, transaction signing, deployment or frontend build ran. Initial connection was measured separately. Existing connection samples include ledger selection and identity verification but exclude HTTP metadata/images. Two samples per repeated operation are descriptive, not a percentile benchmark or an endpoint SLA. Other operations have one sample.
+
+| Operation | RPCs | Elapsed milliseconds |
+| --- | --- | --- |
+| Initial connect and deployment verification | 2 | 2412 |
+| Verified getOwner | 6 | 2612 / 2000 |
+| getProfileSnapshot | 13 | 1813 / 2366 |
+| describe with no addresses and avatar/description only | 9 | 4637 / 2145 |
+| resolveAddress for native XAH | 7 | 4399 / 2331 |
+| Concurrent independent owner/address/text calls | 9 | 2527 |
+| Available-name quote | 12 | 734 |
+| Portfolio of the sampled one-domain owner | 7 | 2752 |
+
+Per-operation duplicate request signatures were zero except the independent owner/address/text composition, which issued the same validated-head request twice. Fewer requests did not consistently mean lower elapsed time because parallelism, dependency stages and public endpoint latency differ. Fourteen focused offline performance regressions also passed: full fixture profile composition29 to14 RPCs, configured primary9 to7 and verified primary15 to9, with identity/recovery checks retained.
+
+### Findings and implementation priorities
+
+1. **Plan one verified read operation.** `getOwner` currently reads root/recovery, then forward token identity, then native token and finally reverse identity. Independent reads can overlap while all results remain pinned to one validated hash. Start requested records alongside verification and expose values only after identity succeeds. Preserve missing-domain and recovery error semantics when doing speculative work. Measure dependency stages as well as request counts.
+2. **Selective record reads.** `describeSnapshot` still enumerates the records index/custom descriptors when both requested address and text lists are explicit. A new `getRecords` operation should verify identity once and read only selected keys, without claiming complete custom-key enumeration. Existing full-profile enumeration must remain available. Avoid mixing raw getText values with a separately sampled owner.
+3. **A reusable read snapshot.** Expose a supported scoped read session to combine owner, receiving addresses, text and content reads against one hash and shared promises. Concurrent independent public calls currently share only overlapping transport requests, not completed results or the validated-head lookup. Do not replace this with an unqualified moving-head TTL cache.
+4. **Bound caches and request concurrency.** The state cache has expiration checks but no size bound or expired-entry eviction. Long-lived clients can retain expired keys across many ledger hashes until clearCache. Introduce a bounded LRU/expiry policy. Apply one configurable read scheduler to record values as well as custom descriptor/portfolio work; full-profile value reads currently use unbounded Promise.all. Keep cancellation local to a consumer when requests are shared.
+5. **Primary lookup for large wallets.** Current primary-name discovery enumerates owned tokens to recover the name corresponding to the stored root hash. Its cost grows with the portfolio. Reuse portfolio results in a view, or use an indexer candidate and verify native identity plus the forward receiving address at the ledger. Do not treat the configured primary candidate as a verified identity.
+6. **Indexer integration.** Use indexed profiles/portfolios for display with explicit checkpoint/freshness metadata; keep the ledger as the authority for signing and receiving-identity verification. The test app currently has no IndexerReadClient integration. Do not silently return indexed ownership as freshly verified on-chain ownership.
+
+### Proposed public API (not implemented)
+
+ENSjs is a useful model for named read actions, record selection and separation of public/wallet/indexing APIs; its EVM multicall implementation cannot be assumed to exist in Xahau. References: [ENSjs](https://github.com/ensdomains/ensjs), [text records](https://docs.ens.domains/web/records/), [forward-confirmed primary names](https://docs.ens.domains/web/reverse/).
+
+| Proposed call | Meaning |
+| --- | --- |
+| getOwner({name}) | Verified native owner, distinct from a receiving address |
+| getAddress({name, coinType: 21337}) | Decoded receiving address; no owner fallback |
+| getText({name, key}) | One verified UTF-8 record or null |
+| getRecords({name, addresses, texts, contentHash}) | Selected records, one shared snapshot/identity verification |
+| getProfile({name}) | Complete discoverable profile with decoded addresses and custom texts |
+| getName({address}) | Forward-confirmed primary name or null |
+| getDomain({name}) | Identity and registration/claim/recovery status |
+| getQuote({name}) | Price and purchase availability/configuration at one snapshot |
+| getNames({address, cursor, limit}) | Paginated domain listing; support explicit ledger/indexer sources |
+
+Use object arguments consistently; expose human-readable addresses in the public facade and retain bytes/state keys under a documented raw API. Treat absent records as null and preserve typed failures for malformed state, identity/recovery, codec or RPC problems. A raw reverse record should have an explicit name such as getReverseRecord. Normalization must follow this protocol's ASCII rules, not ENS Unicode rules; do not silently remove internal whitespace or append a TLD in low-level reads.
+
+Rich results should identify source, ledger hash/index and completeness. A scoped snapshot can expose that metadata once for multiple simple-value calls. Do not label a partial selection as a complete profile. Avatar/profile results should distinguish on-chain avatar records from display-only token metadata fallback.
+
+Add this facade without changing the semantics of existing calls: current resolve means owner, getAddr/addr expose bytes with different missing-value conventions, describe returns FullProfile, and getProfileSnapshot wraps profile plus lifecycle/token data. Keep deprecated aliases through a compatibility window, document replacements and migrate the app to the facade. These recommendations require SDK work and targeted tests; no hook change or redeployment is needed for this first phase.
+
+Implemented follow-up: [verified read API](../READ-API.md) documents `client.read`, sessions, record selections, cursors and budgets. The app now uses its profile and quote reads. [Repair evidence](AUDIT-REPAIRS-2026-10-24.md) records the cache, deadline, discovery and indexer changes and their verification limits. Initial history discovery and legacy full-list APIs still have documented limits; the separate indexer HTTP client remains an explicit data source.

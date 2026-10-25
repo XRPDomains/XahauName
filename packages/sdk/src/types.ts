@@ -11,10 +11,17 @@ export interface XahauNameConfig {
     expectedNetworkId?: number;
     hookHashes?: Partial<Record<HookHandler, string>>;
     cacheTtlMs?: number;
+    /** Bounded state cache; zero disables storage. Defaults: 512 entries / 1 MiB. */
+    cacheMaxEntries?:number;
+    cacheMaxBytes?:number;
+    /** Maximum aggregate RPC reads per client, default 6 (1..32). */
+    readConcurrency?:number;
     hardcodedTlds?: readonly string[];
     maxFeeXAH?: string;
     /** WebSocket connection timeout in milliseconds. Default: 15000. */
     connectionTimeoutMs?: number;
+    /** Total transport connection attempts, 1 (default) or 2. Never retries signing/submission. */
+    connectionAttempts?:1|2;
 }
 /** External signer must support Xahau and wait for validated ledger metadata. */
 export interface TxSigner {
@@ -32,6 +39,8 @@ export interface ReadOptions {
     ledgerHash?: string;
     /** Public client owner/profile reads default true; false explicitly requests unverified state. Low-level APIs retain documented defaults. */
     verifyOwner?: boolean;
+    /** Cancels public read-facade waits; shared underlying RPC requests continue safely. */
+    signal?:AbortSignal;
 }
 export interface OwnedDomainSummary {
     domain:string;
@@ -74,7 +83,7 @@ export interface FullProfile extends RootRecord {
     texts: Record<string, string>;
     /** Legacy custom records lacking a stored name, indexed by full state-key hex. */
     unnamedTexts: Record<string, string>;
-    /** False when legacy custom key names cannot be discovered from current state. */
+    /** False for explicit selections or when legacy custom key names cannot be discovered. */
     textKeysComplete: boolean;
 }
 export interface ProfileSnapshot {

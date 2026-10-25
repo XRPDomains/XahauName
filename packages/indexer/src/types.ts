@@ -10,7 +10,11 @@ export interface Event {
 }
 export type Table = 'state' | 'tokens' | 'domains' | 'recovery';
 export interface Change {table: Table; key: string; value: any | null}
-export interface Batch {checkpoint: Checkpoint; receipts: Receipt[]; events: Event[]; changes: Change[]}
+export interface Batch {
+    checkpoint: Checkpoint; receipts: Receipt[]; events: Event[]; changes: Change[];
+    /** Local ordered-replay evidence, not a consensus transaction-root proof. */
+    ledgerEvidence?:{transactionCount:number;receiptHashesSha256:string};
+}
 export interface Materialized {
     state: Record<string, string>; tokens: Record<string, Json>; domains: Record<string, Json>; recovery: Record<string, string>;
 }
@@ -29,6 +33,10 @@ export interface Rpc {
 export interface LedgerSource {
     connect(): Promise<void>; disconnect(): Promise<void>;
     latest(): Promise<Checkpoint>;
+    /** Header-only checkpoint verification; custom sources can retain the ledger fallback. */
+    header?(index:number):Promise<{checkpoint:Checkpoint;parentHash:string}>;
+    /** A wake-up hint only. Replay always validates complete contiguous ledgers. */
+    waitForLedger?(signal:AbortSignal,timeoutMs:number):Promise<void>;
     ledger(index: number): Promise<{checkpoint: Checkpoint; parentHash: string; receipts: Receipt[]}>;
     snapshot(checkpoint: Checkpoint): Promise<Materialized>;
 }

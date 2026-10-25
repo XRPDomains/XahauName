@@ -1,0 +1,7 @@
+{
+  "version": 2,
+  "operations": {"noop":0,"register":1,"buy":2,"setPrimary":3,"setAddr":4,"clearAddr":5,"setText":6,"clearText":7,"lock":8,"reset":9,"setPricing":10,"addTld":11,"removeTld":12,"pause":13,"unpause":14,"setURIBase":16,"reconcile":17},
+  "standardTextKeys": ["avatar","description","url","email","notice","keywords","com.twitter","com.github","com.discord","com.reddit","com.linkedin","org.telegram","name","location","contenthash","display","mail","phone"],
+  "legacyProfileKeys": ["name","description","avatar","url","email","location","com.twitter","com.github","org.telegram","com.discord"],
+  "profileKeys": ["avatar","description","display","email","keywords","mail","notice","location","phone","url"]
+}

@@ -26,7 +26,10 @@
     "packages:test": "npm run packages:build && npm test --workspace packages --if-present",
     "release:check": "node scripts/check-packages.mjs",
     "release:version": "node scripts/version-packages.mjs",
-    "repo:test": "node --test scripts/test/*.test.cjs"
+    "repo:test": "node --test scripts/test/*.test.cjs",
+    "explorer:prepare": "node scripts/explorer/prepare.mjs",
+    "explorer:build": "node scripts/explorer/build.mjs",
+    "explorer:test": "node --test scripts/explorer/*.test.mjs"
   },
   "workspaces": [
     "packages/*",

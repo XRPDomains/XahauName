@@ -9,12 +9,16 @@ jobs:
         with:
           node-version: '22'
       - run: npm ci
-      - run: npm run sdk:test
+      - run: node scripts/sync-protocol.mjs
+      - run: npm run packages:build
+      - run: node scripts/explorer/prepare.mjs
+      - run: node --test scripts/explorer/*.test.mjs
+      - run: npm run test:unit --workspace @xahauname/sdk
       - run: npm run lint --workspace @xahauname/sdk
-      - run: npm run indexer:test
+      - run: npm run test:unit --workspace @xahauname/indexer
       - run: npm run app:test
       - run: npm run app:typecheck
-      - run: npm run release:check
+      - run: npm run release:check -- --skip-build
       - run: npm run repo:test
       - run: npm run check
   hooks:

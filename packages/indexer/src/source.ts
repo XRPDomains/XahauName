@@ -5,14 +5,29 @@ import type {Checkpoint, Deployment, Json, LedgerSource, Receipt, Rpc} from './t
 
 export class XahauLedgerSource implements LedgerSource {
     private client: Client;
-    constructor(private config: Deployment, client?: Client) {this.client = client ?? new Client(config.wss);}
+    private subscribed=false;
+    constructor(private config: Deployment, client?: Client) {
+        this.client = client ?? new Client(config.wss);
+        this.client.on?.('disconnected',()=>{this.subscribed=false;});
+    }
     async connect() {
         if (!this.client.isConnected()) await this.client.connect();
         if (this.client.networkID !== this.config.expectedNetworkId) {
             await this.client.disconnect(); throw new Error('RPC network does not match deployment');
         }
     }
-    async disconnect() {await this.client.disconnect();}
+    async disconnect() {this.subscribed=false;await this.client.disconnect();}
+    async waitForLedger(signal:AbortSignal,timeoutMs:number) {
+        if(signal.aborted)return;
+        await new Promise<void>((resolve,reject)=>{
+            const done=(error?:unknown)=>{clearTimeout(timer);signal.removeEventListener('abort',abort);this.client.removeListener('ledgerClosed',closed);error?reject(error):resolve();};
+            const abort=()=>done(),closed=()=>done();
+            const timer=setTimeout(closed,timeoutMs);
+            signal.addEventListener('abort',abort,{once:true});this.client.on('ledgerClosed',closed);
+            if(signal.aborted){abort();return;}
+            if(!this.subscribed)void this.request({command:'subscribe',streams:['ledger']}).then(()=>{this.subscribed=true;},done);
+        });
+    }
     private async request(request: Json): Promise<Json> {return (await this.client.request(request as any)).result;}
     async latest(): Promise<Checkpoint> {
         const r = await this.request({command: 'ledger', ledger_index: 'validated', transactions: false});
@@ -21,6 +36,11 @@ export class XahauLedgerSource implements LedgerSource {
     async ledger(index: number) {
         const r = await this.request({command: 'ledger', ledger_index: index, transactions: true, expand: true, binary: false});
         return decodeLedger(r, index);
+    }
+    async header(index:number) {
+        const result=checkedHeader(await this.request({command:'ledger',ledger_index:index,transactions:false,expand:false}));
+        if(result.checkpoint.ledgerIndex!==index)throw new Error('Ledger header index mismatch');
+        return result;
     }
     /** Explicit full-ledger scan at one pinned hash; potentially expensive on public RPC. */
     async snapshot(checkpoint: Checkpoint) {

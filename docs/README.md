@@ -13,6 +13,7 @@ Guides and references for integrating, operating and extending XahauName. Start 
 | Run the domain-management interface | [Domain manager](../test-app/README.md#run-locally) |
 | Build a read model or event service | [Indexer quickstart](../packages/indexer/README.md#quickstart) |
 | Select a network, endpoint and deployment | [Network configuration](NETWORKS.md) |
+| Describe HookState on XahauWin | [Explorer manifests and coverage](../explorer/README.md) |
 | Build the on-chain implementation | [Hook guide](../hook/README.md) |
 | Maintain packages and prepare releases | [Workspace maintenance](PACKAGES.md) |
 

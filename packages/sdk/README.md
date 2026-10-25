@@ -4,6 +4,8 @@ The TypeScript client for XahauName. Resolve on-chain names and profiles, manage
 
 The SDK provides a client, registrar and resolver modules, address/content codecs, typed profile conventions, transaction confirmation and Wallet Kit integration. It exports CommonJS, ESM and TypeScript declarations for Node.js 20+ and browser bundlers.
 
+For new integrations use the [verified read facade](../../docs/READ-API.md): `client.read.getOwner({name})`, `getAddress`, `getText`, `getRecords`, `getProfile`, `getName`, `getDomain`, `getQuote` and paginated `getNames`. `client.read.snapshot()` shares one immutable ledger across related calls. Existing APIs remain compatible.
+
 ## Quickstart
 
 From the repository root:

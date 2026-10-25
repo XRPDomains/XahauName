@@ -313,10 +313,13 @@ test('client submission decodes receipt and clears caches', async () => {
     const r = await c.resolver.setPrimary({ label: 'alice', tld: 'xah', flag: true });
     assert.equal(r.hookReturnString, 'primary');
 });
-test('CJS and generated ESM expose same public API', async () => {
+test('CJS and native ESM expose equivalent public APIs', async () => {
     const esm = await import('../dist/index.mjs');
-    for (const name of Object.keys(sdk))
-        assert.strictEqual(esm[name], sdk[name], name);
+    assert.deepEqual(Object.keys(esm).sort(),Object.keys(sdk).sort());
+    for (const name of Object.keys(sdk))assert.equal(typeof esm[name],typeof sdk[name],name);
+    assert.deepEqual(esm.parameters('setPrimary',{flag:Buffer.from([1])}),sdk.parameters('setPrimary',{flag:Buffer.from([1])}));
+    assert.equal(esm.util.rootKey('alice','xah'),sdk.util.rootKey('alice','xah'));
+    assert.deepEqual(esm.PROFILE_TEXT_KEYS,sdk.PROFILE_TEXT_KEYS);
 });
 test('external signer receives bound NetworkID and rejects a conflicting network before signing', async () => {
     let sent;

@@ -1,3 +1,4 @@
+import {readProfileSnapshot} from './profile-read';
 import { Client, Wallet, decodeAccountID } from 'xahau';
 import { namespaceId as computeNamespaceId,splitDomain } from './util';
 import {domainFields} from './protocol';
@@ -12,6 +13,9 @@ import {mediaURL} from './metadata';
 import {waitValidated} from './confirmation';
 import { transactionResult } from './receipts';
 import {snapshotContext} from './read-snapshot';
+import {ReadScheduler} from './read-scheduler';
+import {ReadModule} from './reads';
+export * from './reads';
 import type {DomainQuote,ProfileSnapshot} from './types';
 export * from './types';
 export * from './addresses';
@@ -47,9 +51,13 @@ export class XahauNameClient {
     private context:ClientContext;
     private connecting?: Promise<void>;
     private pinnedReads=new Map<string,Promise<RpcResult>>();
+    private readScheduler:ReadScheduler;
+    private cacheGeneration=0;
+    private cacheBytes=0;
     private cache = new Map<string, {
         value: Buffer | null;
         expires: number;
+        bytes:number;
     }>();
     readonly namespaceId: string;
     readonly treasuryAddress: string;
@@ -57,6 +65,7 @@ export class XahauNameClient {
     readonly registrar: RegistrarModule;
     readonly controller: ControllerModule;
     readonly treasury: TreasuryModule;
+    readonly read:ReadModule;
     constructor(private cfg: XahauNameConfig) {
         if (cfg.wallet && cfg.signer)
             throw new XahauNameError('Specify wallet OR signer', 'INVALID_ARGUMENT');
@@ -67,8 +76,13 @@ export class XahauNameClient {
             throw new XahauNameError('Invalid namespaceId', 'INVALID_ARGUMENT');
         if (cfg.cacheTtlMs !== undefined && (!Number.isFinite(cfg.cacheTtlMs) || cfg.cacheTtlMs < 0))
             throw new XahauNameError('Invalid cacheTtlMs', 'INVALID_ARGUMENT');
+        for(const key of ['cacheMaxEntries','cacheMaxBytes'] as const)
+            if(cfg[key]!==undefined&&(!Number.isSafeInteger(cfg[key])||cfg[key]!<0))throw new XahauNameError('Invalid '+key,'INVALID_ARGUMENT');
+        this.readScheduler=new ReadScheduler(cfg.readConcurrency??6);
         if (cfg.connectionTimeoutMs !== undefined && (!Number.isSafeInteger(cfg.connectionTimeoutMs) || cfg.connectionTimeoutMs <= 0 || cfg.connectionTimeoutMs > 2147483647))
             throw new XahauNameError('Invalid connectionTimeoutMs', 'INVALID_ARGUMENT');
+        if(cfg.connectionAttempts!==undefined&&cfg.connectionAttempts!==1&&cfg.connectionAttempts!==2)
+            throw new XahauNameError('connectionAttempts must be 1 or 2','INVALID_ARGUMENT');
         decodeAccountID(cfg.treasury);
         this.treasuryAddress = cfg.treasury;
         this.client = new Client(cfg.wss, { maxFeeXAH: cfg.maxFeeXAH ?? '1', connectionTimeout: cfg.connectionTimeoutMs ?? 15000 });
@@ -81,6 +95,7 @@ export class XahauNameClient {
         this.registrar = new RegistrarModule(ctx);
         this.controller = new ControllerModule(ctx, cfg.hardcodedTlds ?? ['xah', 'xahau']);
         this.treasury = new TreasuryModule();
+        this.read=new ReadModule(ctx,async()=>{if(this.connecting||!this.client.isConnected())await this.connect();else this.checkNetwork();},cfg.hardcodedTlds??['xah','xahau']);
     }
     private checkNetwork() {
         if (this.cfg.expectedNetworkId !== undefined && this.client.networkID !== this.cfg.expectedNetworkId)
@@ -95,11 +110,19 @@ export class XahauNameClient {
     private async connectAndVerify(): Promise<void> {
         try {
             if (!this.client.isConnected()) {
-                try { await this.client.connect(); }
-                catch (cause) {
-                    throw new XahauNameError(cause instanceof Error ? cause.message : String(cause), 'RPC_CONNECTION_FAILED', {
-                        endpoint: this.cfg.wss, connectionTimeoutMs: this.cfg.connectionTimeoutMs ?? 15000, phase: 'connect',
-                    });
+                const attempts=this.cfg.connectionAttempts??1;
+                for(let attempt=1;attempt<=attempts;attempt++){
+                    try {await this.client.connect();break;}
+                    catch(cause){
+                        if(attempt<attempts&&isTransientRpcError(cause)){
+                            // A fresh socket after a failed handshake; no transaction has been sent.
+                            await this.client.disconnect().catch(()=>{});
+                            continue;
+                        }
+                        throw new XahauNameError(cause instanceof Error ? cause.message : String(cause), 'RPC_CONNECTION_FAILED', {
+                            endpoint:this.cfg.wss,connectionTimeoutMs:this.cfg.connectionTimeoutMs??15000,phase:'connect',attempts:attempt,
+                        });
+                    }
                 }
             }
             this.checkNetwork();
@@ -141,7 +164,7 @@ export class XahauNameClient {
             throw error;
         }
     }
-    waitForTransaction(hash: string, options: {timeoutMs?:number;intervalMs?:number} = {}) {
+    waitForTransaction(hash: string, options: {timeoutMs?:number;intervalMs?:number;signal?:AbortSignal} = {}) {
         return waitValidated(this.client, hash, options);
     }
     get rawClient() {
@@ -165,10 +188,10 @@ export class XahauNameClient {
         if(['ledger_entry','account_objects'].includes(String(request.command))&&typeof request.ledger_hash==='string'&&/^[a-f0-9]{64}$/i.test(request.ledger_hash)){
             const key=JSON.stringify(request),existing=this.pinnedReads.get(key);
             if(existing)return structuredClone(await existing);
-            const pending=this.requestOnceWithRecovery(request);this.pinnedReads.set(key,pending);
+            const pending=this.readScheduler.run(()=>this.requestOnceWithRecovery(request));this.pinnedReads.set(key,pending);
             try{return structuredClone(await pending);}finally{if(this.pinnedReads.get(key)===pending)this.pinnedReads.delete(key);}
         }
-        return this.requestOnceWithRecovery(request);
+        return this.readScheduler.run(()=>this.requestOnceWithRecovery(request));
     }
     private async requestOnceWithRecovery(request:Record<string,unknown>):Promise<RpcResult> {
         const reads=['server_info','account_info','account_objects','account_tx','fee','ledger','ledger_entry','tx','ping'];
@@ -212,8 +235,12 @@ export class XahauNameClient {
         if (!/^[a-f0-9]{64}$/i.test(hexKey))
             throw new XahauNameError('Invalid state key', 'INVALID_ARGUMENT');
         const key = (options.ledgerHash ?? 'validated') + ':' + hexKey.toUpperCase(), cached = this.cache.get(key);
-        if (!options.bypassCache && cached && cached.expires > Date.now())
+        if(cached&&cached.expires<=Date.now())this.evictCache(key);
+        if (!options.bypassCache && cached && cached.expires > Date.now()) {
+            this.cache.delete(key);this.cache.set(key,cached);
             return cached.value ? Buffer.from(cached.value) : null;
+        }
+        const generation=this.cacheGeneration;
         let data: Buffer | null;
         try {
             const r = await this.request({ command: 'ledger_entry', hook_state: { account: this.treasuryAddress, key: hexKey.toUpperCase(), namespace_id: this.namespaceId }, ...this.ledgerOptions(options) });
@@ -228,12 +255,26 @@ export class XahauNameClient {
                 throw e;
             data = null;
         }
-        if (!options.bypassCache)
-            this.cache.set(key, { value: data ? Buffer.from(data) : null, expires: Date.now() + (this.cfg.cacheTtlMs ?? 30000) });
+        if (!options.bypassCache&&generation===this.cacheGeneration)
+            this.storeCache(key,data);
         return data;
     }
+    private evictCache(key:string):void {
+        const old=this.cache.get(key);if(old){this.cacheBytes-=old.bytes;this.cache.delete(key);}
+    }
+    private storeCache(key:string,data:Buffer|null):void {
+        const ttl=this.cfg.cacheTtlMs??30000,maxEntries=this.cfg.cacheMaxEntries??512,maxBytes=this.cfg.cacheMaxBytes??1048576;
+        if(ttl===0||maxEntries===0||maxBytes===0)return;
+        const now=Date.now();for(const [k,v]of this.cache)if(v.expires<=now)this.evictCache(k);
+        const bytes=key.length*2+(data?.length??0)+64;
+        this.evictCache(key);if(bytes>maxBytes)return;
+        while(this.cache.size>=maxEntries||this.cacheBytes+bytes>maxBytes)this.evictCache(this.cache.keys().next().value!);
+        this.cache.set(key,{value:data?Buffer.from(data):null,expires:now+ttl,bytes});this.cacheBytes+=bytes;
+    }
     clearCache(): void {
+        this.cacheGeneration++;
         this.cache.clear();
+        this.cacheBytes=0;
     }
     /** Native transfer offers have no registrar hook acknowledgement. Never retries a write. */
     private async submitNative(tx: Record<string, unknown>): Promise<SignAndSubmitResult> {
@@ -291,15 +332,7 @@ export class XahauNameClient {
     /** Profile, lifecycle and token display data share one operation-local snapshot. */
     async getProfileSnapshot(domain:string,options:DescribeOptions={}):Promise<ProfileSnapshot|null> {
         const opts={...options,bypassCache:true,verifyOwner:true,ledgerHash:options.ledgerHash??await this.getLedgerHash()};
-        const ctx=snapshotContext(this.context,opts.ledgerHash),resolver=new ResolverModule(ctx),registrar=new RegistrarModule(ctx);
-        const [profile,status]=await Promise.all([resolver.describe(domain,opts),registrar.getRegistrationStatus(domain,opts)]);
-        // A rootless registration belongs to the registration/claim view, not a profile.
-        if(!profile)return null;
-        if(status.stage!=='claimed' || status.owner!==profile.owner)
-            throw new XahauNameError('Domain lifecycle is not finalized','OWNERSHIP_MISMATCH');
-        const token=await ctx.ledgerObject(status.uritokenId,opts);
-        return{ledgerHash:opts.ledgerHash,profile,tokenId:status.uritokenId,uri:Buffer.from(token!.URI,'hex').toString('utf8'),
-            transferOffer:typeof token!.Destination==='string'&&typeof token!.Amount==='string'?{destination:token!.Destination,amountDrops:token!.Amount}:null};
+        return readProfileSnapshot(snapshotContext(this.context,opts.ledgerHash),domain,opts);
     }
     primaryOf(address: string, options?: ReadOptions) {
         return this.resolver.getPrimaryHash(address, options);

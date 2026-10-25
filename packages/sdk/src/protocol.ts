@@ -1,9 +1,8 @@
 import { decodeAccountID, encodeAccountID } from 'xahau';
 import { XahauNameError } from './errors';
 import type { HookHandler } from './types';
-export const OPERATIONS = {
-    noop: 0, register: 1, buy: 2, setPrimary: 3, setAddr: 4, clearAddr: 5, setText: 6, clearText: 7, lock: 8, reset: 9, setPricing: 10, addTld: 11, removeTld: 12, pause: 13, unpause: 14, setURIBase: 16, reconcile: 17
-} as const;
+export {OPERATIONS,LEGACY_PROFILE_TEXT_KEYS,PROFILE_TEXT_KEYS} from "./protocol.generated";
+import {OPERATIONS,LEGACY_PROFILE_TEXT_KEYS,PROFILE_TEXT_KEYS} from "./protocol.generated";
 export type Operation = keyof typeof OPERATIONS;
 export const HANDLERS: Record<Operation, HookHandler> = {
     noop: 'control', register: 'issuance', buy: 'issuance', setPrimary: 'control', setAddr: 'set-address', clearAddr: 'set-address', setText: 'set-text', clearText: 'clear-text', lock: 'control', reset: 'control', setPricing: 'admin', addTld: 'admin', removeTld: 'admin', pause: 'admin', unpause: 'admin', setURIBase: 'admin', reconcile: 'claim'
@@ -111,8 +110,6 @@ export function normalizeDomainInput(input: string, defaultTld = 'xah'): string 
 }
 
 /** Fixed order is the on-chain profile v1 bit layout. */
-export const LEGACY_PROFILE_TEXT_KEYS = ['name','description','avatar','url','email','location','com.twitter','com.github','org.telegram','com.discord'] as const;
-export const PROFILE_TEXT_KEYS = ['avatar','description','display','email','keywords','mail','notice','location','phone','url'] as const;
 export type ProfileTextKey = typeof PROFILE_TEXT_KEYS[number];
 export function profilePatchFields(set: Partial<Record<ProfileTextKey,string>> = {}, clear: ProfileTextKey[] = []): Record<string,Buffer> {
     if (!set || typeof set !== 'object' || Array.isArray(set) || !Array.isArray(clear)) invalid('Invalid profile patch');

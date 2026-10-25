@@ -13,6 +13,7 @@ import {
     ROOT_LEN,
     ROOT_FLAG_PRIMARY,
     ROOT_FLAG_LOCKED,
+    STATE_LAYOUTS,
 } from './constants';
 import type { RootRecord, SplitDomain } from './types';
 
@@ -161,10 +162,11 @@ export function decodeRoot(data: Buffer): RootRecord {
     if (data.length !== ROOT_LEN) {
         throw new Error(`root record must be 32 bytes, got ${data.length}`);
     }
-    const ownerBinary = data.subarray(0, 20);
+    const layout=STATE_LAYOUTS.root;
+    const ownerBinary = data.subarray(layout.owner, layout.flags);
     const owner = encodeAccountID(ownerBinary);
-    const flags = data[20];
-    const mintedAt = Number(data.readBigUInt64BE(21));
+    const flags = data[layout.flags];
+    const mintedAt = Number(data.readBigUInt64BE(layout.mintedAt));
     return {
         owner,
         primary: (flags & ROOT_FLAG_PRIMARY) === ROOT_FLAG_PRIMARY,
@@ -178,13 +180,14 @@ export function decodeRoot(data: Buffer): RootRecord {
 // -----------------------------------------------------------------
 
 export function decodePricing(data: Buffer): Record<string, bigint> {
-    if (data.length !== 81) {
+    const layout=STATE_LAYOUTS.pricing;
+    if (data.length !== layout.length) {
         throw new Error(`pricing record must be 81 bytes, got ${data.length}`);
     }
     const prices: Record<string, bigint> = {};
-    for (let i = 0; i < 10; i++) {
-        const off = 1 + i * 8;
-        const label = i === 9 ? '10+' : String(i + 1);
+    for (let i = 0; i < layout.tiers; i++) {
+        const off = layout.prices + i * layout.priceBytes;
+        const label = i === layout.tiers-1 ? '10+' : String(i + 1);
         prices[label] = data.readBigUInt64BE(off);
     }
     return prices;

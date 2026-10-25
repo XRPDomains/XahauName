@@ -1,3 +1,4 @@
+import {STANDARD_TEXT_KEYS} from "./protocol.generated";
 import { rootKey, addrKey, textKey, primaryOfKey, decodeRoot, splitDomain, joinDomain, recoveryKey, recordsKey, textSlotKey } from './util';
 import { parameters, domainFields, coinBytes, boolBytes, addressBytes, textKeyBytes, textValueBytes, HANDLERS, profilePatchFields, PROFILE_TEXT_KEYS } from './protocol';
 import type { Operation } from './protocol';
@@ -13,6 +14,34 @@ import {snapshotContext,mapReads} from './read-snapshot';
 import type {OwnedDomainSummary,PortfolioSnapshot} from './types';
 export class ResolverModule {
     constructor(private ctx: ClientContext) {
+    }
+    /** One ledger page. A cursor binds pagination to its address and immutable ledger. */
+    async listOwnedDomainsPage(address:string,options:ReadOptions&{cursor?:string;limit?:number}={}) {
+        decodeAccountID(address);
+        const limit=options.limit??50;
+        if(!Number.isSafeInteger(limit)||limit<1||limit>200)throw new XahauNameError('Page limit must be 1..200','INVALID_ARGUMENT');
+        let marker:unknown,hash=options.ledgerHash;
+        if(options.cursor){
+            const cursor=decodeNamesCursor(options.cursor,address);
+            if(hash&&hash.toUpperCase()!==cursor.hash)throw new XahauNameError('Cursor ledger mismatch','INVALID_ARGUMENT');
+            hash=cursor.hash;marker=cursor.marker;
+        }
+        hash??=await this.ctx.ledgerHash();
+        const opts={...options,ledgerHash:hash},ctx=snapshotContext(this.ctx,hash);
+        const result=await ctx.request({command:'account_objects',account:address,ledger_hash:hash,limit,...(marker!==undefined?{marker}:{})});
+        if(!Array.isArray(result.account_objects))throw new XahauNameError('Invalid account objects page','BAD_RESPONSE');
+        if(result.marker!==undefined&&JSON.stringify(result.marker)===JSON.stringify(marker))throw new XahauNameError('Repeated account objects marker','BAD_RESPONSE');
+        const items=(await mapReads(result.account_objects,async(token:any):Promise<OwnedDomainSummary|null>=>{
+            if(token.LedgerEntryType!=='URIToken'||token.Issuer!==ctx.treasury||token.Owner!==address)return null;
+            const name=await domainOfToken(ctx,token,opts);if(!name)return null;
+            const {label,tld}=splitDomain(name),root=await new ResolverModule(ctx).getRoot(name,opts);
+            if(!root&&address===ctx.treasury)return null;
+            if(!root||root.owner!==address)throw new XahauNameError('Native token ownership is not finalized in root: '+name,'OWNERSHIP_MISMATCH');
+            return {domain:name,tokenId:token.index.toUpperCase(),uri:Buffer.from(token.URI,'hex').toString('utf8'),primary:root.primary};
+        })).filter((item):item is OwnedDomainSummary=>item!==null);
+        const nextCursor=result.marker===undefined?null:Buffer.from(JSON.stringify({v:1,address,hash:hash.toUpperCase(),marker:result.marker})).toString('base64url');
+        if(nextCursor&&nextCursor.length>8192)throw new XahauNameError('Oversized pagination marker','BAD_RESPONSE');
+        return {items,ledgerHash:hash,nextCursor,complete:nextCursor===null,source:'ledger' as const};
     }
     async exists(domain: string, options?: ReadOptions) {
         return (await this.getRoot(domain, options)) !== null;
@@ -112,31 +141,15 @@ export class ResolverModule {
         return{address,ledgerHash:opts.ledgerHash,domains,primary:primary??null};
     }
     private async ownedRecords(address:string,options:ReadOptions):Promise<OwnedDomainSummary[]> {
-        decodeAccountID(address);
-        const opts=options,records=new Map<string,OwnedDomainSummary>();
-        let marker: unknown, pages = 0;
-        do {
-            const r = await this.ctx.request({
-                command: 'account_objects', account: address, ledger_hash: opts.ledgerHash, limit: 200, ...(marker ? { marker } : {})
-            });
-            const tokens=(r.account_objects??[]).filter((token:any)=>token.LedgerEntryType==='URIToken'&&token.Issuer===this.ctx.treasury&&token.Owner===address);
-            await mapReads(tokens,async(token:any)=>{
-                const name = await domainOfToken(this.ctx, token, opts);
-                if (!name) return;
-                const {label,tld}=splitDomain(name);
-                const [journal,bytes]=await Promise.all([this.ctx.readState(recoveryKey(label,tld),opts),this.ctx.readState(rootKey(label,tld),opts)]);
-                if(journal)throw new XahauNameError('Domain lifecycle requires reconciliation','OWNERSHIP_MISMATCH');
-                const root=bytes?decodeRoot(bytes):null;
-                if (!root && address === this.ctx.treasury)
-                    return;
-                if (!root || root.owner !== address)
-                    throw new XahauNameError('Native token ownership is not finalized in root: ' + name, 'OWNERSHIP_MISMATCH');
-                records.set(name,{domain:name,tokenId:token.index.toUpperCase(),uri:Buffer.from(token.URI,'hex').toString('utf8'),primary:root.primary});
-            });
-            marker = r.marker;
-            if (++pages > 100)
-                throw new XahauNameError('Owner enumeration pagination limit', 'RPC_LIMIT');
-        } while (marker);
+        const records=new Map<string,OwnedDomainSummary>(),cursors=new Set<string>();let cursor:string|undefined;
+        for(let page=0;;page++) {
+            if(page>=100)throw new XahauNameError('Owner enumeration pagination limit','RPC_LIMIT');
+            const next=await this.listOwnedDomainsPage(address,{...options,cursor,limit:200});
+            for(const item of next.items)records.set(item.domain,item);
+            if(next.nextCursor===null)break;
+            if(cursors.has(next.nextCursor))throw new XahauNameError('Repeated account objects marker','BAD_RESPONSE');
+            cursors.add(next.nextCursor);cursor=next.nextCursor;
+        }
         return [...records.values()].sort((a,b)=>a.domain.localeCompare(b.domain));
     }
     async getPrimaryName(address: string, options: ReadOptions = {}): Promise<string | null> {
@@ -182,7 +195,7 @@ export class ResolverModule {
             if (out.addrs.includes(coin)) bad();
             out.addrs.push(coin);
         }
-        const standard = ['avatar','description','url','email','notice','keywords','com.twitter','com.github','com.discord','com.reddit','com.linkedin','org.telegram','name','location','contenthash','display','mail','phone'];
+        const standard=STANDARD_TEXT_KEYS;
         // Descriptor slots are independent; avoid a round trip per custom key in series.
         const customSlots:number[]=[];
         for(let i=0;i<idx[3];i++)if(idx[34+i*6]===255){
@@ -218,6 +231,10 @@ export class ResolverModule {
         return out;
     }
     async describe(domain: string, options: DescribeOptions = {}): Promise<FullProfile | null> {
+        if((options.addrs?.length??0)+(options.texts?.length??0)>64)
+            throw new XahauNameError('Select at most 64 record keys per read','INVALID_ARGUMENT');
+        for(const coin of options.addrs??[])coinBytes(coin);
+        for(const key of options.texts??[])textKeyBytes(key);
         const opts={...options,ledgerHash:options.ledgerHash??await this.ctx.ledgerHash()};
         return new ResolverModule(snapshotContext(this.ctx,opts.ledgerHash)).describeSnapshot(domain,opts);
     }
@@ -226,22 +243,24 @@ export class ResolverModule {
         if (!root)
             return null;
         const { label, tld } = splitDomain(domain), addrs: Record<number, Buffer> = {}, texts: Record<string, string> = {}, unnamedTexts: Record<string, string> = {};
-        const [keys]=await Promise.all([this.getRecordKeys(domain, opts),options.verifyOwner?this.getOwner(domain,opts):Promise.resolve()]);
-        await Promise.all([...(options.addrs ?? keys.addrs).map(async (ct) => {
+        const explicit=options.addrs!==undefined&&options.texts!==undefined;
+        const [keys]=await Promise.all([explicit?Promise.resolve({addrs:[],texts:[],unnamedTextStateKeys:[]}):this.getRecordKeys(domain, opts),options.verifyOwner?this.getOwner(domain,opts):Promise.resolve()]);
+        const reads:Array<()=>Promise<void>>=[...[...new Set(options.addrs ?? keys.addrs)].map(ct=>async()=>{
                 const v = await this.getAddr(domain, ct, opts);
                 if (v)
                     addrs[ct] = v;
-            }), ...(options.texts ?? keys.texts).map(async (key) => {
+            }), ...[...new Set(options.texts ?? keys.texts)].map(key=>async()=>{
                 const v = await this.getText(domain, key, opts);
                 if (v !== null)
                     Object.defineProperty(texts, key, {value: v, enumerable: true, writable: true, configurable: true});
-            }), ...(options.texts === undefined ? keys.unnamedTextStateKeys : []).map(async key => {
+            }), ...(options.texts === undefined ? keys.unnamedTextStateKeys : []).map(key=>async()=>{
                 const value = await this.ctx.readState(key, opts);
                 if (value !== null) unnamedTexts[key] = new TextDecoder('utf-8',{fatal:true}).decode(value);
-            })]);
+            })];
+        await mapReads(reads,read=>read());
         return {
             ...root, label, tld, domain: joinDomain(label, tld), addrs, texts, unnamedTexts,
-            textKeysComplete: keys.unnamedTextStateKeys.length === 0
+            textKeysComplete: !explicit&&keys.unnamedTextStateKeys.length === 0
         };
     }
     private write(op: Operation, fields: Record<string, Buffer>, ack: string, handler: import('./types').HookHandler = HANDLERS[op]) {
@@ -290,4 +309,13 @@ export class ResolverModule {
     reset(a: LabelTldArgs) {
         return this.write('reset', domainFields(a.label, a.tld), 'reset');
     }
+}
+
+export function decodeNamesCursor(value:string,address:string):{hash:string;marker:unknown} {
+    try {
+        if(value.length>8192||!value.length)throw new Error();
+        const cursor=JSON.parse(Buffer.from(value,'base64url').toString());
+        if(cursor.v!==1||cursor.address!==address||typeof cursor.hash!=='string'||!/^[A-F0-9]{64}$/.test(cursor.hash)||cursor.marker===undefined)throw new Error();
+        return cursor;
+    } catch {throw new XahauNameError('Invalid owned-domain cursor','INVALID_ARGUMENT');}
 }

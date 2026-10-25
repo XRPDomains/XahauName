@@ -12,9 +12,10 @@ export class SqliteStorage implements Storage {
         this.db.pragma('journal_mode = WAL'); this.db.pragma('synchronous = FULL');
         this.db.exec(`CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS projection (kind TEXT NOT NULL, key TEXT NOT NULL, value TEXT NOT NULL, PRIMARY KEY(kind,key));
-            CREATE TABLE IF NOT EXISTS ledgers (ledger_index INTEGER PRIMARY KEY, hash TEXT NOT NULL UNIQUE);
+            CREATE TABLE IF NOT EXISTS ledgers (ledger_index INTEGER PRIMARY KEY, hash TEXT NOT NULL UNIQUE, evidence TEXT);
             CREATE TABLE IF NOT EXISTS receipts (hash TEXT PRIMARY KEY, ledger_index INTEGER NOT NULL, body TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS outbox (cursor INTEGER PRIMARY KEY AUTOINCREMENT, id TEXT NOT NULL UNIQUE, body TEXT NOT NULL);`);
+        if(!(this.db.pragma('table_info(ledgers)') as Array<{name:string}>).some(column=>column.name==='evidence'))this.db.exec('ALTER TABLE ledgers ADD COLUMN evidence TEXT');
     }
     bind(identity: string) {
         const bind = this.db.transaction(() => {
@@ -47,7 +48,7 @@ export class SqliteStorage implements Storage {
             for (const r of batch.receipts) raw.run(r.hash, r.ledgerIndex, JSON.stringify(r));
             const event = this.db.prepare('INSERT INTO outbox(id,body) VALUES (?,?)');
             for (const e of batch.events) event.run(e.id, JSON.stringify(e));
-            this.db.prepare('INSERT INTO ledgers VALUES (?,?)').run(batch.checkpoint.ledgerIndex, batch.checkpoint.ledgerHash);
+            this.db.prepare('INSERT INTO ledgers(ledger_index,hash,evidence) VALUES (?,?,?)').run(batch.checkpoint.ledgerIndex, batch.checkpoint.ledgerHash,batch.ledgerEvidence?JSON.stringify(batch.ledgerEvidence):null);
         })();
     }
     events(after = 0, limit = 100): Array<Event & {cursor: number}> {

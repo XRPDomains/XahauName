@@ -42,7 +42,8 @@
     "test": "node scripts/test.mjs",
     "lint": "tsc --noEmit",
     "test:testnet": "node scripts/test.mjs --testnet",
-    "prepack": "npm run build"
+    "prepack": "npm run build",
+    "test:unit": "node scripts/test.mjs --skip-build"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
@@ -60,5 +61,6 @@
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
-  }
+  },
+  "sideEffects": false
 }

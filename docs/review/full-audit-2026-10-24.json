@@ -1,0 +1,1289 @@
+{
+  "date": "2026-10-24",
+  "revision": "0471f265419705c96f902ec8665b43a9f1077ba7",
+  "method": "Open Code Review full-file preview and delegate rules; host review, not an independent external-model audit",
+  "summary": {
+    "total_files": 95,
+    "reviewed_files": 95,
+    "skipped_files": 0,
+    "coverage_rate": 1,
+    "excluded_files": 122,
+    "critical": 0,
+    "new_high": 0,
+    "medium": 8,
+    "existing_high_assurance_gates": 1
+  },
+  "findings": [
+    {
+      "id": "OCR2-01",
+      "path": "packages/sdk/src/index.ts",
+      "start_line": 232,
+      "severity": "medium",
+      "category": "performance",
+      "status": "open; previously proposed, now reproduced",
+      "content": "readState caches entries even with cacheTtlMs=0 and never evicts expired keys; long-lived clients retain distinct state/ledger keys until clearCache.",
+      "evidence": "Controlled SDK repro retained 2000 expired entries at TTL 0.",
+      "recommendation": "Skip insertion when TTL is zero; add bounded LRU/expiry eviction and explicit snapshot-cache budgets.",
+      "repairStatus": "implemented-and-regression-tested",
+      "repairReport": "docs/review/AUDIT-REPAIRS-2026-10-24.md"
+    },
+    {
+      "id": "OCR2-02",
+      "path": "packages/sdk/src/index.ts",
+      "start_line": 235,
+      "severity": "medium",
+      "category": "bug",
+      "status": "open; newly reproduced",
+      "content": "clearCache clears the map but does not invalidate reads already awaiting RPC. Such a read can repopulate a moving-validated cache entry with pre-invalidation data after a confirmed write or signer switch.",
+      "evidence": "Pause a read, clearCache, release its old RPC response: cache size becomes 1 again.",
+      "recommendation": "Use a cache generation/epoch and only populate if the request generation is still current; keep immutable-hash sharing distinct.",
+      "repairStatus": "implemented-and-regression-tested",
+      "repairReport": "docs/review/AUDIT-REPAIRS-2026-10-24.md"
+    },
+    {
+      "id": "OCR2-03",
+      "path": "packages/sdk/src/confirmation.ts",
+      "start_line": 8,
+      "severity": "medium",
+      "category": "bug",
+      "status": "open; newly reproduced",
+      "content": "waitValidated checks its deadline only around an awaited request. A slow/stalled RPC can exceed the requested timeout, blocking confirmation progress and the UI action lock.",
+      "evidence": "A request that never resolves leaves timeoutMs=5 unsettled after 40 ms.",
+      "recommendation": "Bound each read by remaining deadline, validate timing options, retain txHash and preserve the no-resubmit rule; add cancellation without cancelling other shared consumers.",
+      "repairStatus": "implemented-and-regression-tested",
+      "repairReport": "docs/review/AUDIT-REPAIRS-2026-10-24.md"
+    },
+    {
+      "id": "OCR2-04",
+      "path": "packages/indexer/src/index.ts",
+      "start_line": 61,
+      "severity": "medium",
+      "category": "performance",
+      "status": "open; documented scale limit, now quantified",
+      "content": "Every ledger clones the full materialized state; each relevant receipt spreads all profiles and projects every known name twice. Work scales with total indexed domains rather than changed domains.",
+      "evidence": "100 valid domains plus one profile update invoked projectDomain 200 times.",
+      "recommendation": "Maintain state-key/token/owner dependencies, project only affected domains and commit a copy-on-write change set; move large read models to indexed storage.",
+      "repairStatus": "implemented-and-regression-tested",
+      "repairReport": "docs/review/AUDIT-REPAIRS-2026-10-24.md"
+    },
+    {
+      "id": "OCR2-05",
+      "path": "packages/indexer/src/storage.ts",
+      "start_line": 47,
+      "severity": "medium",
+      "category": "performance",
+      "status": "open; newly quantified retention behavior",
+      "content": "applyLedger commits all full-chain receipts and SQLite retains them indefinitely, including traffic with no domain changes/events. Disk growth and write load track the whole network.",
+      "evidence": "100 unrelated Payments produced 0 business events but 100 stored receipts.",
+      "recommendation": "Decode all ordered transactions for completeness, persist relevant receipts plus ledger/checkpoint evidence, and make full archival retention/compression/pruning an explicit option.",
+      "repairStatus": "implemented-and-regression-tested",
+      "repairReport": "docs/review/AUDIT-REPAIRS-2026-10-24.md"
+    },
+    {
+      "id": "OCR2-06",
+      "path": "packages/sdk/src/registrar.ts",
+      "start_line": 244,
+      "severity": "medium",
+      "category": "performance",
+      "status": "open; source-confirmed",
+      "content": "Incoming offers rescan account history up to 100 pages on every refresh and verify candidates serially without a shared snapshot context. Primary discovery separately enumerates all owned tokens. Large histories/portfolios create many dependent RPC round trips.",
+      "evidence": "Source tracing: history loop at 244, sequential candidate loop at 268 and primary enumeration in resolver.ts:147.",
+      "recommendation": "Offer paginated/incremental collection reads, share pinned identity results and use bounded candidate concurrency; integrate an explicit indexer read source with history-completeness metadata.",
+      "repairStatus": "implemented-and-regression-tested",
+      "repairReport": "docs/review/AUDIT-REPAIRS-2026-10-24.md"
+    },
+    {
+      "id": "OCR2-07",
+      "path": "packages/sdk/src/resolver.ts",
+      "start_line": 229,
+      "severity": "medium",
+      "category": "performance",
+      "status": "open; previously identified read-planning issue",
+      "content": "Selective describe still enumerates the records index/custom slots; requested values then use unbounded Promise.all. Explicit caller arrays are not constrained to the on-chain inventory size.",
+      "evidence": "describeSnapshot always calls getRecordKeys before selected reads; mapReads only bounds descriptor/portfolio work.",
+      "recommendation": "Implement a shared verified read planner/getRecords facade; bypass enumeration for explicit selections, deduplicate keys, bound aggregate concurrency and report selection completeness accurately.",
+      "repairStatus": "implemented-and-regression-tested",
+      "repairReport": "docs/review/AUDIT-REPAIRS-2026-10-24.md"
+    },
+    {
+      "id": "OCR2-08",
+      "path": "test-app/src/app.ts",
+      "start_line": 43,
+      "severity": "medium",
+      "category": "performance",
+      "status": "open; newly reproduced",
+      "content": "Activity renders only 30 entries but retains every activity item and receipt/details object in memory for the entire page session.",
+      "evidence": "Executing the actual transpiled log function 1000 times retained 1000 entries while the display remained limited to 30.",
+      "recommendation": "Bound activity/history by item and byte budgets, keep compact summaries and fetch full receipt details by hash on demand.",
+      "repairStatus": "implemented-and-regression-tested",
+      "repairReport": "docs/review/AUDIT-REPAIRS-2026-10-24.md"
+    }
+  ],
+  "coverage": [
+    {
+      "path": ".gitattributes",
+      "status": "reviewed",
+      "lines": 6,
+      "method": "static configuration/build/deploy/license inspection"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "status": "reviewed",
+      "lines": 37,
+      "method": "static configuration/build/deploy/license inspection"
+    },
+    {
+      "path": ".gitignore",
+      "status": "reviewed",
+      "lines": 36,
+      "method": "static configuration/build/deploy/license inspection"
+    },
+    {
+      "path": "LICENSE",
+      "status": "reviewed",
+      "lines": 21,
+      "method": "static configuration/build/deploy/license inspection"
+    },
+    {
+      "path": "hook/.gitignore",
+      "status": "reviewed",
+      "lines": 7,
+      "method": "static configuration/build/deploy/license inspection"
+    },
+    {
+      "path": "hook/build.ps1",
+      "status": "reviewed",
+      "lines": 5,
+      "method": "static configuration/build/deploy/license inspection"
+    },
+    {
+      "path": "hook/build.sh",
+      "status": "reviewed",
+      "lines": 4,
+      "method": "static configuration/build/deploy/license inspection"
+    },
+    {
+      "path": "hook/config/handlers.json",
+      "status": "reviewed",
+      "lines": 12,
+      "method": "static configuration/build/deploy/license inspection"
+    },
+    {
+      "path": "hook/deploy/masks.cjs",
+      "status": "reviewed",
+      "lines": 12,
+      "method": "static configuration/build/deploy/license inspection"
+    },
+    {
+      "path": "hook/deploy/testnet.cjs",
+      "status": "reviewed",
+      "lines": 49,
+      "method": "static configuration/build/deploy/license inspection"
+    },
+    {
+      "path": "hook/src/common.h",
+      "status": "reviewed",
+      "lines": 1276,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "hook/src/handlers/admin.c",
+      "status": "reviewed",
+      "lines": 43,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "hook/src/handlers/authorization.c",
+      "status": "reviewed",
+      "lines": 25,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "hook/src/handlers/burn.c",
+      "status": "reviewed",
+      "lines": 18,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "hook/src/handlers/claim.c",
+      "status": "reviewed",
+      "lines": 3,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "hook/src/handlers/clear-text.c",
+      "status": "reviewed",
+      "lines": 30,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "hook/src/handlers/control.c",
+      "status": "reviewed",
+      "lines": 108,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "hook/src/handlers/issuance.c",
+      "status": "reviewed",
+      "lines": 155,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "hook/src/handlers/profile.c",
+      "status": "reviewed",
+      "lines": 91,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "hook/src/handlers/set-address.c",
+      "status": "reviewed",
+      "lines": 34,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "hook/src/handlers/set-text.c",
+      "status": "reviewed",
+      "lines": 42,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "hook/toolchain/.dockerignore",
+      "status": "reviewed",
+      "lines": 3,
+      "method": "static configuration/build/deploy/license inspection"
+    },
+    {
+      "path": "hook/toolchain/Dockerfile",
+      "status": "reviewed",
+      "lines": 7,
+      "method": "static configuration/build/deploy/license inspection"
+    },
+    {
+      "path": "hook/toolchain/compile-hook.mjs",
+      "status": "reviewed",
+      "lines": 31,
+      "method": "static configuration/build/deploy/license inspection"
+    },
+    {
+      "path": "hook/toolchain/configure-compiler.mjs",
+      "status": "reviewed",
+      "lines": 21,
+      "method": "static configuration/build/deploy/license inspection"
+    },
+    {
+      "path": "hook/toolchain/guard-sources.json",
+      "status": "reviewed",
+      "lines": 27,
+      "method": "static configuration/build/deploy/license inspection"
+    },
+    {
+      "path": "hook/toolchain/package.json",
+      "status": "reviewed",
+      "lines": 7,
+      "method": "static configuration/build/deploy/license inspection"
+    },
+    {
+      "path": "package.json",
+      "status": "reviewed",
+      "lines": 41,
+      "method": "static configuration/build/deploy/license inspection"
+    },
+    {
+      "path": "packages/indexer/LICENSE",
+      "status": "reviewed",
+      "lines": 21,
+      "method": "static configuration/build/deploy/license inspection"
+    },
+    {
+      "path": "packages/indexer/examples/server.cjs",
+      "status": "reviewed",
+      "lines": 61,
+      "method": "static configuration/build/deploy/license inspection"
+    },
+    {
+      "path": "packages/indexer/package.json",
+      "status": "reviewed",
+      "lines": 55,
+      "method": "static configuration/build/deploy/license inspection"
+    },
+    {
+      "path": "packages/indexer/scripts/build.mjs",
+      "status": "reviewed",
+      "lines": 10,
+      "method": "static configuration/build/deploy/license inspection"
+    },
+    {
+      "path": "packages/indexer/src/decoder.ts",
+      "status": "reviewed",
+      "lines": 101,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "packages/indexer/src/index.ts",
+      "status": "reviewed",
+      "lines": 163,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "packages/indexer/src/projection.ts",
+      "status": "reviewed",
+      "lines": 112,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "packages/indexer/src/source.ts",
+      "status": "reviewed",
+      "lines": 76,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "packages/indexer/src/storage.ts",
+      "status": "reviewed",
+      "lines": 59,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "packages/indexer/src/types.ts",
+      "status": "reviewed",
+      "lines": 34,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "packages/indexer/tsconfig.json",
+      "status": "reviewed",
+      "lines": 1,
+      "method": "static configuration/build/deploy/license inspection"
+    },
+    {
+      "path": "packages/sdk/LICENSE",
+      "status": "reviewed",
+      "lines": 21,
+      "method": "static configuration/build/deploy/license inspection"
+    },
+    {
+      "path": "packages/sdk/package.json",
+      "status": "reviewed",
+      "lines": 64,
+      "method": "static configuration/build/deploy/license inspection"
+    },
+    {
+      "path": "packages/sdk/scripts/build.mjs",
+      "status": "reviewed",
+      "lines": 2,
+      "method": "static configuration/build/deploy/license inspection"
+    },
+    {
+      "path": "packages/sdk/scripts/test.mjs",
+      "status": "reviewed",
+      "lines": 2,
+      "method": "static configuration/build/deploy/license inspection"
+    },
+    {
+      "path": "packages/sdk/src/addresses.ts",
+      "status": "reviewed",
+      "lines": 38,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "packages/sdk/src/confirmation.ts",
+      "status": "reviewed",
+      "lines": 18,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "packages/sdk/src/constants.ts",
+      "status": "reviewed",
+      "lines": 109,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "packages/sdk/src/content.ts",
+      "status": "reviewed",
+      "lines": 26,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "packages/sdk/src/context.ts",
+      "status": "reviewed",
+      "lines": 13,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "packages/sdk/src/controller.ts",
+      "status": "reviewed",
+      "lines": 43,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "packages/sdk/src/deployments.ts",
+      "status": "reviewed",
+      "lines": 22,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "packages/sdk/src/diagnostics.ts",
+      "status": "reviewed",
+      "lines": 106,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "packages/sdk/src/errors.ts",
+      "status": "reviewed",
+      "lines": 42,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "packages/sdk/src/identity.ts",
+      "status": "reviewed",
+      "lines": 38,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "packages/sdk/src/index.ts",
+      "status": "reviewed",
+      "lines": 349,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "packages/sdk/src/indexer.ts",
+      "status": "reviewed",
+      "lines": 48,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "packages/sdk/src/metadata.ts",
+      "status": "reviewed",
+      "lines": 26,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "packages/sdk/src/networks.ts",
+      "status": "reviewed",
+      "lines": 38,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "packages/sdk/src/protocol.ts",
+      "status": "reviewed",
+      "lines": 145,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "packages/sdk/src/purchase.ts",
+      "status": "reviewed",
+      "lines": 7,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "packages/sdk/src/read-snapshot.ts",
+      "status": "reviewed",
+      "lines": 24,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "packages/sdk/src/receipts.ts",
+      "status": "reviewed",
+      "lines": 50,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "packages/sdk/src/registrar.ts",
+      "status": "reviewed",
+      "lines": 329,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "packages/sdk/src/resolver.ts",
+      "status": "reviewed",
+      "lines": 293,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "packages/sdk/src/text-records.ts",
+      "status": "reviewed",
+      "lines": 38,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "packages/sdk/src/treasury.ts",
+      "status": "reviewed",
+      "lines": 8,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "packages/sdk/src/types.ts",
+      "status": "reviewed",
+      "lines": 209,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "packages/sdk/src/util.ts",
+      "status": "reviewed",
+      "lines": 265,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "packages/sdk/src/wallet-kit.ts",
+      "status": "reviewed",
+      "lines": 81,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "packages/sdk/tsconfig.json",
+      "status": "reviewed",
+      "lines": 19,
+      "method": "static configuration/build/deploy/license inspection"
+    },
+    {
+      "path": "scripts/build-hooks.mjs",
+      "status": "reviewed",
+      "lines": 30,
+      "method": "static configuration/build/deploy/license inspection"
+    },
+    {
+      "path": "scripts/check-packages.mjs",
+      "status": "reviewed",
+      "lines": 55,
+      "method": "static configuration/build/deploy/license inspection"
+    },
+    {
+      "path": "scripts/check-repository.mjs",
+      "status": "reviewed",
+      "lines": 60,
+      "method": "static configuration/build/deploy/license inspection"
+    },
+    {
+      "path": "scripts/setup-guard.mjs",
+      "status": "reviewed",
+      "lines": 8,
+      "method": "static configuration/build/deploy/license inspection"
+    },
+    {
+      "path": "scripts/test-hooks.mjs",
+      "status": "reviewed",
+      "lines": 10,
+      "method": "static configuration/build/deploy/license inspection"
+    },
+    {
+      "path": "scripts/version-packages.mjs",
+      "status": "reviewed",
+      "lines": 30,
+      "method": "static configuration/build/deploy/license inspection"
+    },
+    {
+      "path": "test-app/index.html",
+      "status": "reviewed",
+      "lines": 1,
+      "method": "static configuration/build/deploy/license inspection"
+    },
+    {
+      "path": "test-app/package.json",
+      "status": "reviewed",
+      "lines": 29,
+      "method": "static configuration/build/deploy/license inspection"
+    },
+    {
+      "path": "test-app/scripts/build.mjs",
+      "status": "reviewed",
+      "lines": 9,
+      "method": "static configuration/build/deploy/license inspection"
+    },
+    {
+      "path": "test-app/scripts/package.ps1",
+      "status": "reviewed",
+      "lines": 17,
+      "method": "static configuration/build/deploy/license inspection"
+    },
+    {
+      "path": "test-app/src/app.ts",
+      "status": "reviewed",
+      "lines": 187,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "test-app/src/artwork.ts",
+      "status": "reviewed",
+      "lines": 30,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "test-app/src/config.ts",
+      "status": "reviewed",
+      "lines": 9,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "test-app/src/domain-input.ts",
+      "status": "reviewed",
+      "lines": 14,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "test-app/src/main.ts",
+      "status": "reviewed",
+      "lines": 3,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "test-app/src/metadata.ts",
+      "status": "reviewed",
+      "lines": 4,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "test-app/src/network-icons.ts",
+      "status": "reviewed",
+      "lines": 8,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "test-app/src/notifications.ts",
+      "status": "reviewed",
+      "lines": 40,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "test-app/src/purchase.ts",
+      "status": "reviewed",
+      "lines": 1,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "test-app/src/records.ts",
+      "status": "reviewed",
+      "lines": 11,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "test-app/src/styles.css",
+      "status": "reviewed",
+      "lines": 180,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "test-app/src/views.ts",
+      "status": "reviewed",
+      "lines": 8,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "test-app/src/wallet-balance.ts",
+      "status": "reviewed",
+      "lines": 12,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "test-app/src/wallet-signer.ts",
+      "status": "reviewed",
+      "lines": 12,
+      "method": "source and cross-path audit; focused runtime evidence where applicable"
+    },
+    {
+      "path": "test-app/tsconfig.json",
+      "status": "reviewed",
+      "lines": 28,
+      "method": "static configuration/build/deploy/license inspection"
+    },
+    {
+      "path": "test-app/vite.config.ts",
+      "status": "reviewed",
+      "lines": 5,
+      "method": "static configuration/build/deploy/license inspection"
+    }
+  ],
+  "excluded": [
+    {
+      "path": ".github/ISSUE_TEMPLATE/bug.md",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/feature.md",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": ".github/PULL_REQUEST_TEMPLATE.md",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "README.md",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "deployments/testnet-owner-burn-validation.json",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "deployments/testnet-recovery-validation.json",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "deployments/testnet-validation.json",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "deployments/testnet.json",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "docs/API.md",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "docs/ARCHITECTURE.md",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "docs/HOOK-FUNCTIONS.md",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "docs/INDEXER.md",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "docs/NETWORKS.md",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "docs/PACKAGES.md",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "docs/README.md",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "docs/SPEC.md",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "docs/WALLET-INTEGRATION.md",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "docs/examples/README.md",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "docs/examples/config.mjs",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "docs/examples/read-events.mjs",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "docs/examples/read-profile.mjs",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "docs/review/ERROR-UX.md",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "docs/review/EVENTS-AND-INDEXING.md",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "docs/review/FINDINGS.md",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "docs/review/INDEXER.md",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "docs/review/OPEN-CODE-REVIEW.md",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "docs/review/OWNER-ONLY-BURN.md",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "docs/review/READ-PERFORMANCE.md",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "docs/review/README.md",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "docs/review/RECOVERY-AND-CLIENT-FIXES.md",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "docs/review/SDK-RPC-AUDIT.md",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "docs/review/TEST-MATRIX.md",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "docs/review/TESTNET-RECOVERY-DEPLOYMENT.md",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "docs/review/WALLET-KIT-INTEGRATION.md",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "docs/review/WORKSPACES.md",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "docs/review/open-code-review-coverage.json",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "docs/review/releases/0.3.0.md",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "docs/standards/README.md",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "docs/standards/TEMPLATE.md",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "docs/standards/xnip-0000-process.md",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "docs/standards/xnip-0001-names.md",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "docs/standards/xnip-0002-records.md",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "docs/standards/xnip-0003-addresses.md",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "docs/standards/xnip-0004-primary.md",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "docs/standards/xnip-0005-avatar.md",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "hook/DEPLOY-TESTNET.md",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "hook/README.md",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "hook/deploy/.env.example",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "hook/test/deployment.cjs",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "hook/test/lifecycle.cjs",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "hook/test/owner-burn-live.cjs",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "hook/test/policy.cjs",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "hook/test/prepare.cjs",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "hook/test/profile-batch.cjs",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "hook/test/runtime.cjs",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "hook/test/validation.cjs",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "hook/toolchain/package-lock.json",
+      "reason": "default_path"
+    },
+    {
+      "path": "package-lock.json",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "packages/README.md",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "packages/indexer/.env.example",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "packages/indexer/README.md",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "packages/indexer/test/capture-fixtures.cjs",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "packages/indexer/test/evidence.test.cjs",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "packages/indexer/test/fixtures.cjs",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "packages/indexer/test/fixtures/deployment.json",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "packages/indexer/test/fixtures/profile.json",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "packages/indexer/test/fixtures/transfer.json",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "packages/indexer/test/indexer.test.cjs",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "packages/indexer/test/server.test.cjs",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "packages/indexer/test/source.test.cjs",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "packages/indexer/test/testnet.cjs",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "packages/sdk/CHANGELOG.md",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "packages/sdk/PACKAGE.md",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "packages/sdk/README.md",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "packages/sdk/test/keys.test.ts",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "packages/sdk/test/live.cjs",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "packages/sdk/test/networks.test.cjs",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "packages/sdk/test/read-performance.test.cjs",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "packages/sdk/test/run-keys.cjs",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "packages/sdk/test/testnet.cjs",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "packages/sdk/test/v2.test.cjs",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "packages/sdk/test/verify-failures.cjs",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "packages/sdk/test/verify-release.cjs",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "packages/sdk/test/verify-streams.cjs",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "scripts/test/workspaces.test.cjs",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "test-app/.env.example",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "test-app/DEPLOY.md",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "test-app/README.md",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "test-app/public/web.config",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "test-app/src/icons/LICENSE.txt",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "test-app/src/icons/README.md",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "test-app/src/icons/btc.svg",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "test-app/src/icons/eth.svg",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "test-app/src/icons/sol.svg",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "test-app/src/icons/trx.svg",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "test-app/src/icons/xrp.svg",
+      "reason": "unsupported_ext"
+    },
+    {
+      "path": "test-app/tests/artwork-browser.cjs",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "test-app/tests/balance-domain.test.ts",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "test-app/tests/browser-smoke.cjs",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "test-app/tests/capture-screenshot.cjs",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "test-app/tests/connection-browser.cjs",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "test-app/tests/content-media.test.ts",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "test-app/tests/diagnostics.test.ts",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "test-app/tests/domain-manager.test.ts",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "test-app/tests/ens-standards.test.ts",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "test-app/tests/incoming-browser.cjs",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "test-app/tests/incoming.test.ts",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "test-app/tests/metadata-cache.test.ts",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "test-app/tests/notifications-browser.cjs",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "test-app/tests/notifications-fixture.ts",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "test-app/tests/primary-standard.test.ts",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "test-app/tests/profile-batch.test.ts",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "test-app/tests/profile-performance-browser.cjs",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "test-app/tests/rpc-recovery.test.ts",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "test-app/tests/sdk-management.test.ts",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "test-app/tests/static-subpath.cjs",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "test-app/tests/wallet-balance-fixture.ts",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "test-app/tests/wallet-expiry.test.ts",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "test-app/tests/wallet-kit-pipeline.test.ts",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "test-app/tests/wallet-kit-ui-browser.cjs",
+      "reason": "user_exclude"
+    },
+    {
+      "path": "test-app/tests/wallet-signer.test.ts",
+      "reason": "user_exclude"
+    }
+  ],
+  "evidence": {
+    "cache": {
+      "entries": 2000,
+      "expired": 2000,
+      "ttlMs": 0
+    },
+    "cacheAndActivity": {
+      "inFlightCacheAfterClear": 1,
+      "retainedActivityEntries": 1000,
+      "displayLimit": 30
+    },
+    "deadline": {
+      "requestedTimeoutMs": 5,
+      "observedAfterMs": 40,
+      "settled": false
+    },
+    "indexerGrowth": {
+      "unrelatedTransactions": 100,
+      "persistedReceipts": 100,
+      "businessEvents": 0,
+      "domains": 100,
+      "changedDomains": 1,
+      "projectDomainCalls": 200
+    },
+    "uriBoundary": [
+      {
+        "baseLength": 115,
+        "domainLength": 66,
+        "uriLength": 181,
+        "result": {
+          "kind": "accept",
+          "code": 0,
+          "text": "minting"
+        },
+        "emitted": [
+          {
+            "type": "URITokenMint",
+            "bytes": 412
+          }
+        ]
+      },
+      {
+        "baseLength": 116,
+        "domainLength": 66,
+        "uriLength": 182,
+        "result": {
+          "kind": "accept",
+          "code": 0,
+          "text": "minting"
+        },
+        "emitted": [
+          {
+            "type": "URITokenMint",
+            "bytes": 413
+          }
+        ]
+      },
+      {
+        "baseLength": 120,
+        "domainLength": 66,
+        "uriLength": 186,
+        "result": {
+          "kind": "accept",
+          "code": 0,
+          "text": "minting"
+        },
+        "emitted": [
+          {
+            "type": "URITokenMint",
+            "bytes": 417
+          }
+        ]
+      }
+    ],
+    "selectedTests": {
+      "sdkSecurity": 18,
+      "walletSignerAndExpiry": 31,
+      "indexer": 37
+    },
+    "dependencyAudit": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    }
+  },
+  "repairVerification": {
+    "sdkTests": 107,
+    "indexerTests": 43,
+    "appTests": 227,
+    "hookProbes": 283,
+    "hookArtifacts": 10,
+    "nativeStaticGuard": "PASS",
+    "maxHookBytes": 13382,
+    "compilerWarnings": 0,
+    "packageDryRuns": 2,
+    "releaseToolTests": 3,
+    "deployed": true,
+    "nativeFaultInjectionVerified": false,
+    "openNativeAssuranceGate": "F-01",
+    "deploymentReport": "docs/review/TESTNET-AUDIT-DEPLOYMENT.md",
+    "installTransaction": "6E6B6F12658E023DBE6DEC5C49DA5A58E21F2ED7D6CA7BC7735A8D4900F82512"
+  }
+}

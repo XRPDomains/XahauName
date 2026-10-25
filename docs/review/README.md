@@ -9,6 +9,10 @@ Engineering reviews, verification scope, design assessments and deployment evide
 | [Findings register](FINDINGS.md) | Current disposition of correctness and reliability findings |
 | [Test matrix](TEST-MATRIX.md) | Automated coverage and manual/native verification scope |
 | [Full source review](OPEN-CODE-REVIEW.md) | Review method, original findings and source coverage |
+| [Full audit — 24 October 2026](FULL-AUDIT-2026-10-24.md) | Follow-up correctness, memory, scalability and consolidation findings with grouped repairs |
+| [Audit repairs — 24 October 2026](AUDIT-REPAIRS-2026-10-24.md) | Implemented repairs, regressions, rebuilt hook evidence and remaining native assurance gate |
+| [Audit refactor deployment](TESTNET-AUDIT-DEPLOYMENT.md) | Latest testnet install, preserved state, smoke trace and local test server |
+| [Explorer ABI preparation](EXPLORER-ABI.md) | Shared binary schema, checked snapshot manifests, TLD provenance and publication scope |
 | [Lifecycle/client follow-up](RECOVERY-AND-CLIENT-FIXES.md) | Implementation changes and verification evidence |
 | [Owner-only burn](OWNER-ONLY-BURN.md) | Native custody authorization, upgrade boundary and testnet rejection/success receipts |
 

@@ -104,16 +104,9 @@ typedef struct __attribute__((packed, may_alias)) {uint32_t value;} xn_word;
 #define RC_CBAK_UNKNOWN      61
 #define RC_INDEX_FULL        62
 
-#define SWEEP_COIN_TYPES_COUNT  10
-static const uint32_t SWEEP_COIN_TYPES[SWEEP_COIN_TYPES_COUNT] = {
-    0, 60, 118, 144, 145, 148, 195, 345, 535, 714
-};
-
 #define SWEEP_TEXT_KEYS_COUNT   18
 static const char * const SWEEP_TEXT_KEYS[SWEEP_TEXT_KEYS_COUNT] = {
-    "avatar", "description", "url", "email", "notice", "keywords",
-    "com.twitter", "com.github", "com.discord", "com.reddit",
-    "com.linkedin", "org.telegram", "name", "location", "contenthash", "display", "mail", "phone"
+    "avatar", "description", "url", "email", "notice", "keywords", "com.twitter", "com.github", "com.discord", "com.reddit", "com.linkedin", "org.telegram", "name", "location", "contenthash", "display", "mail", "phone"
 };
 static const uint8_t SWEEP_TEXT_KEY_LENS[SWEEP_TEXT_KEYS_COUNT] = {
     6, 11, 3, 5, 6, 8, 11, 10, 11, 10, 12, 12, 4, 8, 11, 7, 4, 5
@@ -126,16 +119,6 @@ int str_has_whitespace(const uint8_t *s, int n)
         if (c == 0x20 || c == 0x09 || c == 0x0A || c == 0x0D) return 1;
     }
     return 0;
-}
-
-int str_eq_lit(const uint8_t *a, int al, const char *lit)
-{
-    int ll = 0;
-    while (GUARD(512), ll < 64 && lit[ll] != 0) ll++;
-    if (al != ll) return 0;
-    for (int i = 0; GUARD(64), i < al; i++)
-        if (a[i] != (uint8_t)lit[i]) return 0;
-    return 1;
 }
 
 static int hex_nibble(uint8_t c)
@@ -238,20 +221,6 @@ int make_label_of_key(uint8_t *out32, const uint8_t *uritokenid_32)
 #pragma clang loop unroll(full)
     for (int k = 0; k < 28; k++) out32[4 + k] = uritokenid_32[k];
     return 1;
-}
-
-int make_role_key(uint8_t *out32,
-                  const uint8_t *role, int rlen,
-                  const uint8_t *addr20)
-{
-    uint8_t buf[64];
-    const char *pfx = "_role:";
-    int i = 0;
-    for (int k = 0; GUARD(7), k < 6; k++) buf[i++] = (uint8_t)pfx[k];
-    for (int k = 0; GUARD(17), k < rlen; k++) buf[i++] = role[k];
-    buf[i++] = ':';
-    for (int k = 0; GUARD(21), k < 20; k++) buf[i++] = addr20[k];
-    return util_sha512h(out32, 32, buf, i) == 32 ? 1 : 0;
 }
 
 int make_tld_key(uint8_t *out32, const uint8_t *tld, int tlen)
@@ -504,25 +473,6 @@ int parse_hex20_field(const uint8_t *memo, int ml,
     return 1;
 }
 
-int parse_hex_var_field(const uint8_t *memo, int ml,
-                        const char *field_name, int fname_len,
-                        uint8_t *out, int cap)
-{
-    uint8_t hex[260];
-    int hl = parse_str_field(memo, ml, field_name, fname_len, hex, 260);
-    if (hl == 0) return 0;
-    if (hl < 0 || (hl & 1) != 0) return -1;
-    int bytes = hl / 2;
-    if (bytes > cap) return -1;
-    for (int i = 0; GUARD(260), i < bytes; i++) {
-        int hi = hex_nibble(hex[i * 2]);
-        int lo = hex_nibble(hex[i * 2 + 1]);
-        if (hi < 0 || lo < 0) return -1;
-        out[i] = (hi << 4) | lo;
-    }
-    return bytes;
-}
-
 int64_t parse_uint_field_strict(const uint8_t *memo,int ml,const char *name,int nl){uint8_t value[4];int n=otxn_param(value,4,name,nl);if(n==DOESNT_EXIST)return -1;if(n!=4)return -2;return ((uint32_t)value[0]<<24)|((uint32_t)value[1]<<16)|((uint32_t)value[2]<<8)|value[3];}
 
 int is_owner_of_hook(const uint8_t *addr20)
@@ -533,8 +483,6 @@ int is_owner_of_hook(const uint8_t *addr20)
         if (ha[i] != addr20[i]) return 0;
     return 1;
 }
-
-int has_role(const uint8_t*role,int rl,const uint8_t*sender){return is_owner_of_hook(sender);}
 
 uint64_t read_payment_amount_drops(int *valid)
 {
@@ -553,18 +501,6 @@ uint64_t read_payment_amount_drops(int *valid)
                | ((uint64_t)amount[6] <<  8)
                |  (uint64_t)amount[7];
     return v;
-}
-
-int payment_is_partial(void)
-{
-    uint8_t flags_buf[4];
-    int fl = otxn_field(flags_buf, 4, sfFlags);
-    if (fl != 4) return 0;
-    uint32_t flags = ((uint32_t)flags_buf[0] << 24)
-                   | ((uint32_t)flags_buf[1] << 16)
-                   | ((uint32_t)flags_buf[2] <<  8)
-                   |  (uint32_t)flags_buf[3];
-    return (flags & tfPartialPayment) ? 1 : 0;
 }
 
 int load_records_index(uint8_t *idx_out,
@@ -964,22 +900,6 @@ static int emit_correlated(int kind, const uint8_t *uri, int uri_len,
     return state_set(hash, 32, key, 32) == 32 ? RC_OK : RC_EMIT_FAIL;
 }
 
-int emit_uritoken_mint_and_offer(const uint8_t *uri, int uri_len,
-                                 const uint8_t *destination20)
-{
-    uint8_t issuer[20], id[32];
-    if (uri_len < 1 || uri_len > TOKEN_URI_MAX || hook_account(issuer, 20) != 20 ||
-        !compute_uritoken_id(id, issuer, uri, uri_len)) return RC_EMIT_FAIL;
-    (void)destination20; 
-    return emit_correlated(ttURITOKEN_MINT, uri, uri_len, id, 0, 0, "mnt");
-}
-
-int emit_refund(const uint8_t *destination20, uint64_t drops)
-{
-    uint8_t hash[32];
-    return emit_stage(ttPAYMENT, 0, 0, 0, destination20, drops, hash);
-}
-
 static int tx_slot_field(int tx, uint32_t field, uint8_t *out, int cap)
 {
     int64_t s = slot_subfield(tx, field, 12);
@@ -1002,39 +922,6 @@ static int erase_async(const char *tag, const uint8_t *id)
     uint8_t key[32], zero[1] = {0};
     async_key(key, tag, id);
     return state_set(zero, 0, key, 32) >= 0;
-}
-
-static int finalize_claim(const uint8_t *id, const uint8_t *buyer)
-{
-    uint8_t key[32], pending[PENDING_LEN], hash[32], name[70];
-    make_pending_key(key, id);
-    if (state(pending, PENDING_LEN, key, 32) != PENDING_LEN) return 0;
-    if (execution_success() != 1 || !bytes_equal(buyer, pending, 20)) return 0;
-    async_key(key, "rfd", id);
-    if (state(hash, 32, key, 32) != DOESNT_EXIST) return 0;
-    async_key(key, "ofr", id);
-    if (state(hash, 32, key, 32) != 32) return 0;
-    make_label_of_key(key, id);
-    int len = state(name, sizeof(name), key, 32), dot = -1;
-    if (len <= 0 || len > 70) return 0;
-    for (int i = len - 1; GUARD(70), i >= 0; i--)
-        if (name[i] == '.') { dot = i; break; }
-    if (dot < 1 || dot >= len - 1) return 0;
-    if(!make_token_key(key,name,dot,name+dot+1,len-dot-1)||state(hash,32,key,32)!=32||!id_equal(hash,id)) return 0;
-    if (!make_root_key(key, name, dot, name + dot + 1, len - dot - 1)) return 0;
-    uint8_t root[ROOT_LEN];
-    COPY_TX_FIXED(root, buyer, 20);
-    root[20] = 0;
-    int64_t now = ledger_last_time();
-    if (now < 0) return 0;
-#pragma clang loop unroll(full)
-    for (int i = 0; i < 8; i++) root[21 + i] = (uint64_t)now >> (56 - 8 * i);
-    root[29] = 0; root[30] = 0; root[31] = 0;
-    if (state_set(root, ROOT_LEN, key, 32) != ROOT_LEN) return 0;
-    make_uri_key(key, id);
-    if (state_set(name, len, key, 32) != len) return 0;
-    if (!clear_pending(id) || !erase_async("mnt", id) || !erase_async("ofr", id)) return 0;
-    return 1;
 }
 
 #define RECOVERY_COPY(dst,src,count) do { \
@@ -1273,4 +1160,9 @@ static int64_t lifecycle_dispatch(uint32_t ctx){
     if(result==1)accept(SBUF("claimed"),0);
     accept(SBUF("not ours"),0);
     return 0;
+}
+
+// Shared entry policy for record, profile, control and admin handlers.
+static int entry_operation(uint32_t ctx,uint8_t *sender) {
+    int64_t tt=otxn_type();if(tt!=ttPAYMENT&&tt!=ttINVOKE)accept(SBUF("ignored"),0);if(ctx!=0)accept(SBUF("weak ignored"),0);uint8_t marker[1];if(otxn_param(marker,1,(uint32_t)"xn_v",4)!=1||marker[0]!=2)accept(SBUF("not v2"),0);if(otxn_field(sender,20,sfAccount)!=20)rollback(SBUF("sender"),RC_BAD_MEMO);uint8_t op[1];if(otxn_param(op,1,(uint32_t)"op",2)!=1||(op[0]>17||op[0]==15||op[0]==8))rollback(SBUF("unknown op"),RC_UNKNOWN_OP);return op[0];
 }

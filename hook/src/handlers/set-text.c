@@ -39,4 +39,4 @@ int64_t do_set_text(const uint8_t *memo, int ml, const uint8_t *sender20)
 }
 #pragma clang attribute pop
 
-__attribute__((flatten)) int64_t hook(uint32_t ctx){_g(1,1);int64_t tt=otxn_type();if(tt!=ttPAYMENT&&tt!=ttINVOKE)accept(SBUF("ignored"),0);if(ctx!=0)accept(SBUF("weak ignored"),0);uint8_t marker[1];if(otxn_param(marker,1,(uint32_t)"xn_v",4)!=1||marker[0]!=2)accept(SBUF("not v2"),0);uint8_t sender[20];if(otxn_field(sender,20,sfAccount)!=20)rollback(SBUF("sender"),RC_BAD_MEMO);uint8_t op[1];if(otxn_param(op,1,(uint32_t)"op",2)!=1||(op[0]>17||op[0]==15||op[0]==8))rollback(SBUF("unknown op"),RC_UNKNOWN_OP);int operation=op[0];const uint8_t*m=0;int ml=0;if(operation!=6)accept(SBUF("next"),0);uint8_t hdr[5];int hl=otxn_param(hdr,5,(uint32_t)"profile",7);if(hl!=DOESNT_EXIST)accept(SBUF("next"),0);return do_set_text(m,ml,sender);}
+__attribute__((flatten)) int64_t hook(uint32_t ctx){_g(1,1);uint8_t sender[20];int operation=entry_operation(ctx,sender);const uint8_t*m=0;int ml=0;if(operation!=6)accept(SBUF("next"),0);uint8_t hdr[5];int hl=otxn_param(hdr,5,(uint32_t)"profile",7);if(hl!=DOESNT_EXIST)accept(SBUF("next"),0);return do_set_text(m,ml,sender);}

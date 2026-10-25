@@ -42,7 +42,7 @@ for (const p of ordered) {
                 throw new Error(`${p.name}: internal dependency ${name} is not synchronized`);
         }
     }
-    npm(['run', 'build', '--workspace', p.name]);
+    if(!process.argv.includes('--skip-build'))npm(['run', 'build', '--workspace', p.name]);
     if (process.argv.includes('--build-only')) continue;
     const packed = JSON.parse(npm(['pack', '--workspace', p.name, '--dry-run', '--ignore-scripts', '--json'], true))[0];
     const files = new Set(packed.files.map(f => f.path));

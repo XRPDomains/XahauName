@@ -41,12 +41,7 @@ export const TEXT_KEYS = {
     CONTENTHASH: 'contenthash',
 } as const;
 
-export const SWEEP_TEXT_KEYS: readonly string[] = [
-    'avatar', 'description', 'url', 'email', 'notice', 'keywords',
-    'com.twitter', 'com.github', 'com.discord', 'com.reddit',
-    'com.linkedin', 'org.telegram', 'name', 'location', 'contenthash',
-    'display', 'mail', 'phone',
-];
+export {STANDARD_TEXT_KEYS as SWEEP_TEXT_KEYS} from "./protocol.generated";
 
 /** Hook return codes; see docs/SPEC.md */
 export enum ReturnCode {
@@ -99,11 +94,13 @@ export const MEMO_FORMAT_STR = 'application/json';
 export const TF_PARTIAL_PAYMENT = 0x00020000;
 
 /** Hook state layout constants */
-export const ROOT_LEN = 32;
-export const ROOT_FLAG_PRIMARY = 0x01;
-export const ROOT_FLAG_LOCKED = 0x02;
-export const PRICING_LEN = 81;
-export const PRICING_VERSION = 1;
+import {STATE_LAYOUTS} from './state-layouts.generated';
+export {STATE_LAYOUTS};
+export const ROOT_LEN = STATE_LAYOUTS.root.length;
+export const ROOT_FLAG_PRIMARY = STATE_LAYOUTS.root.primaryFlag;
+export const ROOT_FLAG_LOCKED = STATE_LAYOUTS.root.legacyLockedFlag;
+export const PRICING_LEN = STATE_LAYOUTS.pricing.length;
+export const PRICING_VERSION = STATE_LAYOUTS.pricing.version;
 
 /** URIToken formula prefix (XLS-45) */
 export const URITOKEN_PREFIX = Buffer.from([0x00, 0x55]);
