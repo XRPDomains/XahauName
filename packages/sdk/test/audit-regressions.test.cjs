@@ -4,6 +4,13 @@ const {beforeDeadline}=require('../dist/deadline');
 const {ReadScheduler}=require('../dist/read-scheduler');
 const {snapshotContext}=require('../dist/read-snapshot');
 const H='AB'.repeat(32),key=i=>i.toString(16).padStart(64,'0').toUpperCase();
+test('native low-fee rejection explains the fee refresh without claiming insufficient balance',()=>{
+ const {explainError}=require('../dist');
+ const direct=explainError({code:'telINSUF_FEE_P'});
+ assert.equal(direct.title,'Network fee is too low');assert.equal(direct.stage,'ledger');assert.equal(direct.recovery,'correct-input');
+ const wrapped=explainError({details:{engineResult:'telINSUF_FEE_P',txHash:'AB'.repeat(32)}});
+ assert.equal(wrapped.title,direct.title);assert.equal(wrapped.txHash,'AB'.repeat(32));assert.match(wrapped.message,/check its transaction status/);
+});
 function client(options={}){const c=new XahauNameClient({...TESTNET,...options});c.rawClient.isConnected=()=>true;c.rawClient.networkID=21338;return c;}
 test('disabled cache stores nothing; entry and byte caps evict even without a repeat lookup',async()=>{
  for(const config of [{cacheTtlMs:0},{cacheMaxEntries:0},{cacheMaxBytes:0}]){const c=client(config);c.rawClient.request=async()=>({result:{node:{HookStateData:'00'}}});for(let i=0;i<30;i++)await c.readState(key(i));assert.equal(c.cache.size,0);}

@@ -1,0 +1,177 @@
+{
+  "networkID": 21338,
+  "readOnly": true,
+  "account": "rDrFNrJYsFAs1d3xQCFYnzsxMxecZYhAfq",
+  "result": "PASS",
+  "source": "native RPC simulate, not consensus fault injection",
+  "checks": [
+    {
+      "name": "purchase above wallet balance",
+      "engineResult": "tecUNFUNDED_PAYMENT",
+      "simulated": true,
+      "broadcast": false,
+      "feeDrops": "337184",
+      "hookExecutions": [
+        {
+          "HookExecution": {
+            "Flags": 1,
+            "HookAccount": "rw5W1Ljeg7T4JionCu2hKzWeUus7XQ9qs",
+            "HookEmitCount": 1,
+            "HookExecutionIndex": 0,
+            "HookHash": "D57DDDEEDAE663B2B34DE833219241AA7E01236C39B2620FAC1DFC5292C2B1A0",
+            "HookInstructionCount": "2513",
+            "HookResult": 3,
+            "HookReturnCode": "0",
+            "HookReturnString": "6D696E74696E6700",
+            "HookStateChangeCount": 5
+          }
+        },
+        {
+          "HookExecution": {
+            "Flags": 1,
+            "HookAccount": "rw5W1Ljeg7T4JionCu2hKzWeUus7XQ9qs",
+            "HookEmitCount": 0,
+            "HookExecutionIndex": 1,
+            "HookHash": "16892071EB61F7062CBA05851F919F9ADC27A406D4DDBEDA74FD6EF06A8CD0D9",
+            "HookInstructionCount": "60",
+            "HookResult": 3,
+            "HookReturnCode": "0",
+            "HookReturnString": "6E65787400",
+            "HookStateChangeCount": 0
+          }
+        },
+        {
+          "HookExecution": {
+            "Flags": 1,
+            "HookAccount": "rw5W1Ljeg7T4JionCu2hKzWeUus7XQ9qs",
+            "HookEmitCount": 0,
+            "HookExecutionIndex": 2,
+            "HookHash": "91ADB82613C8AF0BCB6733D469A2EE1C94C610737799D29362B0D8FDA6227A66",
+            "HookInstructionCount": "49",
+            "HookResult": 3,
+            "HookReturnCode": "0",
+            "HookReturnString": "6E65787400",
+            "HookStateChangeCount": 0
+          }
+        },
+        {
+          "HookExecution": {
+            "Flags": 1,
+            "HookAccount": "rw5W1Ljeg7T4JionCu2hKzWeUus7XQ9qs",
+            "HookEmitCount": 0,
+            "HookExecutionIndex": 3,
+            "HookHash": "CBFF5F82D8DD305061FA48A90017F0BFB68BC33ACC4A7CB6540E30C099398EE5",
+            "HookInstructionCount": "66",
+            "HookResult": 3,
+            "HookReturnCode": "0",
+            "HookReturnString": "6E65787400",
+            "HookStateChangeCount": 0
+          }
+        },
+        {
+          "HookExecution": {
+            "Flags": 1,
+            "HookAccount": "rw5W1Ljeg7T4JionCu2hKzWeUus7XQ9qs",
+            "HookEmitCount": 0,
+            "HookExecutionIndex": 4,
+            "HookHash": "D9FD28ED1280540BFA3F49C418688278658D680F8D6EACFB2A5766736FEE7CAF",
+            "HookInstructionCount": "58",
+            "HookResult": 3,
+            "HookReturnCode": "0",
+            "HookReturnString": "6E65787400",
+            "HookStateChangeCount": 0
+          }
+        },
+        {
+          "HookExecution": {
+            "Flags": 1,
+            "HookAccount": "rw5W1Ljeg7T4JionCu2hKzWeUus7XQ9qs",
+            "HookEmitCount": 0,
+            "HookExecutionIndex": 5,
+            "HookHash": "A7F75CD01917EF7F59A54F82A15B18016AC37A31E9A4D037CB33C8CA63CABC97",
+            "HookInstructionCount": "60",
+            "HookResult": 3,
+            "HookReturnCode": "0",
+            "HookReturnString": "6E65787400",
+            "HookStateChangeCount": 0
+          }
+        },
+        {
+          "HookExecution": {
+            "Flags": 1,
+            "HookAccount": "rw5W1Ljeg7T4JionCu2hKzWeUus7XQ9qs",
+            "HookEmitCount": 0,
+            "HookExecutionIndex": 6,
+            "HookHash": "35CA8198DD8EC1481916CB65DA3E3C5FD78FFB73FF03F8DDB45B4737EA4BD9F3",
+            "HookInstructionCount": "66",
+            "HookResult": 3,
+            "HookReturnCode": "0",
+            "HookReturnString": "6E65787400",
+            "HookStateChangeCount": 0
+          }
+        },
+        {
+          "HookExecution": {
+            "Flags": 1,
+            "HookAccount": "rw5W1Ljeg7T4JionCu2hKzWeUus7XQ9qs",
+            "HookEmitCount": 0,
+            "HookExecutionIndex": 7,
+            "HookHash": "C580C4F7EAF3546CB5ED0A05BDD1878C8E3BA9D032A93D13FBD3548340FA57F8",
+            "HookInstructionCount": "64",
+            "HookResult": 3,
+            "HookReturnCode": "0",
+            "HookReturnString": "6E65787400",
+            "HookStateChangeCount": 0
+          }
+        }
+      ],
+      "hookStateChanges": 0,
+      "explanation": {
+        "title": "Not enough available XAH",
+        "message": "Your wallet needs enough XAH for this action, network fees and the ledger reserve. Add XAH on the selected network, then refresh the action status before trying again.",
+        "stage": "ledger",
+        "code": "tecUNFUNDED_PAYMENT",
+        "recovery": "correct-input"
+      },
+      "covered": true
+    },
+    {
+      "name": "owner reserve boundary",
+      "engineResult": "tecINSUFFICIENT_RESERVE",
+      "simulated": true,
+      "broadcast": false,
+      "feeDrops": "10",
+      "hookExecutions": [],
+      "hookStateChanges": 0,
+      "explanation": {
+        "title": "Not enough available XAH",
+        "message": "Your wallet needs enough XAH for this action, network fees and the ledger reserve. Add XAH on the selected network, then refresh the action status before trying again.",
+        "stage": "ledger",
+        "code": "tecINSUFFICIENT_RESERVE",
+        "recovery": "correct-input"
+      },
+      "covered": true
+    },
+    {
+      "name": "fee below current base",
+      "engineResult": "telINSUF_FEE_P",
+      "simulated": true,
+      "broadcast": false,
+      "feeDrops": "1",
+      "hookExecutions": [],
+      "hookStateChanges": 0,
+      "explanation": {
+        "title": "Network fee is too low",
+        "message": "Refresh the network fee before approving this action. If it was already submitted, check its transaction status first.",
+        "stage": "ledger",
+        "code": "telINSUF_FEE_P",
+        "recovery": "correct-input"
+      },
+      "covered": true
+    }
+  ],
+  "reserveBaseDrops": 1000000,
+  "reserveIncrementDrops": 200000,
+  "baseFeeDrops": 10,
+  "presentationEvidence": "Current SDK mapping plus native simulate result; no consensus transaction broadcast"
+}

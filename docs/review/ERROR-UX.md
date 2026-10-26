@@ -48,6 +48,6 @@ When a native dialog is open, the notification is mounted in that dialog's subtr
 
 ## Remaining work
 
-A real RPC simulation of an over-balance purchase returned tecUNFUNDED_PAYMENT and the friendly funds explanation, with no broadcast. Fee/reserve and consensus boundaries still need fixtures. Total balance is not a precise spendable/reserve estimate; there is no complete pre-sign reserve/fee breakdown yet. Simulation cannot guarantee later success after balance, fee load or offer changes.
+A real RPC simulation of an over-balance purchase returned tecUNFUNDED_PAYMENT and the friendly funds explanation, with no broadcast. [P2 native simulations](P2-TESTNET-2026-10-25.md) also cover an owner-reserve rejection and telINSUF_FEE_P; the latter now displays a dedicated fee-refresh explanation. Exhaustive fee/reserve combinations and consensus faults remain unverified. Total balance is not a precise spendable/reserve estimate; there is no complete pre-sign reserve/fee breakdown yet. Simulation cannot guarantee later success after balance, fee load or offer changes.
 
 Actual provider consent/popups/mobile behavior and recovery UX require manual acceptance. Weak finalization requires the reconciliation work in [findings](FINDINGS.md), beyond warning text.

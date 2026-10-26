@@ -2,6 +2,10 @@
 
 Date: 2026-10-23. Initial developer implementation; not published to npm and not deployed as a public service. No C changes or hook redeployment in this work.
 
+**Native follow-up, 2026-10-25:** [P2 verification](P2-TESTNET-2026-10-25.md) now covers pinned bootstrap and 19 SDK owner comparisons, SQLite restart, complete replay of a 51-ledger interval (225 transactions), independent final namespace comparison and real ledger subscription/reconnect. The original validation counts below describe the earlier implementation snapshot. This does not establish million-domain capacity or complete historical backfill.
+
+Bootstrap now has bounded transport retries that preserve the pinned hash and current page marker. Four added offline tests verify page reuse, retry exhaustion without a committed checkpoint, fail-closed RPC/network behavior and reconnect/disabled retries. The full current indexer suite passes 47 tests; persistent scan resume remains unimplemented.
+
 ## Delivered
 
 - `@xahauname/indexer`: pure metadata decoder, complete expanded-ledger ordering, explicit pinned bootstrap, namespace filtering, known-hash gate, SQLite checkpoint/projection/raw-receipt/outbox transaction, replay and restart.
@@ -27,8 +31,10 @@ The read-only live source check connected to NetworkID 21338 and decoded validat
 
 ## Open gates
 
-The weak-phase on-chain recovery issue [F-01](FINDINGS.md) remains open. Quarantine is not an on-chain repair. Native fault injection and an idempotent authorized recovery path are still required before production.
+[26 October native recovery replay](P2-STANDALONE-2026-10-26.md) additionally verifies quarantine through actual weak transfer/burn failures, failed strong repair and successful repair/retry on an isolated node. Test-only fault handlers are explicitly separate from production bytes.
 
-SQLite tests and synthetic reconnect tests are not million-domain benchmarks or consensus crash tests. Runtime projection is resident in memory; PostgreSQL, bounded-memory projection, API load/outage tests, multi-version migration, failed/expired callback coverage and an independent pinned namespace/native-token comparison after live replay remain required for production claims.
+The weak-phase on-chain recovery issue [F-01](FINDINGS.md) remains open. The on-chain recovery path is implemented and normal reconciliation is live-tested; quarantine is not an on-chain repair, and controlled native fault injection of that path is still required before production.
+
+SQLite tests and native bounded replay/reconnect are not million-domain benchmarks or consensus crash tests. The P2 run closes one independent pinned namespace/native-owner comparison after live replay. Runtime projection remains resident in memory; PostgreSQL, bounded-memory projection, API load/outage tests, multi-version migration, larger backfills and failed/expired callback coverage remain required for production claims.
 
 The [earlier design](EVENTS-AND-INDEXING.md) remains a roadmap. V1 uses generic committed StateChanged and before/after DomainUpdated events alongside finalized native/domain lifecycle events. It does not claim every proposed granular event name or every production adapter is implemented.

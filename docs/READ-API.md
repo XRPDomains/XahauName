@@ -31,7 +31,7 @@ The facade connects lazily, verifies the configured deployment and pins each ope
 | `getName({address, name?})` | Forward-confirmed native-XAH primary; optional candidate name avoids enumerating owned tokens |
 | `getDomain({name})` | Registration/claim/refund/recovery lifecycle state |
 | `getQuote({name})` | Same-ledger lifecycle, price and TLD availability; purchase still rechecks |
-| `getNames({address, cursor?, limit?})` | One account-object page: verified domain `items`, `nextCursor`, `complete`, `ledgerHash`, `source` |
+| `getNames({address, cursor?, limit?})` | One account-object page: `items: OwnedDomainSummary[]` (read each item's `.domain`), `nextCursor`, `complete`, `ledgerHash`, `source` |
 
 For selected records, supply both `addresses` and `texts`, using `[]` to omit a category. This bypasses record-index/custom-descriptor discovery and deduplicates keys. A selection contains at most 64 requested keys and reports `complete: false`. Omit both arrays to discover the full indexed profile; legacy unnamed custom keys still make it incomplete. `contentHash: true` also returns the validated content URI and encoded content-hash hex when present. Unknown address codecs remain explicitly marked raw hex in `getRecords`; `getAddress` requires a supported codec. Use low-level `resolver.getAddr` for raw bytes.
 

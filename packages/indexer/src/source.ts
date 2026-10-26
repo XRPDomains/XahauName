@@ -1,12 +1,26 @@
-import {Client} from 'xahau';
+import {Client, DisconnectedError, NotConnectedError, TimeoutError} from 'xahau';
 import {hex64, stateLedgerIndex} from './decoder';
 import {emptyState} from './storage';
 import type {Checkpoint, Deployment, Json, LedgerSource, Receipt, Rpc} from './types';
 
+export interface LedgerSourceOptions {
+    /** Extra attempts for a pinned bootstrap read after a transport failure (0–5). */
+    snapshotReadRetries?: number;
+    /** Initial retry delay; subsequent delays double, capped at 10 seconds. */
+    snapshotRetryDelayMs?: number;
+}
+
 export class XahauLedgerSource implements LedgerSource {
     private client: Client;
     private subscribed=false;
-    constructor(private config: Deployment, client?: Client) {
+    private snapshotReadRetries: number;
+    private snapshotRetryDelayMs: number;
+    constructor(private config: Deployment, client?: Client, options: LedgerSourceOptions = {}) {
+        this.snapshotReadRetries = options.snapshotReadRetries ?? 2;
+        this.snapshotRetryDelayMs = options.snapshotRetryDelayMs ?? 250;
+        if (!Number.isInteger(this.snapshotReadRetries) || this.snapshotReadRetries < 0 || this.snapshotReadRetries > 5 ||
+            !Number.isInteger(this.snapshotRetryDelayMs) || this.snapshotRetryDelayMs < 0 || this.snapshotRetryDelayMs > 10000)
+            throw new Error('Invalid snapshot retry options');
         this.client = client ?? new Client(config.wss);
         this.client.on?.('disconnected',()=>{this.subscribed=false;});
     }
@@ -29,6 +43,20 @@ export class XahauLedgerSource implements LedgerSource {
         });
     }
     private async request(request: Json): Promise<Json> {return (await this.client.request(request as any)).result;}
+    /** Only bootstrap transport failures are retried; retain the same ledger hash and marker. */
+    private async snapshotRequest(request: Json): Promise<Json> {
+        for (let attempt = 0; ; attempt++) {
+            try {return await this.request(request);}
+            catch (error) {
+                if (attempt >= this.snapshotReadRetries || !(error instanceof TimeoutError ||
+                    error instanceof DisconnectedError || error instanceof NotConnectedError)) throw error;
+                const delay = Math.min(10000, this.snapshotRetryDelayMs * 2 ** attempt);
+                if (delay) await new Promise(resolve => setTimeout(resolve, delay));
+                // A reconnect must verify the configured network before another page is read.
+                await this.connect();
+            }
+        }
+    }
     async latest(): Promise<Checkpoint> {
         const r = await this.request({command: 'ledger', ledger_index: 'validated', transactions: false});
         return checkedHeader(r).checkpoint;
@@ -44,10 +72,10 @@ export class XahauLedgerSource implements LedgerSource {
     }
     /** Explicit full-ledger scan at one pinned hash; potentially expensive on public RPC. */
     async snapshot(checkpoint: Checkpoint) {
-        const header = await this.request({command: 'ledger', ledger_hash: checkpoint.ledgerHash, transactions: false});
+        const header = await this.snapshotRequest({command: 'ledger', ledger_hash: checkpoint.ledgerHash, transactions: false});
         const checked = checkedHeader(header).checkpoint;
         if (checked.ledgerIndex !== checkpoint.ledgerIndex || checked.ledgerHash !== hex64(checkpoint.ledgerHash)) throw new Error('Snapshot header mismatch');
-        const hooks = await this.request({command: 'account_objects', account: this.config.treasury, type: 'hook', ledger_hash: checked.ledgerHash});
+        const hooks = await this.snapshotRequest({command: 'account_objects', account: this.config.treasury, type: 'hook', ledger_hash: checked.ledgerHash});
         const installed = (hooks.account_objects ?? []).flatMap((o: Json) => (o.Hooks ?? []).map((h: Json) => h.Hook?.HookHash));
         const expected = Object.values(this.config.hookHashes);
         if (installed.filter(Boolean).length !== expected.length || expected.some(h => !installed.includes(h)))
@@ -55,7 +83,7 @@ export class XahauLedgerSource implements LedgerSource {
         const out = emptyState(); let marker: unknown;
         const markers = new Set<string>();
         do {
-            const r = await this.request({command: 'ledger_data', ledger_hash: checkpoint.ledgerHash, binary: false, limit: 2048, ...(marker ? {marker} : {})});
+            const r = await this.snapshotRequest({command: 'ledger_data', ledger_hash: checkpoint.ledgerHash, binary: false, limit: 2048, ...(marker ? {marker} : {})});
             if (hex64(r.ledger_hash) !== checked.ledgerHash || !Array.isArray(r.state)) throw new Error('Incomplete pinned snapshot');
             for (const node of r.state) {
                 if (node.LedgerEntryType === 'HookState' && typeof node.HookStateKey === 'string' &&

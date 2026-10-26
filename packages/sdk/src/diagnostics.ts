@@ -52,6 +52,8 @@ export function explainError(error: unknown): ErrorExplanation {
     }
     if (String(code) === '4001' || ['ACTION_REJECTED','SIGN_REJECTED','CONNECTION_REJECTED'].includes(String(code)) || /user (rejected|declined|cancelled)|request (rejected|declined) by/i.test(text))
         return set('Wallet request declined', 'The wallet request was declined. If purchase was already confirmed, use Claim domain later; do not buy again.', 'wallet', 'none');
+    if (code === 'telINSUF_FEE_P')
+        return set('Network fee is too low', 'Refresh the network fee before approving this action. If it was already submitted, check its transaction status first.', 'ledger', 'correct-input');
     if (['tecUNFUNDED_PAYMENT', 'tecUNFUNDED', 'tecINSUFFICIENT_FUNDS', 'terINSUF_FEE_B', 'tecINSUFF_FEE', 'tecINSUFFICIENT_RESERVE', 'tecINSUF_RESERVE_OFFER', 'tecINSUF_RESERVE'].includes(String(code)))
         return set('Not enough available XAH', 'Your wallet needs enough XAH for this action, network fees and the ledger reserve. Add XAH on the selected network, then refresh the action status before trying again.', 'ledger', 'correct-input');
     if (code === 'actNotFound')

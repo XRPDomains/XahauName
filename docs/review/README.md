@@ -12,6 +12,8 @@ Engineering reviews, verification scope, design assessments and deployment evide
 | [Full audit — 24 October 2026](FULL-AUDIT-2026-10-24.md) | Follow-up correctness, memory, scalability and consolidation findings with grouped repairs |
 | [Audit repairs — 24 October 2026](AUDIT-REPAIRS-2026-10-24.md) | Implemented repairs, regressions, rebuilt hook evidence and remaining native assurance gate |
 | [Audit refactor deployment](TESTNET-AUDIT-DEPLOYMENT.md) | Latest testnet install, preserved state, smoke trace and local test server |
+| [P2 testnet verification — 25 October 2026](P2-TESTNET-2026-10-25.md) | Fresh-wallet lifecycle, native rejection simulations, pinned indexer bootstrap/replay and remaining gates |
+| [P2 isolated native verification — 26 October 2026](P2-STANDALONE-2026-10-26.md) | Native write errors, partial persistence, repair retry, mint/refund failures and indexer quarantine replay |
 | [Explorer ABI preparation](EXPLORER-ABI.md) | Shared binary schema, checked snapshot manifests, TLD provenance and publication scope |
 | [Lifecycle/client follow-up](RECOVERY-AND-CLIENT-FIXES.md) | Implementation changes and verification evidence |
 | [Owner-only burn](OWNER-ONLY-BURN.md) | Native custody authorization, upgrade boundary and testnet rejection/success receipts |

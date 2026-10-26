@@ -1,8 +1,10 @@
 # Test strategy and coverage matrix
 
-Reviewed: 2026-10-23. Hook artifacts: installed release 0.3.0, unchanged in this review. Counts: 216 WASM probes (101 lifecycle, 30 profile, 12 policy, 73 validation), 67 SDK regressions and 129 application/integration units; typechecks and 16 browser checks pass. Model pass counts do not prove native ledger failure semantics. See [open findings](FINDINGS.md).
+Reviewed: 2026-10-26. Hook artifacts: installed release 0.3.0 refactor; 283 production-WASM model probes and ten static checks passed before deployment. Latest offline evidence: 108 SDK, 47 indexer, 231 application and ten repo/ABI tests; typechecks pass. [P2 native verification](P2-TESTNET-2026-10-25.md) adds 61 live lifecycle checks, three rejection simulations and bounded native indexer replay. No browser/screenshot test was rerun in P2. Model pass counts do not prove native ledger failure semantics. See [open findings](FINDINGS.md).
 
 ## Ten handlers, one protocol
+
+[Native follow-up, 2026-10-26](P2-STANDALONE-2026-10-26.md): 31 selected native write errors across claim/transfer/burn, failed strong repair, two emitted mint/refund outcomes and indexer quarantine/recovery replay passed. Fault wrappers are test-only; normal lifecycle uses exact production bytes. Expiry/stale callbacks, maximum native inventory, failed-refund retry and arbitrary engine/process faults remain open.
 
 | Slot | Handler | Responsibility | Critical assertions |
 | --- | --- | --- | --- |
@@ -39,7 +41,7 @@ U = SDK/UI unit. M = real production WASM with modeled ledger APIs and guards. L
 | Exact price / one drop short / zero payment | Exact proceeds; underpayment50 | M; exact L |
 | Pricing values0/1/uint64 maximum; table lengths9/10/11 | Validate encoding and native viable payment policy; zero-priced purchase needs an explicit policy | U/M encoding subset; native viability P |
 | Overpayment | Currently accepted, no automatic change refund; SDK sends quoted amount | M; policy decision remains documented |
-| Wallet lacks amount, fee or reserve | Ledger/wallet failure; not hook underpayment50 | U mappings; insufficient payment amount L simulation; fee/reserve boundaries P |
+| Wallet lacks amount, fee or reserve | Ledger/wallet failure; not hook underpayment50 | U mappings; amount/reserve/low-fee L simulations; exhaustive domain-specific combinations P |
 | Missing pricing / paused / disabled TLD |51/52/33, no issuance side effects | M |
 | PartialPayment / issued-currency amount |54/53 | M |
 | Address coin0/65535/65536/negative/short/missing | Bounded IDs valid; malformed/out-of-range rejects3 | U/M |
@@ -61,11 +63,11 @@ U = SDK/UI unit. M = real production WASM with modeled ledger APIs and guards. L
 | Transfer create/cancel/recreate/claim | Recipient sees incoming offer; sender owns until claim; all custom keys/addresses/primary cleared | M/L |
 | Strong write/delete failure | No operation success or partial committed record changes | M; ledger sandbox equivalence P |
 | Weak claim/burn state write/delete failure with native tesSUCCESS | Native outcome may remain final; SDK reports recovery and indexer quarantines inconsistent domain | SDK receipt M/U; native fault injection and repair P, release gate |
-| Burn then register the same name again | New lifecycle, no inherited records/primary, old callbacks cannot settle new pending | Availability/cleanup M/L; full remint/reclaim and replay sequence P |
+| Burn then register the same name again | New lifecycle, no inherited records/primary, old callbacks cannot settle new pending | Full burn/buy/reclaim/cleanup M/L; stale callback replay P |
 | Reset/burn max15+15, named/legacy custom slots | Complete cleanup, identity retention/removal per operation | M/L |
 | Primary replace/unset/forward address mismatch/tags | One candidate; verified native round trip; no owner/XRP fallback | U/M/L |
 | Disconnect after payment, wallet declines claim, invalid/missing hash, confirmation timeout | No duplicate purchase; preserve hash; manual claim remains available | U; real wallet/provider exceptions manual |
-| Indexed replay/reconnect/duplicate notification/missed ledger/upgrade | Deterministic projection, persisted cursor, no skipped events | Proposed indexer; not implemented |
+| Indexed replay/reconnect/duplicate notification/missed ledger/upgrade | Deterministic projection, persisted cursor, no skipped events | U/M plus native 51-ledger replay, real subscription/reconnect, SQLite/outbox restart; scale/upgrade/backfill gates remain P |
 
 ## Automation gates
 
@@ -73,7 +75,7 @@ U = SDK/UI unit. M = real production WASM with modeled ledger APIs and guards. L
 2. Every C change: affected production WASM build, unchanged native guard checker, all model suites. Common-header changes rebuild every handler.
 3. Before testnet release: existing journaled live suite with fresh wallets and full cleanup, then read-only deployment/namespace checks.
 4. Before production: run a disposable local xahaud ledger integration fixture with controlled state-write, weak-phase, emission/expiration, reserve and reconnect faults. Prove reconciliation or revise the strong/weak design. This gate is OPEN.
-5. Before indexer release: deterministic historical replay, disconnect/backfill, duplicate/order tests and comparison with a pinned on-chain snapshot. This gate is OPEN.
+5. Before indexer production release: extend the bounded native replay/snapshot/reconnect evidence to larger historical backfills, load/outage behavior, retention and version migration. Small-scale correctness has P2 evidence; production scale remains OPEN.
 
 ## Manual exceptions only
 
@@ -92,6 +94,6 @@ node packages/sdk/test/verify-streams.cjs
 node packages/sdk/test/verify-failures.cjs
 ```
 
-Live writes remain a separately authorized testnet operation. Native fault-injection and the business-event projector are planned work, not covered by these commands today.
+Live writes remain a separately authorized testnet operation. The developer business-event projector is implemented and has bounded native P2 replay evidence. Controlled native fault injection remains open and is not covered by the default commands.
 
 The insufficient-funds simulation produced tecUNFUNDED_PAYMENT despite eight hook executions; metadata contained zero HookState changes. It left the real account sequence/balance and domain availability unchanged. This verifies a simulated rejection path, not consensus or weak-phase fault recovery.

@@ -38,6 +38,8 @@ try {
 
 Continuous synchronization subscribes to ledger-close notifications as wake-up hints, with periodic polling and checkpoint replay as fallback. Relevant receipts are retained by default; pass `retainAllReceipts: true` for full network archival. Domain projection and owner/inbox indexes update incrementally. `listOwnedDomainsPage(address, {after?, limit?})` returns a bounded result page; the runtime still holds the materialized namespace in RAM.
 
+Bootstrap retries a timed-out/disconnected read up to twice, retaining its pinned ledger hash and page marker. Completed pages stay in memory during those retries. RPC errors and invalid data stop bootstrap; the database checkpoint commits only after the complete snapshot. A failed process still requires a fresh scan. To configure retry limits, inject `new XahauLedgerSource(config, undefined, {snapshotReadRetries: 2, snapshotRetryDelayMs: 250})` as `source` when creating the indexer. Retries may be disabled with `snapshotReadRetries: 0`; reconnect/network verification failures stop immediately.
+
 Each database is bound to its network, treasury, namespace, decoder and hook hash set. Deployment changes require a matching database/bootstrap or an explicit history migration. The [indexer reference](../../docs/INDEXER.md#reliability-and-current-limits) describes snapshot, replay and storage behavior.
 
 ## What applications can read

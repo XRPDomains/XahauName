@@ -1,0 +1,94 @@
+{
+  "networkID": 21338,
+  "readOnly": true,
+  "result": "PASS",
+  "bootstrap": {
+    "networkId": 21338,
+    "readOnly": true,
+    "requests": {
+      "server_info": 1,
+      "ledger": 1,
+      "account_namespace": 1
+    },
+    "result": "PASS",
+    "checkpoint": {
+      "ledgerIndex": 13472891,
+      "ledgerHash": "C559146FC4F3E0D2E715D8D61054DD7E8770240D9C15E84ABBD56E6FCF97C57B"
+    },
+    "namespaceEntries": 95,
+    "projectedDomains": 19,
+    "verifiedClaimedOwners": 19,
+    "resumedOwnerVerification": true,
+    "issuedTokens": 19,
+    "restartPreserved": true,
+    "elapsedMs": 33654,
+    "limitation": "Pinned bootstrap and restart only; not a complete historical replay or large-scale capacity benchmark"
+  },
+  "replay": {
+    "networkId": 21338,
+    "readOnly": true,
+    "result": "PASS",
+    "from": {
+      "ledgerIndex": 13472891,
+      "ledgerHash": "C559146FC4F3E0D2E715D8D61054DD7E8770240D9C15E84ABBD56E6FCF97C57B"
+    },
+    "to": {
+      "ledgerIndex": 13472942,
+      "ledgerHash": "8953252270CB95D0FEB1C1AB55AFDC8B6422F6F8B66465630A166C11D094DD5E"
+    },
+    "ledgers": 51,
+    "transactions": 225,
+    "events": 71,
+    "eventKinds": {
+      "StateChanged": 46,
+      "NativeTokenBurned": 3,
+      "DomainBurned": 3,
+      "DomainUpdated": 9,
+      "DomainMinted": 2,
+      "DomainOfferCreated": 2,
+      "NativeOwnerChanged": 2,
+      "DomainOfferRemoved": 2,
+      "DomainClaimed": 2
+    },
+    "namespaceEntries": 88,
+    "projectedDomains": 18,
+    "realLedgerSubscription": true,
+    "resubscriptionAfterDisconnect": true,
+    "lastEventCursor": 71
+  },
+  "outboxRestart": {
+    "events": 71,
+    "lastCursor": 71,
+    "uniqueIds": true,
+    "noRedeliveryAfterCursor": true
+  },
+  "attempts": [
+    {
+      "stage": "initial bootstrap",
+      "result": "RPC_TIMEOUT",
+      "elapsedMs": 22374,
+      "ledgerDataPages": 12,
+      "requestTimeoutMs": 12000
+    },
+    {
+      "stage": "complete bootstrap; owner verification",
+      "result": "OWNER_READ_DEADLINE",
+      "elapsedMs": 98555,
+      "ledgerDataPages": 83
+    },
+    {
+      "stage": "resume owner checks at stored checkpoint",
+      "result": "PASS",
+      "elapsedMs": 33654,
+      "ledgerDataPages": 0,
+      "ownerReadTimeoutMs": 30000,
+      "ownerConcurrency": 2
+    }
+  ],
+  "limitations": [
+    "Small testnet dataset only; not a million-domain benchmark",
+    "Not complete genesis-to-head replay",
+    "No native weak-phase or emit-expiry fault injection",
+    "Public-RPC full-ledger bootstrap remains expensive; memory-resident projection unchanged"
+  ]
+}

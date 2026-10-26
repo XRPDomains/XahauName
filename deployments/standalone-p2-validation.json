@@ -1,0 +1,888 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-26",
+  "networkID": 65535,
+  "environment": "isolated standalone on localhost; no public deployment",
+  "buildVersion": "2026.10.16-dev+4158",
+  "nodeSourceCommit": "3dc41b2a5951855f7c5c88c9efed0299e7a843ec",
+  "nodeBinarySha256": "519c8dfc59bbde10d4be54907945fbf2b71ff3b58cb5ed4bab34d8d43b68ae7d",
+  "nodeBinarySource": "https://build.xahau.tech/2026.10.16-dev%2B4158",
+  "result": "PASS",
+  "checks": 52,
+  "signedTransactions": 268,
+  "expectedRejectedStrongTransactions": 1,
+  "accounts": {
+    "treasury": "r9B2KuR8uciVHjr1kZdzfd9Rrfdv1AKdAe",
+    "a": "rKHktu9Kj3P5LcEjUQcGvFXCTeXWUV1kBq",
+    "b": "rB2oriHvekD2gFfsc1uQrTHB8TJL3wRGQ4"
+  },
+  "productionArtifacts": "Exact hashes from deployments/testnet.json installed first; claim and burn subsequently replaced by test-only wrappers",
+  "testOnlyArtifacts": [
+    {
+      "part": "claim",
+      "testOnly": true,
+      "bytes": 14112,
+      "sha256": "1a0fc32431a163c53196596566c8e8232b1962af65fa4eb268a0cb84cd54b9ff",
+      "productionCommonSha256": "88166cca33711977a8be99144042ad8e23db12b6551986761c5aafd6985f7f2f",
+      "guardPassed": true
+    },
+    {
+      "part": "burn",
+      "testOnly": true,
+      "bytes": 14534,
+      "sha256": "9761d61fe51c2b2d02317c47b4e23f4f050cc74431d43f93216a05e10051bd96",
+      "productionCommonSha256": "88166cca33711977a8be99144042ad8e23db12b6551986761c5aafd6985f7f2f",
+      "guardPassed": true
+    }
+  ],
+  "faultMechanism": "On selected state_set ordinal, a test-only inline wrapper calls the actual native API with a zero-length key. Original production handler error/rollback branches and recovery logic execute. Not arbitrary engine or process crash injection.",
+  "faultCases": [
+    {
+      "kind": "claim",
+      "writeOrdinal": 1,
+      "txHash": "EFE162AC33C21DDE4164DDC6591C2FC02C9389D33E360EE8B055A68771B1EDEC",
+      "nativeResult": "tesSUCCESS",
+      "failures": [
+        {
+          "Flags": 0,
+          "HookAccount": "r9B2KuR8uciVHjr1kZdzfd9Rrfdv1AKdAe",
+          "HookEmitCount": 0,
+          "HookExecutionIndex": 1,
+          "HookHash": "D9FE4F01F61CCBBD1AE6720A879374782A4B2D11CBF5626834F1F809E25A6DFE",
+          "HookInstructionCount": "1728",
+          "HookResult": 2,
+          "HookReturnCode": "14",
+          "HookReturnString": "7265636F76657279206A6F75726E616C20777269746500",
+          "HookStateChangeCount": 3
+        }
+      ],
+      "changedStateKeys": 0,
+      "recovered": true
+    },
+    {
+      "kind": "claim",
+      "writeOrdinal": 2,
+      "txHash": "D2323186413DFD8D2A58A366A233E45E255ADCBC794E11F5480433F6D6FB3D48",
+      "nativeResult": "tesSUCCESS",
+      "failures": [
+        {
+          "Flags": 0,
+          "HookAccount": "r9B2KuR8uciVHjr1kZdzfd9Rrfdv1AKdAe",
+          "HookEmitCount": 0,
+          "HookExecutionIndex": 1,
+          "HookHash": "D9FE4F01F61CCBBD1AE6720A879374782A4B2D11CBF5626834F1F809E25A6DFE",
+          "HookInstructionCount": "1782",
+          "HookResult": 2,
+          "HookReturnCode": "14",
+          "HookReturnString": "70656E64696E6720636C65617200",
+          "HookStateChangeCount": 4
+        }
+      ],
+      "changedStateKeys": 1,
+      "recovered": true
+    },
+    {
+      "kind": "claim",
+      "writeOrdinal": 3,
+      "txHash": "B3845065C652E42DDB6D5A233914D8ACDDEAC30B2E3682F768534FFAEBA803FC",
+      "nativeResult": "tesSUCCESS",
+      "failures": [
+        {
+          "Flags": 0,
+          "HookAccount": "r9B2KuR8uciVHjr1kZdzfd9Rrfdv1AKdAe",
+          "HookEmitCount": 0,
+          "HookExecutionIndex": 1,
+          "HookHash": "D9FE4F01F61CCBBD1AE6720A879374782A4B2D11CBF5626834F1F809E25A6DFE",
+          "HookInstructionCount": "17bf",
+          "HookResult": 2,
+          "HookReturnCode": "14",
+          "HookReturnString": "70656E64696E6720636C65617200",
+          "HookStateChangeCount": 5
+        }
+      ],
+      "changedStateKeys": 2,
+      "recovered": true
+    },
+    {
+      "kind": "claim",
+      "writeOrdinal": 4,
+      "txHash": "833B48A2A863D9772EF2B9FE22EC823924F7F3505D340E08C74F4D543F1DF772",
+      "nativeResult": "tesSUCCESS",
+      "failures": [
+        {
+          "Flags": 0,
+          "HookAccount": "r9B2KuR8uciVHjr1kZdzfd9Rrfdv1AKdAe",
+          "HookEmitCount": 0,
+          "HookExecutionIndex": 1,
+          "HookHash": "D9FE4F01F61CCBBD1AE6720A879374782A4B2D11CBF5626834F1F809E25A6DFE",
+          "HookInstructionCount": "17fc",
+          "HookResult": 2,
+          "HookReturnCode": "14",
+          "HookReturnString": "70656E64696E6720636C65617200",
+          "HookStateChangeCount": 6
+        }
+      ],
+      "changedStateKeys": 3,
+      "recovered": true
+    },
+    {
+      "kind": "claim",
+      "writeOrdinal": 5,
+      "txHash": "7033F81678B9D39ECBDA9A30B93832970FE30D7572FD63525868958C3FE9F516",
+      "nativeResult": "tesSUCCESS",
+      "failures": [
+        {
+          "Flags": 0,
+          "HookAccount": "r9B2KuR8uciVHjr1kZdzfd9Rrfdv1AKdAe",
+          "HookEmitCount": 0,
+          "HookExecutionIndex": 1,
+          "HookHash": "D9FE4F01F61CCBBD1AE6720A879374782A4B2D11CBF5626834F1F809E25A6DFE",
+          "HookInstructionCount": "18c1",
+          "HookResult": 2,
+          "HookReturnCode": "14",
+          "HookReturnString": "6964656E7469747920777269746500",
+          "HookStateChangeCount": 7
+        }
+      ],
+      "changedStateKeys": 4,
+      "recovered": true
+    },
+    {
+      "kind": "claim",
+      "writeOrdinal": 6,
+      "txHash": "8CE9F7916040980AA37C90F7523F7395AB6F24193B79BCB8E625ECE63E77BD04",
+      "nativeResult": "tesSUCCESS",
+      "failures": [
+        {
+          "Flags": 0,
+          "HookAccount": "r9B2KuR8uciVHjr1kZdzfd9Rrfdv1AKdAe",
+          "HookEmitCount": 0,
+          "HookExecutionIndex": 1,
+          "HookHash": "D9FE4F01F61CCBBD1AE6720A879374782A4B2D11CBF5626834F1F809E25A6DFE",
+          "HookInstructionCount": "18e8",
+          "HookResult": 2,
+          "HookReturnCode": "14",
+          "HookReturnString": "6964656E7469747920777269746500",
+          "HookStateChangeCount": 8
+        }
+      ],
+      "changedStateKeys": 5,
+      "recovered": true
+    },
+    {
+      "kind": "claim",
+      "writeOrdinal": 7,
+      "txHash": "1F559BF5A371FE306A157B9079527D2B5BE3B9EBE3FEAF9B7B02618E1C457065",
+      "nativeResult": "tesSUCCESS",
+      "failures": [
+        {
+          "Flags": 0,
+          "HookAccount": "r9B2KuR8uciVHjr1kZdzfd9Rrfdv1AKdAe",
+          "HookEmitCount": 0,
+          "HookExecutionIndex": 1,
+          "HookHash": "D9FE4F01F61CCBBD1AE6720A879374782A4B2D11CBF5626834F1F809E25A6DFE",
+          "HookInstructionCount": "1912",
+          "HookResult": 2,
+          "HookReturnCode": "14",
+          "HookReturnString": "6964656E7469747920777269746500",
+          "HookStateChangeCount": 9
+        }
+      ],
+      "changedStateKeys": 5,
+      "recovered": true
+    },
+    {
+      "kind": "claim",
+      "writeOrdinal": 8,
+      "txHash": "98FFA1FDE07EEFCAB3890F307668DE34100B6E62F426BF32C7B4313EA22E35EF",
+      "nativeResult": "tesSUCCESS",
+      "failures": [
+        {
+          "Flags": 0,
+          "HookAccount": "r9B2KuR8uciVHjr1kZdzfd9Rrfdv1AKdAe",
+          "HookEmitCount": 0,
+          "HookExecutionIndex": 1,
+          "HookHash": "D9FE4F01F61CCBBD1AE6720A879374782A4B2D11CBF5626834F1F809E25A6DFE",
+          "HookInstructionCount": "1c0a",
+          "HookResult": 2,
+          "HookReturnCode": "14",
+          "HookReturnString": "7265766572736520777269746500",
+          "HookStateChangeCount": 10
+        }
+      ],
+      "changedStateKeys": 5,
+      "recovered": true
+    },
+    {
+      "kind": "claim",
+      "writeOrdinal": 9,
+      "txHash": "8C5F14709E79B9D64F8E1B44375E0683F9C9B1C7853B52E3192870940C4A608E",
+      "nativeResult": "tesSUCCESS",
+      "failures": [
+        {
+          "Flags": 0,
+          "HookAccount": "r9B2KuR8uciVHjr1kZdzfd9Rrfdv1AKdAe",
+          "HookEmitCount": 0,
+          "HookExecutionIndex": 1,
+          "HookHash": "D9FE4F01F61CCBBD1AE6720A879374782A4B2D11CBF5626834F1F809E25A6DFE",
+          "HookInstructionCount": "1c35",
+          "HookResult": 2,
+          "HookReturnCode": "14",
+          "HookReturnString": "7265636F76657279206A6F75726E616C20636C65617200",
+          "HookStateChangeCount": 11
+        }
+      ],
+      "changedStateKeys": 6,
+      "recovered": true
+    },
+    {
+      "kind": "transfer",
+      "writeOrdinal": 1,
+      "txHash": "A7346A744863BDDA95F31FB04AD075B620B68010EF6D94F7D3CAE744B8DE73DA",
+      "nativeResult": "tesSUCCESS",
+      "failures": [
+        {
+          "Flags": 0,
+          "HookAccount": "r9B2KuR8uciVHjr1kZdzfd9Rrfdv1AKdAe",
+          "HookEmitCount": 0,
+          "HookExecutionIndex": 1,
+          "HookHash": "D9FE4F01F61CCBBD1AE6720A879374782A4B2D11CBF5626834F1F809E25A6DFE",
+          "HookInstructionCount": "b5d",
+          "HookResult": 2,
+          "HookReturnCode": "14",
+          "HookReturnString": "7265636F76657279206A6F75726E616C20777269746500",
+          "HookStateChangeCount": 4
+        }
+      ],
+      "changedStateKeys": 0,
+      "recovered": true
+    },
+    {
+      "kind": "transfer",
+      "writeOrdinal": 2,
+      "txHash": "984DAEA8FF474ADDC929FB83E2D3C334CD9BF554BA0CF078CCCE0179AA6C140D",
+      "nativeResult": "tesSUCCESS",
+      "failures": [
+        {
+          "Flags": 0,
+          "HookAccount": "r9B2KuR8uciVHjr1kZdzfd9Rrfdv1AKdAe",
+          "HookEmitCount": 0,
+          "HookExecutionIndex": 1,
+          "HookHash": "D9FE4F01F61CCBBD1AE6720A879374782A4B2D11CBF5626834F1F809E25A6DFE",
+          "HookInstructionCount": "f95",
+          "HookResult": 2,
+          "HookReturnCode": "14",
+          "HookReturnString": "7072696D61727920636C65617200",
+          "HookStateChangeCount": 6
+        }
+      ],
+      "changedStateKeys": 1,
+      "recovered": true
+    },
+    {
+      "kind": "transfer",
+      "writeOrdinal": 3,
+      "txHash": "B7D87557D14A8E9F4D0B9DA30CC28DCD8EBC5F6124A52630FA42A0FDC6F163A0",
+      "nativeResult": "tesSUCCESS",
+      "failures": [
+        {
+          "Flags": 0,
+          "HookAccount": "r9B2KuR8uciVHjr1kZdzfd9Rrfdv1AKdAe",
+          "HookEmitCount": 0,
+          "HookExecutionIndex": 1,
+          "HookHash": "D9FE4F01F61CCBBD1AE6720A879374782A4B2D11CBF5626834F1F809E25A6DFE",
+          "HookInstructionCount": "128a",
+          "HookResult": 2,
+          "HookReturnCode": "14",
+          "HookReturnString": "7265636F72647320636C65617200",
+          "HookStateChangeCount": 7
+        }
+      ],
+      "changedStateKeys": 2,
+      "recovered": true
+    },
+    {
+      "kind": "transfer",
+      "writeOrdinal": 4,
+      "txHash": "831001446CBE5F94265076A0A5C95A0EBEE9FF5E800A518B5BE6D957BF0553EF",
+      "nativeResult": "tesSUCCESS",
+      "failures": [
+        {
+          "Flags": 0,
+          "HookAccount": "r9B2KuR8uciVHjr1kZdzfd9Rrfdv1AKdAe",
+          "HookEmitCount": 0,
+          "HookExecutionIndex": 1,
+          "HookHash": "D9FE4F01F61CCBBD1AE6720A879374782A4B2D11CBF5626834F1F809E25A6DFE",
+          "HookInstructionCount": "1358",
+          "HookResult": 2,
+          "HookReturnCode": "14",
+          "HookReturnString": "7265636F72647320636C65617200",
+          "HookStateChangeCount": 8
+        }
+      ],
+      "changedStateKeys": 3,
+      "recovered": true,
+      "failedStrongRecovery": {
+        "hash": "1FCF4F00B15F9DB174747489D0359A311E3968967BBA380AF7D5EBDAF4674755",
+        "result": "tecHOOK_REJECTED",
+        "stateUnchanged": true
+      }
+    },
+    {
+      "kind": "transfer",
+      "writeOrdinal": 5,
+      "txHash": "E72BE10184E441B4673AA9339BED1883F5934C82F0E5D6A0B6DC49F7E7062400",
+      "nativeResult": "tesSUCCESS",
+      "failures": [
+        {
+          "Flags": 0,
+          "HookAccount": "r9B2KuR8uciVHjr1kZdzfd9Rrfdv1AKdAe",
+          "HookEmitCount": 0,
+          "HookExecutionIndex": 1,
+          "HookHash": "D9FE4F01F61CCBBD1AE6720A879374782A4B2D11CBF5626834F1F809E25A6DFE",
+          "HookInstructionCount": "1380",
+          "HookResult": 2,
+          "HookReturnCode": "14",
+          "HookReturnString": "7265636F72647320636C65617200",
+          "HookStateChangeCount": 9
+        }
+      ],
+      "changedStateKeys": 4,
+      "recovered": true
+    },
+    {
+      "kind": "transfer",
+      "writeOrdinal": 6,
+      "txHash": "C7DFE9CFB2CC300ECC896D5FB7784345B45578DDD1F525E41E1D3B3F334B5546",
+      "nativeResult": "tesSUCCESS",
+      "failures": [
+        {
+          "Flags": 0,
+          "HookAccount": "r9B2KuR8uciVHjr1kZdzfd9Rrfdv1AKdAe",
+          "HookEmitCount": 0,
+          "HookExecutionIndex": 1,
+          "HookHash": "D9FE4F01F61CCBBD1AE6720A879374782A4B2D11CBF5626834F1F809E25A6DFE",
+          "HookInstructionCount": "14a0",
+          "HookResult": 2,
+          "HookReturnCode": "14",
+          "HookReturnString": "696E64657820636C65617200",
+          "HookStateChangeCount": 10
+        }
+      ],
+      "changedStateKeys": 5,
+      "recovered": true
+    },
+    {
+      "kind": "transfer",
+      "writeOrdinal": 7,
+      "txHash": "90AE6FD80E1B22A5DE40361FC3BB82031E7AF464DD89E62C4177AD4808081A2C",
+      "nativeResult": "tesSUCCESS",
+      "failures": [
+        {
+          "Flags": 0,
+          "HookAccount": "r9B2KuR8uciVHjr1kZdzfd9Rrfdv1AKdAe",
+          "HookEmitCount": 0,
+          "HookExecutionIndex": 1,
+          "HookHash": "D9FE4F01F61CCBBD1AE6720A879374782A4B2D11CBF5626834F1F809E25A6DFE",
+          "HookInstructionCount": "154b",
+          "HookResult": 2,
+          "HookReturnCode": "14",
+          "HookReturnString": "6964656E7469747920777269746500",
+          "HookStateChangeCount": 11
+        }
+      ],
+      "changedStateKeys": 6,
+      "recovered": true
+    },
+    {
+      "kind": "transfer",
+      "writeOrdinal": 8,
+      "txHash": "02254EEBB3DFEF76C225397B159D96B5D848251028B1F5BAB9BEC97D55DF608D",
+      "nativeResult": "tesSUCCESS",
+      "failures": [
+        {
+          "Flags": 0,
+          "HookAccount": "r9B2KuR8uciVHjr1kZdzfd9Rrfdv1AKdAe",
+          "HookEmitCount": 0,
+          "HookExecutionIndex": 1,
+          "HookHash": "D9FE4F01F61CCBBD1AE6720A879374782A4B2D11CBF5626834F1F809E25A6DFE",
+          "HookInstructionCount": "1572",
+          "HookResult": 2,
+          "HookReturnCode": "14",
+          "HookReturnString": "6964656E7469747920777269746500",
+          "HookStateChangeCount": 12
+        }
+      ],
+      "changedStateKeys": 7,
+      "recovered": true
+    },
+    {
+      "kind": "transfer",
+      "writeOrdinal": 9,
+      "txHash": "E1587CEDC798AF744AE95E1C1AD280392E8726646F88DA9D7D65957194823767",
+      "nativeResult": "tesSUCCESS",
+      "failures": [
+        {
+          "Flags": 0,
+          "HookAccount": "r9B2KuR8uciVHjr1kZdzfd9Rrfdv1AKdAe",
+          "HookEmitCount": 0,
+          "HookExecutionIndex": 1,
+          "HookHash": "D9FE4F01F61CCBBD1AE6720A879374782A4B2D11CBF5626834F1F809E25A6DFE",
+          "HookInstructionCount": "159c",
+          "HookResult": 2,
+          "HookReturnCode": "14",
+          "HookReturnString": "6964656E7469747920777269746500",
+          "HookStateChangeCount": 13
+        }
+      ],
+      "changedStateKeys": 7,
+      "recovered": true
+    },
+    {
+      "kind": "transfer",
+      "writeOrdinal": 10,
+      "txHash": "29947CF904785EB76AEB2882BE1C5674409B379579BF93576125AE4AD55C9C15",
+      "nativeResult": "tesSUCCESS",
+      "failures": [
+        {
+          "Flags": 0,
+          "HookAccount": "r9B2KuR8uciVHjr1kZdzfd9Rrfdv1AKdAe",
+          "HookEmitCount": 0,
+          "HookExecutionIndex": 1,
+          "HookHash": "D9FE4F01F61CCBBD1AE6720A879374782A4B2D11CBF5626834F1F809E25A6DFE",
+          "HookInstructionCount": "1920",
+          "HookResult": 2,
+          "HookReturnCode": "14",
+          "HookReturnString": "7265766572736520777269746500",
+          "HookStateChangeCount": 14
+        }
+      ],
+      "changedStateKeys": 7,
+      "recovered": true
+    },
+    {
+      "kind": "transfer",
+      "writeOrdinal": 11,
+      "txHash": "7F0CB9ABC941FB2300704456D418E67B034991CF194B6B329A45AAEBFCFC08D4",
+      "nativeResult": "tesSUCCESS",
+      "failures": [
+        {
+          "Flags": 0,
+          "HookAccount": "r9B2KuR8uciVHjr1kZdzfd9Rrfdv1AKdAe",
+          "HookEmitCount": 0,
+          "HookExecutionIndex": 1,
+          "HookHash": "D9FE4F01F61CCBBD1AE6720A879374782A4B2D11CBF5626834F1F809E25A6DFE",
+          "HookInstructionCount": "194b",
+          "HookResult": 2,
+          "HookReturnCode": "14",
+          "HookReturnString": "7265636F76657279206A6F75726E616C20636C65617200",
+          "HookStateChangeCount": 15
+        }
+      ],
+      "changedStateKeys": 7,
+      "recovered": true
+    },
+    {
+      "kind": "burn",
+      "writeOrdinal": 1,
+      "txHash": "1879125CEFCDA4EC254C858F3120E2EB8AFACC11D4B80B6EFCE475A02B34F826",
+      "nativeResult": "tesSUCCESS",
+      "failures": [
+        {
+          "Flags": 0,
+          "HookAccount": "r9B2KuR8uciVHjr1kZdzfd9Rrfdv1AKdAe",
+          "HookEmitCount": 0,
+          "HookExecutionIndex": 0,
+          "HookHash": "71BDAA4290757C6AB7F238B5CE300FE10400D847223B262D1197F74F17ED6168",
+          "HookInstructionCount": "9de",
+          "HookResult": 2,
+          "HookReturnCode": "14",
+          "HookReturnString": "7265636F76657279206A6F75726E616C20777269746500",
+          "HookStateChangeCount": 4
+        }
+      ],
+      "changedStateKeys": 0,
+      "recovered": true
+    },
+    {
+      "kind": "burn",
+      "writeOrdinal": 2,
+      "txHash": "5855C31F14C602F3DD5CC23506EA398404BD216798CAB28656A17C74EF284102",
+      "nativeResult": "tesSUCCESS",
+      "failures": [
+        {
+          "Flags": 0,
+          "HookAccount": "r9B2KuR8uciVHjr1kZdzfd9Rrfdv1AKdAe",
+          "HookEmitCount": 0,
+          "HookExecutionIndex": 0,
+          "HookHash": "71BDAA4290757C6AB7F238B5CE300FE10400D847223B262D1197F74F17ED6168",
+          "HookInstructionCount": "e16",
+          "HookResult": 2,
+          "HookReturnCode": "14",
+          "HookReturnString": "7072696D61727920636C65617200",
+          "HookStateChangeCount": 6
+        }
+      ],
+      "changedStateKeys": 1,
+      "recovered": true
+    },
+    {
+      "kind": "burn",
+      "writeOrdinal": 3,
+      "txHash": "8ECC8B3CCD96DA8BAE7555EA955F3CED9CD4105DBACEDCFB2EC44FF07A729B0F",
+      "nativeResult": "tesSUCCESS",
+      "failures": [
+        {
+          "Flags": 0,
+          "HookAccount": "r9B2KuR8uciVHjr1kZdzfd9Rrfdv1AKdAe",
+          "HookEmitCount": 0,
+          "HookExecutionIndex": 0,
+          "HookHash": "71BDAA4290757C6AB7F238B5CE300FE10400D847223B262D1197F74F17ED6168",
+          "HookInstructionCount": "109f",
+          "HookResult": 2,
+          "HookReturnCode": "14",
+          "HookReturnString": "7265636F72647320636C65617200",
+          "HookStateChangeCount": 7
+        }
+      ],
+      "changedStateKeys": 2,
+      "recovered": true
+    },
+    {
+      "kind": "burn",
+      "writeOrdinal": 4,
+      "txHash": "B47CE33FE276361FA0CEB4F6C369BFB543AB04BD9A78C7890D31016DB7D30670",
+      "nativeResult": "tesSUCCESS",
+      "failures": [
+        {
+          "Flags": 0,
+          "HookAccount": "r9B2KuR8uciVHjr1kZdzfd9Rrfdv1AKdAe",
+          "HookEmitCount": 0,
+          "HookExecutionIndex": 0,
+          "HookHash": "71BDAA4290757C6AB7F238B5CE300FE10400D847223B262D1197F74F17ED6168",
+          "HookInstructionCount": "116d",
+          "HookResult": 2,
+          "HookReturnCode": "14",
+          "HookReturnString": "7265636F72647320636C65617200",
+          "HookStateChangeCount": 8
+        }
+      ],
+      "changedStateKeys": 3,
+      "recovered": true
+    },
+    {
+      "kind": "burn",
+      "writeOrdinal": 5,
+      "txHash": "59C36EDCDC27376F7D02F6DC1979510B5B08EE129BD22854806E235A4E8E8CD0",
+      "nativeResult": "tesSUCCESS",
+      "failures": [
+        {
+          "Flags": 0,
+          "HookAccount": "r9B2KuR8uciVHjr1kZdzfd9Rrfdv1AKdAe",
+          "HookEmitCount": 0,
+          "HookExecutionIndex": 0,
+          "HookHash": "71BDAA4290757C6AB7F238B5CE300FE10400D847223B262D1197F74F17ED6168",
+          "HookInstructionCount": "1195",
+          "HookResult": 2,
+          "HookReturnCode": "14",
+          "HookReturnString": "7265636F72647320636C65617200",
+          "HookStateChangeCount": 9
+        }
+      ],
+      "changedStateKeys": 4,
+      "recovered": true
+    },
+    {
+      "kind": "burn",
+      "writeOrdinal": 6,
+      "txHash": "E66D9FDCE8B50AFD524090DD1D99E5626106D3091C79E45F6882F9241BF4392E",
+      "nativeResult": "tesSUCCESS",
+      "failures": [
+        {
+          "Flags": 0,
+          "HookAccount": "r9B2KuR8uciVHjr1kZdzfd9Rrfdv1AKdAe",
+          "HookEmitCount": 0,
+          "HookExecutionIndex": 0,
+          "HookHash": "71BDAA4290757C6AB7F238B5CE300FE10400D847223B262D1197F74F17ED6168",
+          "HookInstructionCount": "1299",
+          "HookResult": 2,
+          "HookReturnCode": "14",
+          "HookReturnString": "696E64657820636C65617200",
+          "HookStateChangeCount": 10
+        }
+      ],
+      "changedStateKeys": 5,
+      "recovered": true
+    },
+    {
+      "kind": "burn",
+      "writeOrdinal": 7,
+      "txHash": "561660D5EBB15D724194D6C4865B9FB4D1F085EAC621F7849ECE66B32D2CC59C",
+      "nativeResult": "tesSUCCESS",
+      "failures": [
+        {
+          "Flags": 0,
+          "HookAccount": "r9B2KuR8uciVHjr1kZdzfd9Rrfdv1AKdAe",
+          "HookEmitCount": 0,
+          "HookExecutionIndex": 0,
+          "HookHash": "71BDAA4290757C6AB7F238B5CE300FE10400D847223B262D1197F74F17ED6168",
+          "HookInstructionCount": "12dc",
+          "HookResult": 2,
+          "HookReturnCode": "14",
+          "HookReturnString": "726F6F7420636C65617200",
+          "HookStateChangeCount": 11
+        }
+      ],
+      "changedStateKeys": 6,
+      "recovered": true
+    },
+    {
+      "kind": "burn",
+      "writeOrdinal": 8,
+      "txHash": "82FA547C15B69A153C9983C293806B1DE578813C2782DEB3E4F98B24A1F6E670",
+      "nativeResult": "tesSUCCESS",
+      "failures": [
+        {
+          "Flags": 0,
+          "HookAccount": "r9B2KuR8uciVHjr1kZdzfd9Rrfdv1AKdAe",
+          "HookEmitCount": 0,
+          "HookExecutionIndex": 0,
+          "HookHash": "71BDAA4290757C6AB7F238B5CE300FE10400D847223B262D1197F74F17ED6168",
+          "HookInstructionCount": "1308",
+          "HookResult": 2,
+          "HookReturnCode": "14",
+          "HookReturnString": "726F6F7420636C65617200",
+          "HookStateChangeCount": 12
+        }
+      ],
+      "changedStateKeys": 7,
+      "recovered": true
+    },
+    {
+      "kind": "burn",
+      "writeOrdinal": 9,
+      "txHash": "7767EC3F7C459DA23A0BC0F47346CF2060D01AE6877809F4A652361AFADD43F0",
+      "nativeResult": "tesSUCCESS",
+      "failures": [
+        {
+          "Flags": 0,
+          "HookAccount": "r9B2KuR8uciVHjr1kZdzfd9Rrfdv1AKdAe",
+          "HookEmitCount": 0,
+          "HookExecutionIndex": 0,
+          "HookHash": "71BDAA4290757C6AB7F238B5CE300FE10400D847223B262D1197F74F17ED6168",
+          "HookInstructionCount": "15fe",
+          "HookResult": 2,
+          "HookReturnCode": "14",
+          "HookReturnString": "6964656E7469747920636C65617200",
+          "HookStateChangeCount": 13
+        }
+      ],
+      "changedStateKeys": 8,
+      "recovered": true
+    },
+    {
+      "kind": "burn",
+      "writeOrdinal": 10,
+      "txHash": "FDF1C5718534E90FF065832C734295080EF54A87077BAB285B4FE6B6D7D5F8F8",
+      "nativeResult": "tesSUCCESS",
+      "failures": [
+        {
+          "Flags": 0,
+          "HookAccount": "r9B2KuR8uciVHjr1kZdzfd9Rrfdv1AKdAe",
+          "HookEmitCount": 0,
+          "HookExecutionIndex": 0,
+          "HookHash": "71BDAA4290757C6AB7F238B5CE300FE10400D847223B262D1197F74F17ED6168",
+          "HookInstructionCount": "16b5",
+          "HookResult": 2,
+          "HookReturnCode": "14",
+          "HookReturnString": "6964656E7469747920636C65617200",
+          "HookStateChangeCount": 14
+        }
+      ],
+      "changedStateKeys": 9,
+      "recovered": true
+    },
+    {
+      "kind": "burn",
+      "writeOrdinal": 11,
+      "txHash": "68BD9C2846CD28F60069CC02B4A3B9147C194E877E2971F67CA5ED10275E7C77",
+      "nativeResult": "tesSUCCESS",
+      "failures": [
+        {
+          "Flags": 0,
+          "HookAccount": "r9B2KuR8uciVHjr1kZdzfd9Rrfdv1AKdAe",
+          "HookEmitCount": 0,
+          "HookExecutionIndex": 0,
+          "HookHash": "71BDAA4290757C6AB7F238B5CE300FE10400D847223B262D1197F74F17ED6168",
+          "HookInstructionCount": "16db",
+          "HookResult": 2,
+          "HookReturnCode": "14",
+          "HookReturnString": "7265636F76657279206A6F75726E616C20636C65617200",
+          "HookStateChangeCount": 15
+        }
+      ],
+      "changedStateKeys": 10,
+      "recovered": true
+    }
+  ],
+  "emitCases": [
+    {
+      "name": "mintfailure.xah",
+      "buyHash": "826444F33265ADE3AEEFEC28AF1ED6F815B4E68DDA9B0CAFD6F82477D9A0C220",
+      "mintResult": "tecDUPLICATE",
+      "refundResult": "tesSUCCESS",
+      "refundCount": 1,
+      "pendingRetained": false,
+      "children": [
+        {
+          "hash": "F8E1900242F803EC7FA1C0C1FF78EB608A0BD67B2842DD4E2E444ABC648AD986",
+          "validated": true,
+          "type": "URITokenMint",
+          "result": "tecDUPLICATE",
+          "hookExecutions": [
+            {
+              "HookExecution": {
+                "Flags": 2,
+                "HookAccount": "r9B2KuR8uciVHjr1kZdzfd9Rrfdv1AKdAe",
+                "HookEmitCount": 1,
+                "HookExecutionIndex": 0,
+                "HookHash": "D57DDDEEDAE663B2B34DE833219241AA7E01236C39B2620FAC1DFC5292C2B1A0",
+                "HookInstructionCount": "13dd",
+                "HookResult": 3,
+                "HookReturnCode": "0",
+                "HookReturnString": "726566756E642071756575656400",
+                "HookStateChangeCount": 2
+              }
+            }
+          ]
+        },
+        {
+          "hash": "71555D94BFE5F28A272DB8B923400DD5B0DED09064979DB59E173FB433C4C818",
+          "validated": true,
+          "type": "Payment",
+          "result": "tesSUCCESS",
+          "hookExecutions": [
+            {
+              "HookExecution": {
+                "Flags": 2,
+                "HookAccount": "r9B2KuR8uciVHjr1kZdzfd9Rrfdv1AKdAe",
+                "HookEmitCount": 0,
+                "HookExecutionIndex": 0,
+                "HookHash": "D57DDDEEDAE663B2B34DE833219241AA7E01236C39B2620FAC1DFC5292C2B1A0",
+                "HookInstructionCount": "a50",
+                "HookResult": 3,
+                "HookReturnCode": "0",
+                "HookReturnString": "726566756E64656400",
+                "HookStateChangeCount": 9
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "refundfailure.xah",
+      "buyHash": "33B46510E18B3F4B509B5981175F62941C2060D3F0C9C1B09A2975CB8FE7836B",
+      "mintResult": "tecDUPLICATE",
+      "refundResult": "tecDST_TAG_NEEDED",
+      "refundCount": 1,
+      "pendingRetained": true,
+      "children": [
+        {
+          "hash": "70140DBE25FEC7AD289505EAA2C185404A99BC02947DEE8C6DEBE7EA09D279F3",
+          "validated": true,
+          "type": "URITokenMint",
+          "result": "tecDUPLICATE",
+          "hookExecutions": [
+            {
+              "HookExecution": {
+                "Flags": 2,
+                "HookAccount": "r9B2KuR8uciVHjr1kZdzfd9Rrfdv1AKdAe",
+                "HookEmitCount": 1,
+                "HookExecutionIndex": 0,
+                "HookHash": "D57DDDEEDAE663B2B34DE833219241AA7E01236C39B2620FAC1DFC5292C2B1A0",
+                "HookInstructionCount": "13f3",
+                "HookResult": 3,
+                "HookReturnCode": "0",
+                "HookReturnString": "726566756E642071756575656400",
+                "HookStateChangeCount": 2
+              }
+            }
+          ]
+        },
+        {
+          "hash": "8DE6F4A785DF68F4B4777B27D611B0F5C048FF30E7022567FCAC365C55CAC274",
+          "validated": true,
+          "type": "Payment",
+          "result": "tecDST_TAG_NEEDED",
+          "hookExecutions": [
+            {
+              "HookExecution": {
+                "Flags": 2,
+                "HookAccount": "r9B2KuR8uciVHjr1kZdzfd9Rrfdv1AKdAe",
+                "HookEmitCount": 0,
+                "HookExecutionIndex": 0,
+                "HookHash": "D57DDDEEDAE663B2B34DE833219241AA7E01236C39B2620FAC1DFC5292C2B1A0",
+                "HookInstructionCount": "777",
+                "HookResult": 3,
+                "HookReturnCode": "3c",
+                "HookReturnString": "726566756E64207265717569726573207265636F7665727900",
+                "HookStateChangeCount": 1
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "indexerReplay": {
+    "networkID": 65535,
+    "readOnly": true,
+    "result": "PASS",
+    "checks": [
+      {
+        "kind": "transfer",
+        "domain": "faulttransfer4.xah",
+        "failureHash": "831001446CBE5F94265076A0A5C95A0EBEE9FF5E800A518B5BE6D957BF0553EF",
+        "fromLedger": 690,
+        "throughLedger": 694,
+        "quarantined": true,
+        "recovered": true,
+        "failedStrongRecoveryVerified": true,
+        "eventTypes": [
+          "NativeOwnerChanged",
+          "DomainOfferRemoved",
+          "StateChanged",
+          "StateChanged",
+          "StateChanged",
+          "HookExecutionFailed",
+          "DomainRecoveryRequired"
+        ]
+      },
+      {
+        "kind": "burn",
+        "domain": "faultburn4.xah",
+        "failureHash": "B47CE33FE276361FA0CEB4F6C369BFB543AB04BD9A78C7890D31016DB7D30670",
+        "fromLedger": 882,
+        "throughLedger": 885,
+        "quarantined": true,
+        "recovered": true,
+        "failedStrongRecoveryVerified": false,
+        "eventTypes": [
+          "StateChanged",
+          "StateChanged",
+          "StateChanged",
+          "NativeTokenBurned",
+          "HookExecutionFailed",
+          "DomainRecoveryRequired"
+        ]
+      }
+    ]
+  },
+  "limitations": [
+    "Node amendment set differs from public testnet; retired amendments omitted, dev defaults may add others",
+    "Expiry callbacks, stale/out-of-order callback delivery and failed offer emission not tested",
+    "Failed refund remains pending and needs an operator recovery design; no retry method verified",
+    "Process/consensus crash, state corruption, maximum record inventory and all-history backfill not certified"
+  ]
+}
