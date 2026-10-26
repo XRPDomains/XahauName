@@ -1,0 +1,119 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-26",
+  "sourceBaseline": "b8a3309",
+  "environment": "isolated localhost standalone; fresh chain",
+  "networkID": 65535,
+  "buildVersion": "2026.10.16-dev+4158",
+  "nodeSourceCommit": "3dc41b2a5951855f7c5c88c9efed0299e7a843ec",
+  "result": "PASS",
+  "checks": 21,
+  "signedTransactions": 26,
+  "accounts": {
+    "treasury": "raBnwwkkxSgm3mqTYMLPFoma8iVB3p5fBy",
+    "a": "rwxtHWGiht4TW3WcGoXaN3feQjgDpigPuD",
+    "b": "rU97iwvZqKT4XZH6CiLS9BqjzYuD8wTcbj"
+  },
+  "productionArtifactsUnchanged": true,
+  "emittedOutcomes": [
+    {
+      "name": "mintfailure.xah",
+      "buyHash": "271109E03A2C10ACA5B8FA844D24EE81A78E86881F2BE3DC7939A036B70B4106",
+      "mintResult": "tecDUPLICATE",
+      "refundResult": "tesSUCCESS",
+      "pendingRetained": false,
+      "diagnostic": {
+        "domain": "mintfailure.xah",
+        "uritokenId": "D114A2B58E9BDD8AA7F002BAC73F599A56FEA34D3BC1B001A486CF6D62C6CB66",
+        "ledgerHash": "4329A8E854479DC5BCB22063392A93D434BD29DFF42D2B50D49D2AB451FFA93C",
+        "state": "notTracked",
+        "recovery": "none"
+      },
+      "refundCount": 1
+    },
+    {
+      "name": "refundfailure.xah",
+      "buyHash": "CA0584CE070E00FC583BFA0E14C1A2D68F7DFBD1996D82D18E3F09EA44FC85D0",
+      "mintResult": "tecDUPLICATE",
+      "refundResult": "tecDST_TAG_NEEDED",
+      "pendingRetained": true,
+      "diagnostic": {
+        "domain": "refundfailure.xah",
+        "uritokenId": "83178CD465F267948BD9AE3B67A13627C162954104206431D20E32EBC19463A8",
+        "ledgerHash": "B3007D9CC80CFC9F775CA335948653F10E2E4D96253F194AABD294FB03490788",
+        "state": "failed",
+        "recovery": "operator",
+        "transactionHash": "D0D0859798FC61366C7FB829813D35D459897C07E0949ED8CD8BE63064F112C8",
+        "recipient": "rwxtHWGiht4TW3WcGoXaN3feQjgDpigPuD",
+        "amountDrops": "1000000",
+        "transactionLedgerIndex": 97,
+        "engineResult": "tecDST_TAG_NEEDED"
+      },
+      "refundCount": 1
+    }
+  ],
+  "paidButTracked": {
+    "buyHash": "6148E62911EFDA3C5B6A91BC2347A39008E43E1A24DDCFF09BB4C21EEF63573B",
+    "refundHash": "70ABCFAA7E7A6B3870D5B0F6D4BB8F0428DAA1FB2D4B84908550D1CF2D53258D",
+    "diagnostic": {
+      "domain": "paidtracking.xah",
+      "uritokenId": "362D91824464972CA6567B6AAA01C7EA339A1868DC3B597828D6B03B02B1B5CC",
+      "ledgerHash": "148D008C5EE5ABAA2FF93CDAFC2BC46F7B0FEC036CF5248BDD54A07ADCDB57E3",
+      "state": "paid",
+      "recovery": "operator",
+      "transactionHash": "70ABCFAA7E7A6B3870D5B0F6D4BB8F0428DAA1FB2D4B84908550D1CF2D53258D",
+      "recipient": "rwxtHWGiht4TW3WcGoXaN3feQjgDpigPuD",
+      "amountDrops": "1000000",
+      "transactionLedgerIndex": 117,
+      "engineResult": "tesSUCCESS"
+    },
+    "paidOnce": true,
+    "pendingRetained": true,
+    "callbackExecutions": [
+      {
+        "HookExecution": {
+          "Flags": 2,
+          "HookAccount": "raBnwwkkxSgm3mqTYMLPFoma8iVB3p5fBy",
+          "HookEmitCount": 0,
+          "HookExecutionIndex": 0,
+          "HookHash": "374FB410932FEDC80063905433966D55C75A1C586683050F17589FACB3896193",
+          "HookInstructionCount": "782",
+          "HookResult": 2,
+          "HookReturnCode": "14",
+          "HookReturnString": "726566756E6420736574746C65207700",
+          "HookStateChangeCount": 1
+        }
+      }
+    ],
+    "testArtifact": {
+      "part": "issuance",
+      "testOnly": true,
+      "faultMode": "before refund cleanup",
+      "bytes": 12529,
+      "sha256": "940bfd9247597647afe094848749268b3014664d6c8da9b7fbcd52513b2a24e7",
+      "productionCommonSha256": "88166cca33711977a8be99144042ad8e23db12b6551986761c5aafd6985f7f2f",
+      "productionHandlerSha256": "60ae5ac4ba123992848f793057d43ac5fb626edd9d68e87af8426ad8eff040d8",
+      "guardPassed": true
+    }
+  },
+  "guard": {
+    "testArtifact": {
+      "bytes": 12529,
+      "hookInstructions": 32192,
+      "callbackInstructions": 63466,
+      "passed": true
+    },
+    "initialBroadInstrumentation": {
+      "bytes": 13276,
+      "callbackInstructions": 66562,
+      "passed": false,
+      "disposition": "Not installed. Replaced by a targeted invalid-key API call immediately before refund cleanup; no checker or guard limit changes."
+    }
+  },
+  "limitations": [
+    "No refund retry/settlement opcode implemented",
+    "Paid evidence is observational, never resubmission authorization",
+    "Expiry, stale callback, offer failure, maximum inventory and engine/process crash coverage remain open",
+    "Native state and receipts are RPC observations without an independent consensus proof"
+  ]
+}

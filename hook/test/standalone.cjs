@@ -136,7 +136,10 @@ async function main(){
     const entries=(await rpc.request({command:'account_namespace',account:treasury.classicAddress,namespace_id:manifest.namespace,ledger_index:'validated'})).result;assert(!entries.marker);
     const state=new Map(entries.namespace_entries.map(row=>[row.HookStateKey,row.HookStateData]));
     assert.equal(state.has(util.pendingKey(id)),failRefund);assert.equal(state.has(util.asyncKey('rfd',id)),failRefund);
+    const diagnostic=await ac.registrar.getRefundStatus(name);
+    assert.equal(diagnostic.state,failRefund?'failed':'notTracked');
     if(failRefund){
+     assert.equal(diagnostic.engineResult,'tecDST_TAG_NEEDED');assert.equal(diagnostic.transactionHash,refunds[0].hash);assert.equal(diagnostic.recovery,'operator');
      assert.equal((await ac.registrar.getRegistrationStatus(name)).stage,'refundPending');
      await submit(a,{TransactionType:'AccountSet',ClearFlag:1});await close(8);
      // The failed refund remains recorded; clearing a recipient flag must not replay payment.
@@ -147,13 +150,37 @@ async function main(){
      await submit(treasury,{TransactionType:'URITokenBurn',URITokenID:id});
      assert.equal((await ac.registrar.getRegistrationStatus(name)).stage,'available');
     }
-    const evidence={name,buyHash:buy.txHash,mintResult:mint[0].meta.TransactionResult,refundResult:refunds[0].meta.TransactionResult,refundCount:refunds.length,pendingRetained:failRefund,children};
+    const evidence={name,buyHash:buy.txHash,mintResult:mint[0].meta.TransactionResult,refundResult:refunds[0].meta.TransactionResult,refundCount:refunds.length,pendingRetained:failRefund,diagnostic,children};
     report.emitCases.push(evidence);save('emit-cases',report.emitCases);return evidence;
    });
   }
+  if(process.env.STANDALONE_REFUND_SETTLEMENT==='1')await step('paid refund survives callback cleanup failure',async()=>{
+   const dir=path.join(base,'native-refund-cleanup-fault/issuance'),proof=JSON.parse(fs.readFileSync(path.join(dir,'proof.json'))),code=fs.readFileSync(path.join(dir,'xahau-name-hook.cleaned.wasm'));
+   assert.equal(proof.testOnly,true);assert.equal(proof.guardPassed,true);assert.equal(proof.faultMode,'before refund cleanup');assert.equal(hash(code),proof.sha256);assert.equal(hash(fs.readFileSync(path.join(repo,'hook/src/common.h'))),proof.productionCommonSha256);assert.equal(hash(fs.readFileSync(path.join(repo,'hook/src/handlers/issuance.c'))),proof.productionHandlerSha256);
+   await submit(treasury,{TransactionType:'SetHook',Hooks:parts.map(part=>({Hook:part==='issuance'?{...artifacts[0].Hook,CreateCode:code.toString('hex').toUpperCase()}:{}}))});
+   const slots=(await rpc.request({command:'account_objects',account:treasury.classicAddress,type:'hook',ledger_index:'validated'})).result.account_objects.flatMap(x=>x.Hooks??[]);
+   config.hookHashes.issuance=slots[0].Hook.HookHash;
+   const label='paidtracking',name=label+'.xah',uri='https://example.com/metadata/'+name;
+   await submit(treasury,{TransactionType:'URITokenMint',URI:Buffer.from(uri).toString('hex').toUpperCase(),Flags:1});
+   const before=(await rpc.request({command:'account_info',account:a.classicAddress,ledger_index:'validated'})).result.account_data.Balance;
+   const buy=await ac.registrar.buy({label,tld:'xah'});await close(8);
+   const status=await ac.registrar.getRegistrationStatus(name);assert.equal(status.stage,'refundPending');assert(status.refundTxHash);
+   const diagnostic=await ac.registrar.getRefundStatus(name);assert.equal(diagnostic.state,'paid');assert.equal(diagnostic.engineResult,'tesSUCCESS');assert.equal(diagnostic.recovery,'operator');
+   const refund=(await rpc.request({command:'tx',transaction:status.refundTxHash})).result;assert.equal(refund.validated,true);assert.equal(refund.meta.TransactionResult,'tesSUCCESS');
+   assert(refund.meta.HookExecutions.some(x=>BigInt('0x'+x.HookExecution.HookReturnCode)===20n),'Native callback cleanup fault not reached');
+   const parent=(await rpc.request({command:'tx',transaction:buy.txHash})).result;
+   const after=(await rpc.request({command:'account_info',account:a.classicAddress,ledger_index:'validated'})).result.account_data.Balance;
+   assert.equal(BigInt(before)-BigInt(after),BigInt(parent.Fee),'Refund must repay exactly once');
+   await close(8);
+   assert.equal((await ac.registrar.getRefundStatus(name)).state,'paid');
+   assert.equal((await rpc.request({command:'account_info',account:a.classicAddress,ledger_index:'validated'})).result.account_data.Balance,after,'No second payment while tracking remains');
+   report.refundSettlementCase={buyHash:buy.txHash,refundHash:status.refundTxHash,diagnostic,paidOnce:true,pendingRetained:true,callbackExecutions:refund.meta.HookExecutions,testArtifact:proof};
+   save('refund-settlement',report.refundSettlementCase);return report.refundSettlementCase;
+  });
   Object.assign(report,{result:'PASS',scope:'Exact production artifacts on isolated native standalone; normal callbacks and lifecycle only, not fault injection'});
   if(report.faultCases)report.scope='Production lifecycle plus test-only claim/burn wrappers requesting native state_set invalid-key errors; not arbitrary node/consensus crash injection';
   if(report.emitCases)report.emitScope='Production issuance artifact: duplicate mint failure, successful refund, recipient-tag refund failure retaining correlation/pending; expiry and replay not tested';
+  if(report.refundSettlementCase)report.refundSettlementScope='Test-only issuance copy requests a native invalid-key error immediately before refund cleanup; payment validates while pending/correlation remain';
  }catch(error){Object.assign(report,{result:'FAIL',stage,error:error.message});throw error;}
  finally{save('summary',report);for(const c of clients)await c.disconnect();if(rpc.isConnected())await rpc.disconnect();}
 }

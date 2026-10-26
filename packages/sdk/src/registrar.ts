@@ -8,6 +8,7 @@ import { fetchMetadata, metadataURL } from './metadata';
 import { XahauNameError, isTransientRpcError } from './errors';
 import {beforeDeadline,positiveMilliseconds} from './deadline';
 import {mapReads,snapshotContext} from './read-snapshot';
+import {readRefundStatus} from './refund-read';
 import {STATE_LAYOUTS} from './state-layouts.generated';
 export class RegistrarModule {
     private incomingHistory=new Map<string,{max:number;min:number;hash:string;bytes:number;offers:import('./types').IncomingDomain[]}>();
@@ -118,6 +119,10 @@ export class RegistrarModule {
             if (base) id = computeUritokenIdFromURI(this.ctx.treasury, base + name);
         }
         const status: RegistrationStatus = { domain: name, uritokenId: id, stage: 'available', ledgerHash: opts.ledgerHash };
+        if(refund){
+            if(refund.length!==32)throw new XahauNameError('Invalid refund tracking hash','BAD_STATE');
+            status.refundTxHash=refund.toString('hex').toUpperCase();
+        }
         if (pending) {
             if (pending.length !== STATE_LAYOUTS.pending.length)
                 throw new XahauNameError('Invalid pending record', 'BAD_STATE');
@@ -155,6 +160,10 @@ export class RegistrarModule {
         if (token || identity.mapped)
             status.stage = 'recoveryRequired';
         return status;
+    }
+    /** Read the tracked refund outcome explicitly; never retries a payment. */
+    async getRefundStatus(domain:string,options:ReadOptions={}) {
+        return readRefundStatus(this.ctx,await this.getRegistrationStatus(domain,options));
     }
     /** Explicit strong Invoke, safe to retry after checking status; never repeats a buy/burn. */
     async reconcile(domain:string) {

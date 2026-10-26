@@ -48,3 +48,26 @@ Client defaults are 512 cached entries, approximately 1 MiB retained cache, 30-s
 `listIncomingDomains` shares one snapshot and verifies candidates with bounded concurrency. Completed inboxes are reused only at the identical immutable ledger. Subsequent heads scan new account-history ledgers and revalidate active offers. Discovery cache is bounded to 32 wallets and approximately 1 MiB. It still needs an initial history scan, can fail at the 100-page/20,000-candidate limit, and exposes `historyMinLedger`; pruned history is not proof that no old offer exists. For large accounts use the [indexer](INDEXER.md) for discovery, then verify ledger state before signing.
 
 Network selection uses the [shared configuration](NETWORKS.md). No read method silently substitutes the bundled testnet deployment for mainnet.
+
+## Refund diagnostics
+
+`registrar.getRegistrationStatus(name, options?)` exposes `refundTxHash` when a valid 32-byte refund correlation exists. It keeps the same state-read RPC workload. The registration stage `refundPending` means unresolved tracking, not proof that a refund is still executing.
+
+For explicit diagnosis, use:
+
+```ts
+const refund = await client.registrar.getRefundStatus('alice.xah');
+console.log(refund.state, refund.transactionHash, refund.engineResult);
+```
+
+| State | Meaning |
+| --- | --- |
+| `notTracked` | No current correlation; this is not a historical refund search |
+| `unknown` | Pending evidence is incomplete, the receipt is unavailable, or it is later than the requested snapshot |
+| `unvalidated` | Receipt lacks `validated: true`; do not infer payment or failure |
+| `failed` | A matching emitted Payment has a validated `tec` result at/before the state snapshot |
+| `paid` | The matching emitted Payment validated successfully, while unresolved tracking still exists |
+
+The method verifies treasury, recipient, exact drops, full token InvoiceID, transaction hash, emitted sequence/flags, metadata and the pinned validated ledger. Malformed/mismatched replies throw; connection errors propagate. An unavailable receipt remains unknown, including on pruned RPC servers. A later receipt never changes a historical snapshot's outcome.
+
+There are no additional receipt RPCs on existing registration/profile reads. This explicit method adds one `tx` request and, for a validated receipt, one pinned ledger header. Missing tracking needs neither; normal registration-state reads still precede those requests. `paid` confirms the Payment, not successful callback cleanup or domain availability. While tracking remains, both `paid` and `failed` return `recovery: 'operator'`; none of these outcomes authorizes resubmission. The hook has no refund retry operation in this release. See the [recovery design](review/REFUND-RECOVERY-DESIGN.md).

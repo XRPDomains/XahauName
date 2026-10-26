@@ -12,6 +12,10 @@ Required before production: controlled native failures at journal, primary/index
 
 **Native follow-up, 2026-10-26:** [Isolated verification](P2-STANDALONE-2026-10-26.md) covers 31 selected native state_set errors across first claim, transfer and burn, partial weak persistence, SDK quarantine, failed strong repair with unchanged state, successful repair/retry and native indexer quarantine/recovery replay. Production issuance also handles duplicate-mint failure with one successful refund; a failed refund retains pending/correlation. Injection uses separately built test-only wrappers, not arbitrary engine/process faults. Expiry/stale callbacks, failed offer emission, failed-refund retry design, maximum native inventory and process/consensus crash remain open. This evidence does not authorize mainnet deployment.
 
+**Refund diagnostics:** the SDK exposes tracked `refundTxHash` without extra registration-read RPC and an explicit `registrar.getRefundStatus()` for validated matching Payment receipts, bounded by the state snapshot. It distinguishes failed, paid-but-tracked, unvalidated and unknown outcomes; none authorizes payment retry. A [journal/strong-queue proposal](REFUND-RECOVERY-DESIGN.md) documents the double-payment boundary and migration requirements; no refund retry opcode is implemented.
+
+[Native paid-tracking evidence](REFUND-DIAGNOSTICS-2026-10-26.md) now confirms a validated successful refund whose callback cleanup fails, leaving pending/correlation. SDK diagnosis returns paid with operator settlement required; additional ledger closes do not pay twice. The isolated run has 21 checks; only this cleanup-fault case replaces issuance with a guarded test-only copy. Production issuance remains close to its static instruction ceiling, so adding a journal requires resource planning.
+
 ## F-02 / P1 / FIXED in working tree: missing validation flag could pass a receipt
 
 transactionResult rejected only validated:false, allowing an omitted flag to pass if acknowledgement metadata looked successful. It now requires validated:true. The new regression removes the flag and requires NOT_VALIDATED. Native offer submission already required true.

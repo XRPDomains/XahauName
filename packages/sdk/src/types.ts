@@ -189,6 +189,21 @@ export interface RegistrationStatus {
     tokenOwner?: string;
     recipient?: string;
     amountDrops?: bigint;
+    /** Tracked emitted refund transaction; presence alone does not prove payment. */
+    refundTxHash?: string;
+}
+export interface RefundStatus {
+    domain: string;
+    uritokenId: string;
+    ledgerHash: string;
+    state: 'notTracked' | 'unknown' | 'unvalidated' | 'failed' | 'paid';
+    transactionHash?: string;
+    transactionLedgerIndex?: number;
+    engineResult?: string;
+    recipient?: string;
+    amountDrops?: bigint;
+    recovery: 'none' | 'check-status' | 'operator';
+    reason?: 'missingPending' | 'receiptUnavailable' | 'notValidated' | 'afterSnapshot';
 }
 export interface WaitOptions {
     timeoutMs?: number;

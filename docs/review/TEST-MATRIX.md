@@ -6,6 +6,8 @@ Reviewed: 2026-10-26. Hook artifacts: installed release 0.3.0 refactor; 283 prod
 
 [Native follow-up, 2026-10-26](P2-STANDALONE-2026-10-26.md): 31 selected native write errors across claim/transfer/burn, failed strong repair, two emitted mint/refund outcomes and indexer quarantine/recovery replay passed. Fault wrappers are test-only; normal lifecycle uses exact production bytes. Expiry/stale callbacks, maximum native inventory, failed-refund retry and arbitrary engine/process faults remain open.
 
+[Refund follow-up](REFUND-DIAGNOSTICS-2026-10-26.md): SDK suite now **115 PASS**, including seven explicit diagnostic tests. A separate **21-check native run** verifies failed refund versus paid refund whose callback cleanup fails. Only the paid-cleanup scenario uses a test-only issuance copy; production C/artifacts are unchanged.
+
 | Slot | Handler | Responsibility | Critical assertions |
 | --- | --- | --- | --- |
 | 0 | issuance | Native purchase/register, name/TLD/price/pause checks; mint/offer/refund callback stages | Reserve only once; no root owner before claim; correlate every emitted tx |

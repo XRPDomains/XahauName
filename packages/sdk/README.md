@@ -108,6 +108,8 @@ await writer.resolver.setText({
 
 Purchase and claim are separate wallet approvals; `buyAndClaim()` coordinates them. A profile batch uses one Invoke/signature, while an unchanged patch returns null. Transfer acceptance clears the prior owner's records and primary selection.
 
+For an interrupted purchase, inspect `registrar.getRegistrationStatus(domain)` first. Its optional `refundTxHash` identifies a tracked refund without adding a receipt RPC. Call `registrar.getRefundStatus(domain, {ledgerHash?})` explicitly to inspect its validated outcome. `failed` and `paid` both require operator attention while tracking remains; this read never retries a payment. `notTracked` means no current refund correlation, not proof that no historical refund occurred. See [refund diagnostics](../../docs/READ-API.md#refund-diagnostics).
+
 When the integration is disposed, close both client connections:
 
 ```ts
