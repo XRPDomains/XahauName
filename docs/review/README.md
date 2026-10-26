@@ -16,6 +16,7 @@ Engineering reviews, verification scope, design assessments and deployment evide
 | [P2 isolated native verification — 26 October 2026](P2-STANDALONE-2026-10-26.md) | Native write errors, partial persistence, repair retry, mint/refund failures and indexer quarantine replay |
 | [Refund recovery design](REFUND-RECOVERY-DESIGN.md) | Why pending cannot authorize retry; proposed paid journal, strong queue/settlement and migration gates |
 | [Refund diagnostics verification](REFUND-DIAGNOSTICS-2026-10-26.md) | SDK receipt checks and native successful-payment/failed-cleanup evidence |
+| [Offer failures and maximum limits](OFFER-AND-LIMITS-2026-10-26.md) | Native recipient rejection, reserved-token cleanup/reissue, full inventories and indexer replay |
 | [Explorer ABI preparation](EXPLORER-ABI.md) | Shared binary schema, checked snapshot manifests, TLD provenance and publication scope |
 | [Lifecycle/client follow-up](RECOVERY-AND-CLIENT-FIXES.md) | Implementation changes and verification evidence |
 | [Owner-only burn](OWNER-ONLY-BURN.md) | Native custody authorization, upgrade boundary and testnet rejection/success receipts |

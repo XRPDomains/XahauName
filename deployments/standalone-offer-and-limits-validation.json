@@ -1,0 +1,430 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-26",
+  "sourceBaseline": "5526273",
+  "networkID": 65535,
+  "environment": "isolated localhost standalone",
+  "buildVersion": "2026.10.16-dev+4158",
+  "nodeSourceCommit": "3dc41b2a5951855f7c5c88c9efed0299e7a843ec",
+  "result": "PASS",
+  "productionSourcesUnchanged": true,
+  "offerFailure": {
+    "checks": 22,
+    "signedTransactions": 23,
+    "treasuryProductionArtifacts": true,
+    "case": {
+      "domain": "offerfailure.xah",
+      "tokenId": "B91DF7F630A0AAAD2FC36B3677B59DD21E3A17E5C1CD86A817CFC637BCF00E9A",
+      "buyHash": "D560245B99C4A6C8200FCA697E4A88E4F5B74EBBBF2AE7FB3BE25AF30B627EAA",
+      "mintHash": "FCFEB943E17F26B56D0D14BB3887312FBAD36B7B2E5BE7DCFA4449FFAB22C6A7",
+      "offerHash": "B1BF2074980CCD333649E0BAEF243388A648AF434B98215B8E17B943F8FC0B55",
+      "refundHash": "E174CCDEFEA7DA0311DD979408838D149430B4BBEA80F1DEB1CD532409F8DBEF",
+      "mintResult": "tesSUCCESS",
+      "offerResult": "tecHOOK_REJECTED",
+      "refundResult": "tesSUCCESS",
+      "refundCount": 1,
+      "owner": "rwmG8h8fLBdy2tmqqRv5kmEWHKgSQidCx5",
+      "stage": "recoveryRequired",
+      "recipientFixture": {
+        "part": "recipient",
+        "testOnly": true,
+        "faultMode": "recipient rejects sell offer",
+        "bytes": 130,
+        "sha256": "1cac74522e4bbf269de14da6102a634446053fcc8896dab3525cf7b38a239865",
+        "productionCommonSha256": "88166cca33711977a8be99144042ad8e23db12b6551986761c5aafd6985f7f2f",
+        "fixtureSourceSha256": "95914d893c0d48dfae47f66f7653483c53c1d44583d76ef6bb31b6a1b7d637e8",
+        "guardPassed": true
+      },
+      "children": [
+        {
+          "hash": "FCFEB943E17F26B56D0D14BB3887312FBAD36B7B2E5BE7DCFA4449FFAB22C6A7",
+          "type": "URITokenMint",
+          "validated": true,
+          "result": "tesSUCCESS",
+          "hookExecutions": [
+            {
+              "HookExecution": {
+                "Flags": 2,
+                "HookAccount": "rwmG8h8fLBdy2tmqqRv5kmEWHKgSQidCx5",
+                "HookEmitCount": 1,
+                "HookExecutionIndex": 0,
+                "HookHash": "D57DDDEEDAE663B2B34DE833219241AA7E01236C39B2620FAC1DFC5292C2B1A0",
+                "HookInstructionCount": "13d7",
+                "HookResult": 3,
+                "HookReturnCode": "0",
+                "HookReturnString": "6F666665722071756575656400",
+                "HookStateChangeCount": 3
+              }
+            }
+          ]
+        },
+        {
+          "hash": "B1BF2074980CCD333649E0BAEF243388A648AF434B98215B8E17B943F8FC0B55",
+          "type": "URITokenCreateSellOffer",
+          "validated": true,
+          "result": "tecHOOK_REJECTED",
+          "hookExecutions": [
+            {
+              "HookExecution": {
+                "Flags": 1,
+                "HookAccount": "rf3hxwp8DmGWWHv3rymcjksyY5CCQoDg9G",
+                "HookEmitCount": 0,
+                "HookExecutionIndex": 0,
+                "HookHash": "28A1C218A4DD654435E9F58162D5D3D1CF08CBB0207B87B98918CB14809B6585",
+                "HookInstructionCount": "a",
+                "HookResult": 2,
+                "HookReturnCode": "309",
+                "HookReturnString": "746573742072656A656374206F6666657200",
+                "HookStateChangeCount": 0
+              }
+            },
+            {
+              "HookExecution": {
+                "Flags": 2,
+                "HookAccount": "rwmG8h8fLBdy2tmqqRv5kmEWHKgSQidCx5",
+                "HookEmitCount": 1,
+                "HookExecutionIndex": 1,
+                "HookHash": "D57DDDEEDAE663B2B34DE833219241AA7E01236C39B2620FAC1DFC5292C2B1A0",
+                "HookInstructionCount": "106b",
+                "HookResult": 3,
+                "HookReturnCode": "0",
+                "HookReturnString": "726566756E642071756575656400",
+                "HookStateChangeCount": 2
+              }
+            }
+          ]
+        },
+        {
+          "hash": "E174CCDEFEA7DA0311DD979408838D149430B4BBEA80F1DEB1CD532409F8DBEF",
+          "type": "Payment",
+          "validated": true,
+          "result": "tesSUCCESS",
+          "hookExecutions": [
+            {
+              "HookExecution": {
+                "Flags": 2,
+                "HookAccount": "rwmG8h8fLBdy2tmqqRv5kmEWHKgSQidCx5",
+                "HookEmitCount": 0,
+                "HookExecutionIndex": 0,
+                "HookHash": "D57DDDEEDAE663B2B34DE833219241AA7E01236C39B2620FAC1DFC5292C2B1A0",
+                "HookInstructionCount": "7f3",
+                "HookResult": 3,
+                "HookReturnCode": "0",
+                "HookReturnString": "726566756E64656400",
+                "HookStateChangeCount": 5
+              }
+            }
+          ]
+        }
+      ],
+      "cleanupBurnHash": "9BD7304256709DFF991CDE5F20384A9A1D22C2C91853A1506B25B64117BC1153",
+      "reissuedAndCleaned": true
+    },
+    "indexerReplay": {
+      "networkID": 65535,
+      "readOnly": true,
+      "result": "PASS",
+      "checks": [
+        {
+          "kind": "offer-failure",
+          "domain": "offerfailure.xah",
+          "fromLedger": 27,
+          "throughLedger": 49,
+          "refundLedger": 31,
+          "reservationBurnLedger": 37,
+          "reclaimLedger": 48,
+          "rejectedOfferNotOwned": true,
+          "rejectedOfferNotInInbox": true,
+          "refundedReservationQuarantined": true,
+          "reissuedAndCleaned": true,
+          "eventTypes": [
+            "StateChanged",
+            "StateChanged",
+            "StateChanged",
+            "StateChanged",
+            "DomainUpdated",
+            "StateChanged",
+            "DomainMinted",
+            "StateChanged",
+            "DomainUpdated",
+            "OperationRejected",
+            "StateChanged",
+            "StateChanged",
+            "StateChanged",
+            "StateChanged",
+            "RefundSettled",
+            "DomainRecoveryRequired",
+            "StateChanged",
+            "NativeTokenBurned",
+            "StateChanged",
+            "DomainUpdated",
+            "StateChanged",
+            "StateChanged",
+            "StateChanged",
+            "StateChanged",
+            "DomainUpdated",
+            "StateChanged",
+            "DomainMinted",
+            "StateChanged",
+            "DomainUpdated",
+            "DomainOfferCreated",
+            "DomainUpdated",
+            "StateChanged",
+            "StateChanged",
+            "StateChanged",
+            "NativeOwnerChanged",
+            "DomainOfferRemoved",
+            "StateChanged",
+            "StateChanged",
+            "DomainClaimed",
+            "StateChanged",
+            "StateChanged",
+            "NativeTokenBurned",
+            "StateChanged",
+            "StateChanged",
+            "DomainBurned"
+          ]
+        }
+      ]
+    }
+  },
+  "maximumInventory": {
+    "checks": 24,
+    "signedTransactions": 166,
+    "expectedRejectedTransactions": 8,
+    "cases": [
+      {
+        "kind": "transfer",
+        "domain": "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm.abcdefgh",
+        "labelBytes": 57,
+        "tldBytes": 8,
+        "addressCount": 15,
+        "addressBytes": 128,
+        "customTextCount": 15,
+        "customKeyBytes": 40,
+        "customValueBytes": 128,
+        "overflows": [
+          {
+            "operation": "setAddr",
+            "hash": "D3C00E5EC5030D7AD03BDC7CCC0FE7B667594DBFB5BF56B42CFD519BC86C3A38",
+            "result": "tecHOOK_REJECTED",
+            "code": 62
+          },
+          {
+            "operation": "setText",
+            "hash": "76BD877FC817132132AB684E33442EF56D473777733453001ED85E058C9B1D9C",
+            "result": "tecHOOK_REJECTED",
+            "code": 62
+          }
+        ],
+        "namespaceRestored": true
+      },
+      {
+        "kind": "burn",
+        "domain": "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn.abcdefgh",
+        "labelBytes": 57,
+        "tldBytes": 8,
+        "addressCount": 15,
+        "addressBytes": 128,
+        "customTextCount": 15,
+        "customKeyBytes": 40,
+        "customValueBytes": 128,
+        "overflows": [
+          {
+            "operation": "setAddr",
+            "hash": "ECD741E547DD73140F2A8474EE0B0A30B9B8F64C10FFBD614CE73E79502A2A08",
+            "result": "tecHOOK_REJECTED",
+            "code": 62
+          },
+          {
+            "operation": "setText",
+            "hash": "11D8182E999AFEB6B1D4316A9B2B580F6FBC21FEB3EC0FB3C1C8E036C2D4A5F0",
+            "result": "tecHOOK_REJECTED",
+            "code": 62
+          }
+        ],
+        "namespaceRestored": true
+      },
+      {
+        "kind": "transfer-fault",
+        "domain": "ooooooooooooooooooooooooooooooooooooooooooooooooooooooooo.abcdefgh",
+        "labelBytes": 57,
+        "tldBytes": 8,
+        "addressCount": 15,
+        "addressBytes": 128,
+        "customTextCount": 15,
+        "customKeyBytes": 40,
+        "customValueBytes": 128,
+        "overflows": [
+          {
+            "operation": "setAddr",
+            "hash": "560002998851E4DC5357E8EF0B73A2F17665D73F822E952A6F6658E9F3C6CF68",
+            "result": "tecHOOK_REJECTED",
+            "code": 62
+          },
+          {
+            "operation": "setText",
+            "hash": "FA69A414064C84FB78D9005CCBB778E884F60CE6CB6B6194F7E9B5B3BD68F76E",
+            "result": "tecHOOK_REJECTED",
+            "code": 62
+          }
+        ],
+        "failure": {
+          "hash": "1BD15B6A38D5D74531E7DA09DC4E7D0E1596CDBA02A3ED28FB042037C07DC57A",
+          "nativeResult": "tesSUCCESS",
+          "writeOrdinal": 20,
+          "failures": [
+            {
+              "HookExecution": {
+                "Flags": 0,
+                "HookAccount": "rsrYA7mwCrPSTe1fsQopp7hY1J37XEGNDG",
+                "HookEmitCount": 0,
+                "HookExecutionIndex": 1,
+                "HookHash": "D9FE4F01F61CCBBD1AE6720A879374782A4B2D11CBF5626834F1F809E25A6DFE",
+                "HookInstructionCount": "3436",
+                "HookResult": 2,
+                "HookReturnCode": "14",
+                "HookReturnString": "7265636F72647320636C65617200",
+                "HookStateChangeCount": 37
+              }
+            }
+          ],
+          "recovered": true
+        },
+        "namespaceRestored": true
+      },
+      {
+        "kind": "burn-fault",
+        "domain": "ppppppppppppppppppppppppppppppppppppppppppppppppppppppppp.abcdefgh",
+        "labelBytes": 57,
+        "tldBytes": 8,
+        "addressCount": 15,
+        "addressBytes": 128,
+        "customTextCount": 15,
+        "customKeyBytes": 40,
+        "customValueBytes": 128,
+        "overflows": [
+          {
+            "operation": "setAddr",
+            "hash": "4BC4B5FE0CFA21C59827784F9D69434E8318A50A66F1849AB2463A954A058D81",
+            "result": "tecHOOK_REJECTED",
+            "code": 62
+          },
+          {
+            "operation": "setText",
+            "hash": "2B331795F44E5720EA8520019D25ABFF9C496EEB61405E4A60DD3410186CBE7D",
+            "result": "tecHOOK_REJECTED",
+            "code": 62
+          }
+        ],
+        "failure": {
+          "hash": "E4EBD6A3D9BE9618DD647353FF8356B7887C7254EFF36F272B87940FB89C2872",
+          "nativeResult": "tesSUCCESS",
+          "writeOrdinal": 20,
+          "failures": [
+            {
+              "HookExecution": {
+                "Flags": 0,
+                "HookAccount": "rsrYA7mwCrPSTe1fsQopp7hY1J37XEGNDG",
+                "HookEmitCount": 0,
+                "HookExecutionIndex": 0,
+                "HookHash": "71BDAA4290757C6AB7F238B5CE300FE10400D847223B262D1197F74F17ED6168",
+                "HookInstructionCount": "340f",
+                "HookResult": 2,
+                "HookReturnCode": "14",
+                "HookReturnString": "7265636F72647320636C65617200",
+                "HookStateChangeCount": 37
+              }
+            }
+          ],
+          "recovered": true
+        },
+        "namespaceRestored": true
+      }
+    ],
+    "indexerReplay": {
+      "networkID": 65535,
+      "readOnly": true,
+      "result": "PASS",
+      "checks": [
+        {
+          "kind": "maximum-transfer",
+          "domain": "ooooooooooooooooooooooooooooooooooooooooooooooooooooooooo.abcdefgh",
+          "failureHash": "1BD15B6A38D5D74531E7DA09DC4E7D0E1596CDBA02A3ED28FB042037C07DC57A",
+          "fromLedger": 206,
+          "throughLedger": 209,
+          "quarantined": true,
+          "recovered": true,
+          "failedStrongRecoveryVerified": false,
+          "eventTypes": [
+            "StateChanged",
+            "StateChanged",
+            "StateChanged",
+            "StateChanged",
+            "StateChanged",
+            "StateChanged",
+            "StateChanged",
+            "StateChanged",
+            "StateChanged",
+            "StateChanged",
+            "StateChanged",
+            "StateChanged",
+            "StateChanged",
+            "StateChanged",
+            "StateChanged",
+            "StateChanged",
+            "StateChanged",
+            "NativeOwnerChanged",
+            "DomainOfferRemoved",
+            "StateChanged",
+            "StateChanged",
+            "HookExecutionFailed",
+            "DomainRecoveryRequired"
+          ]
+        },
+        {
+          "kind": "maximum-burn",
+          "domain": "ppppppppppppppppppppppppppppppppppppppppppppppppppppppppp.abcdefgh",
+          "failureHash": "E4EBD6A3D9BE9618DD647353FF8356B7887C7254EFF36F272B87940FB89C2872",
+          "fromLedger": 252,
+          "throughLedger": 255,
+          "quarantined": true,
+          "recovered": true,
+          "failedStrongRecoveryVerified": false,
+          "eventTypes": [
+            "StateChanged",
+            "StateChanged",
+            "StateChanged",
+            "StateChanged",
+            "NativeTokenBurned",
+            "StateChanged",
+            "StateChanged",
+            "StateChanged",
+            "StateChanged",
+            "StateChanged",
+            "StateChanged",
+            "StateChanged",
+            "StateChanged",
+            "StateChanged",
+            "StateChanged",
+            "StateChanged",
+            "StateChanged",
+            "StateChanged",
+            "StateChanged",
+            "StateChanged",
+            "HookExecutionFailed",
+            "DomainRecoveryRequired"
+          ]
+        }
+      ]
+    },
+    "addressPayloadNote": "Opaque binary boundary vectors, not coin-specific address codec validation",
+    "textCapacityNote": "15 total text slots; this fixture fills all with custom keys"
+  },
+  "remainingGates": [
+    "Expiry and stale/out-of-order callbacks",
+    "Refund retry/settlement journal design and migration",
+    "Arbitrary node/engine/process crash and broad concurrent-failure coverage",
+    "Million-domain memory/load and large historical backfill"
+  ]
+}

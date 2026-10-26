@@ -50,6 +50,16 @@ async function main(){
   const config={wss:endpoint,treasury:treasury.classicAddress,namespaceId:manifest.namespace,expectedNetworkId:networkID,hookHashes:Object.fromEntries(parts.map((name,i)=>[name,installed[i].Hook.HookHash])),cacheTtlMs:0,maxFeeXAH:'50'};
   function client(wallet){const c=new XahauNameClient({...config,signer:{address:wallet.classicAddress,signAndSubmit:tx=>submit(wallet,tx)}});clients.push(c);return c;}
   const tc=client(treasury),ac=client(a),bc=client(b);for(const c of clients)await c.connect();
+  async function installLifecycleFaults(){
+   const hooks=parts.map(part=>{if(!['claim','burn'].includes(part))return{Hook:{}};
+    const dir=path.join(base,'native-fault-artifacts',part),proof=JSON.parse(fs.readFileSync(path.join(dir,'proof.json'))),code=fs.readFileSync(path.join(dir,'xahau-name-hook.cleaned.wasm'));
+    assert.equal(proof.testOnly,true);assert.equal(proof.guardPassed,true);assert.equal(hash(code),proof.sha256);assert.equal(hash(fs.readFileSync(path.join(repo,'hook/src/common.h'))),proof.productionCommonSha256);
+    return{Hook:{...artifacts[parts.indexOf(part)].Hook,CreateCode:code.toString('hex').toUpperCase()}};});
+   await submit(treasury,{TransactionType:'SetHook',Hooks:hooks});
+   const slots=(await rpc.request({command:'account_objects',account:treasury.classicAddress,type:'hook',ledger_index:'validated'})).result.account_objects.flatMap(x=>x.Hooks??[]);
+   for(const part of ['claim','burn'])config.hookHashes[part]=slots[parts.indexOf(part)].Hook.HookHash;
+  }
+  async function namespace(){const values=[],seen=new Set();let marker;do{const r=(await rpc.request({command:'account_namespace',account:treasury.classicAddress,namespace_id:manifest.namespace,ledger_index:'validated',...(marker?{marker}:{})})).result;values.push(...r.namespace_entries.map(e=>[e.HookStateKey,e.HookStateData]));marker=r.marker;if(marker){const encoded=JSON.stringify(marker);assert(!seen.has(encoded));seen.add(encoded);}}while(marker);return values.sort();}
   await step('set pricing',()=>tc.registrar.setPricing(Array(10).fill(1000000n)));
   await step('set URI base',()=>tc.registrar.setURIBase('https://example.com/metadata/'));
   const domain='standalone.xah',args={label:'standalone',tld:'xah'};
@@ -65,15 +75,77 @@ async function main(){
   await step('burn',()=>bc.registrar.burn(domain));
   await step('burn cleanup',async()=>{assert.equal(await bc.describe(domain),null);return{absent:true};});
   await step('reconcile twice',async()=>{await ac.registrar.reconcile(domain);await ac.registrar.reconcile(domain);return{idempotent:true};});
+  if(process.env.STANDALONE_OFFER_FAILURE==='1'){
+   const label='offerfailure',name=label+'.xah',id=util.computeUritokenIdFromURI(treasury.classicAddress,'https://example.com/metadata/'+name);
+   await step('rejected emitted offer refunds once and retains minted reservation',async()=>{
+    const dir=path.join(base,'native-offer-reject-hook/recipient'),proof=JSON.parse(fs.readFileSync(path.join(dir,'proof.json'))),code=fs.readFileSync(path.join(dir,'xahau-name-hook.cleaned.wasm'));
+    assert.equal(proof.testOnly,true);assert.equal(proof.guardPassed,true);assert.equal(proof.faultMode,'recipient rejects sell offer');assert.equal(hash(code),proof.sha256);assert.equal(hash(fs.readFileSync(path.join(repo,'hook/test/fixtures/reject-offer.c'))),proof.fixtureSourceSha256);
+    await submit(a,{TransactionType:'SetHook',Hooks:[{Hook:{CreateCode:code.toString('hex').toUpperCase(),HookNamespace:'AA'.repeat(32),HookOn:hookMask([48]),HookCanEmit:hookMask([]),HookApiVersion:0,Flags:1}}]});
+    const before=(await rpc.request({command:'account_info',account:a.classicAddress,ledger_index:'validated'})).result.account_data.Balance;
+    const buy=await ac.registrar.buy({label,tld:'xah'});await close(8);
+    const parent=(await rpc.request({command:'tx',transaction:buy.txHash})).result;
+    const history=(await rpc.request({command:'account_tx',account:treasury.classicAddress,ledger_index_min:parent.ledger_index,ledger_index_max:-1,forward:true,limit:100})).result;
+    assert(!history.marker);const children=history.transactions.map(row=>({tx:row.tx??row.tx_json,meta:row.meta,hash:row.hash??row.tx?.hash??row.tx_json?.hash,validated:row.validated})).filter(row=>row.tx?.EmitDetails&&row.tx.Account===treasury.classicAddress);
+    assert(children.every(row=>row.validated===true));
+    const mint=children.filter(x=>x.tx.TransactionType==='URITokenMint'),offer=children.filter(x=>x.tx.TransactionType==='URITokenCreateSellOffer'),refunds=children.filter(x=>x.tx.TransactionType==='Payment'&&x.tx.InvoiceID===id);
+    assert.equal(mint.length,1);assert.equal(mint[0].meta.TransactionResult,'tesSUCCESS');assert.equal(offer.length,1);assert.equal(offer[0].meta.TransactionResult,'tecHOOK_REJECTED');assert(offer[0].meta.HookExecutions.some(x=>x.HookExecution.HookAccount===a.classicAddress&&BigInt('0x'+x.HookExecution.HookReturnCode)===777n));
+    assert.equal(refunds.length,1);assert.equal(refunds[0].meta.TransactionResult,'tesSUCCESS');
+    const after=(await rpc.request({command:'account_info',account:a.classicAddress,ledger_index:'validated'})).result.account_data.Balance;assert.equal(BigInt(before)-BigInt(after),BigInt(parent.Fee));
+    const native=(await rpc.request({command:'ledger_entry',index:id,ledger_index:'validated'})).result.node;assert.equal(native.Owner,treasury.classicAddress);assert.equal(native.Amount,undefined);assert.equal(native.Destination,undefined);
+    const status=await ac.registrar.getRegistrationStatus(name);assert.equal(status.stage,'recoveryRequired');assert.equal((await ac.registrar.getRefundStatus(name)).state,'notTracked');
+    report.offerFailureCase={domain:name,tokenId:id,buyHash:buy.txHash,mintHash:mint[0].hash,offerHash:offer[0].hash,refundHash:refunds[0].hash,mintResult:mint[0].meta.TransactionResult,offerResult:offer[0].meta.TransactionResult,refundResult:refunds[0].meta.TransactionResult,refundCount:refunds.length,owner:native.Owner,stage:status.stage,recipientFixture:proof,children};save('offer-failure',report.offerFailureCase);return{stage:status.stage,refundCount:refunds.length};
+   });
+   await step('refunded reservation cannot be bought or claimed again',async()=>{
+    const tx=await rpc.autofill({TransactionType:'Payment',Account:a.classicAddress,Destination:treasury.classicAddress,Amount:'1000000',NetworkID:networkID,HookParameters:parameters('buy',{label:Buffer.from(label),tld:Buffer.from('xah')})});
+    const simulation=(await rpc.simulate({...tx,SigningPubKey:''})).result;assert.equal(simulation.engine_result,'tecHOOK_REJECTED');assert(simulation.meta.HookExecutions.some(x=>BigInt('0x'+x.HookExecution.HookReturnCode)===31n));save('offer-reservation-simulation',simulation);
+    const signed=transactions.length;await assert.rejects(ac.registrar.claimIncoming(name),e=>e.code==='NOT_CLAIMABLE');assert.equal(transactions.length,signed,'SDK must not request a claim signature');return{repurchaseRejected:true,claimBlockedBeforeSigning:true};
+   });
+   await step('treasury owner burns refunded unclaimed reservation',async()=>{
+    const burn=await submit(treasury,{TransactionType:'URITokenBurn',URITokenID:id});assert.equal((await ac.registrar.getRegistrationStatus(name)).stage,'available');report.offerFailureCase.cleanupBurnHash=burn.txHash;return{burnHash:burn.txHash};
+   });
+   await step('same name reissues after reserved token cleanup',async()=>{
+    await submit(a,{TransactionType:'SetHook',Hooks:[{Hook:{CreateCode:'',Flags:1}}]});
+    await ac.registrar.buy({label,tld:'xah'});await close(8);await ac.registrar.claimIncoming(name);
+    const p=await ac.describe(name);assert.equal(p.owner,a.classicAddress);assert.deepEqual(p.texts,{});assert.deepEqual(p.addrs,{});await ac.registrar.burn(name);assert.equal((await ac.registrar.getRegistrationStatus(name)).stage,'available');report.offerFailureCase.reissuedAndCleaned=true;return{reissuedAndCleaned:true};
+   });
+  }
+  if(process.env.STANDALONE_MAX_INVENTORY==='1'){
+   assert(Object.values(features).some(x=>x.name==='ExtendedHookState'&&x.enabled),'Maximum-name journal needs ExtendedHookState');
+   const tld='abcdefgh';await step('enable maximum-length test TLD',()=>tc.controller.addTld(tld));
+   const baseline=await namespace();report.maxInventoryCases=[];
+   for(const [caseIndex,kind]of ['transfer','burn','transfer-fault','burn-fault'].entries()){
+    if(caseIndex===2)await step('install maximum-inventory fault handlers',installLifecycleFaults);
+    await step('maximum inventory '+kind,async()=>{
+     const fault=kind.endsWith('-fault'),transfer=kind.startsWith('transfer'),label=String.fromCharCode(109+caseIndex).repeat(57),name=label+'.'+tld,args={label,tld};
+     await ac.registrar.buy(args);await close(8);await ac.registrar.claimIncoming(name);
+     for(let i=0;i<15;i++){
+      await ac.resolver.setAddr({...args,coinType:i*1000,addr:Buffer.alloc(128,i+1)});
+      await ac.resolver.setText({...args,key:'custom.'+String(i).padStart(33,'0'),value:'v'.repeat(128)});
+     }
+     const profile=await ac.describe(name);assert.equal(Object.keys(profile.addrs).length,15);assert.equal(Object.keys(profile.texts).length,15);assert(Object.values(profile.addrs).every(x=>x.length===128));assert(Object.keys(profile.texts).every(x=>x.length===40));assert(Object.values(profile.texts).every(x=>Buffer.byteLength(x)===128));
+     const before=await namespace(),coin=Buffer.alloc(4);coin.writeUInt32BE(65535);
+     const overflows=[];
+     for(const [op,fields]of [['setAddr',{coinType:coin,addr:Buffer.from('AB'.repeat(128))}],['setText',{key:Buffer.from('custom.overflow'),value:Buffer.from('overflow')}]]){
+      const failed=await submit(a,{TransactionType:'Invoke',Destination:treasury.classicAddress,HookParameters:parameters(op,{label:Buffer.from(label),tld:Buffer.from(tld),...fields})},'tecHOOK_REJECTED');
+      assert(failed.meta.HookExecutions.some(x=>BigInt('0x'+x.HookExecution.HookReturnCode)===62n));assert.deepEqual(await namespace(),before,'Overflow must leave namespace unchanged');overflows.push({operation:op,hash:failed.txHash,result:failed.engineResult,code:62});
+     }
+     const id=(await ac.registrar.getRegistrationStatus(name)).uritokenId;
+     if(transfer)await ac.registrar.createTransferOffer(name,b.classicAddress);
+     let failure;
+     if(fault){
+      const tx=await submit(transfer?b:a,{TransactionType:transfer?'URITokenBuy':'URITokenBurn',URITokenID:id,...(transfer?{Amount:'0'}:{}),HookParameters:[{HookParameter:{HookParameterName:'6669',HookParameterValue:'14'}}]});
+      const failures=tx.meta.HookExecutions.filter(x=>BigInt('0x'+x.HookExecution.HookReturnCode)===20n);assert(failures.length);assert.equal((await ac.registrar.getRegistrationStatus(name)).stage,'recoveryRequired');
+      save('maximum-'+kind+'-partial',{before,after:await namespace(),failures});
+      await ac.registrar.reconcile(name);await ac.registrar.reconcile(name);failure={hash:tx.txHash,nativeResult:tx.engineResult,writeOrdinal:20,failures,recovered:true};
+     }else if(transfer)await bc.registrar.claimIncoming(name);else await ac.registrar.burn(name);
+     if(transfer){const p=await bc.describe(name);assert.equal(p.owner,b.classicAddress);assert.deepEqual(p.texts,{});assert.deepEqual(p.addrs,{});await bc.registrar.burn(name);}else assert.equal(await ac.describe(name),null);
+     assert.equal((await ac.registrar.getRegistrationStatus(name)).stage,'available');assert.deepEqual(await namespace(),baseline,'Maximum inventory cleanup must restore exact baseline');
+     const evidence={kind,domain:name,labelBytes:label.length,tldBytes:tld.length,addressCount:15,addressBytes:128,customTextCount:15,customKeyBytes:40,customValueBytes:128,overflows,...(failure?{failure}:{}),namespaceRestored:true};report.maxInventoryCases.push(evidence);save('maximum-inventory',report.maxInventoryCases);return evidence;
+    });
+   }
+  }
   if(process.env.STANDALONE_FAULTS==='1'){
-   const hooks=parts.map(part=>{if(!['claim','burn'].includes(part))return{Hook:{}};
-    const dir=path.join(base,'native-fault-artifacts',part),proof=JSON.parse(fs.readFileSync(path.join(dir,'proof.json'))),code=fs.readFileSync(path.join(dir,'xahau-name-hook.cleaned.wasm'));
-    assert.equal(proof.testOnly,true);assert.equal(proof.guardPassed,true);assert.equal(hash(code),proof.sha256);assert.equal(hash(fs.readFileSync(path.join(repo,'hook/src/common.h'))),proof.productionCommonSha256);
-    return{Hook:{...artifacts[parts.indexOf(part)].Hook,CreateCode:code.toString('hex').toUpperCase()}};});
-   await step('install test-only fault handlers',()=>submit(treasury,{TransactionType:'SetHook',Hooks:hooks}));
-   const slots=(await rpc.request({command:'account_objects',account:treasury.classicAddress,type:'hook',ledger_index:'validated'})).result.account_objects.flatMap(x=>x.Hooks??[]);
-   for(const part of ['claim','burn'])config.hookHashes[part]=slots[parts.indexOf(part)].Hook.HookHash;
-   async function namespace(){const values=[],seen=new Set();let marker;do{const r=(await rpc.request({command:'account_namespace',account:treasury.classicAddress,namespace_id:manifest.namespace,ledger_index:'validated',...(marker?{marker}:{})})).result;values.push(...r.namespace_entries.map(e=>[e.HookStateKey,e.HookStateData]));marker=r.marker;if(marker){const encoded=JSON.stringify(marker);assert(!seen.has(encoded));seen.add(encoded);}}while(marker);return values.sort();}
+   await step('install test-only fault handlers',installLifecycleFaults);
    report.faultCases=[];
    for(const kind of ['claim','transfer','burn'])for(let at=1;at<=(kind==='claim'?9:11);at++){
     await step(kind+' native write fault '+at,async()=>{
@@ -177,10 +249,12 @@ async function main(){
    report.refundSettlementCase={buyHash:buy.txHash,refundHash:status.refundTxHash,diagnostic,paidOnce:true,pendingRetained:true,callbackExecutions:refund.meta.HookExecutions,testArtifact:proof};
    save('refund-settlement',report.refundSettlementCase);return report.refundSettlementCase;
   });
-  Object.assign(report,{result:'PASS',scope:'Exact production artifacts on isolated native standalone; normal callbacks and lifecycle only, not fault injection'});
-  if(report.faultCases)report.scope='Production lifecycle plus test-only claim/burn wrappers requesting native state_set invalid-key errors; not arbitrary node/consensus crash injection';
+  Object.assign(report,{result:'PASS',scope:'Initial lifecycle uses exact production artifacts on isolated native standalone.'});
+  if(report.faultCases||report.maxInventoryCases)report.scope+=' Selected claim/burn cases use test-only native state_set invalid-key wrappers; not arbitrary engine/process crash injection.';
+  if(report.offerFailureCase)report.scope+=' Rejected-offer cases keep treasury artifacts unchanged and install a test-only hook on the recipient.';
   if(report.emitCases)report.emitScope='Production issuance artifact: duplicate mint failure, successful refund, recipient-tag refund failure retaining correlation/pending; expiry and replay not tested';
-  if(report.refundSettlementCase)report.refundSettlementScope='Test-only issuance copy requests a native invalid-key error immediately before refund cleanup; payment validates while pending/correlation remain';
+  if(report.refundSettlementCase){report.scope+=' Paid-cleanup failure uses a test-only issuance copy.';report.refundSettlementScope='Test-only issuance copy requests a native invalid-key error immediately before refund cleanup; payment validates while pending/correlation remain';}
+  if(report.maxInventoryCases)report.maximumInventoryScope='Maximum name/record byte and count bounds; production transfer/burn, then test-only write-20 failures and strong repair. Addresses are opaque test payloads, not valid network address codec vectors.';
  }catch(error){Object.assign(report,{result:'FAIL',stage,error:error.message});throw error;}
  finally{save('summary',report);for(const c of clients)await c.disconnect();if(rpc.isConnected())await rpc.disconnect();}
 }

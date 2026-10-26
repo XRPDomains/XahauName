@@ -8,6 +8,8 @@ Reviewed: 2026-10-26. Hook artifacts: installed release 0.3.0 refactor; 283 prod
 
 [Refund follow-up](REFUND-DIAGNOSTICS-2026-10-26.md): SDK suite now **115 PASS**, including seven explicit diagnostic tests. A separate **21-check native run** verifies failed refund versus paid refund whose callback cleanup fails. Only the paid-cleanup scenario uses a test-only issuance copy; production C/artifacts are unchanged.
 
+[Offer/limits follow-up](OFFER-AND-LIMITS-2026-10-26.md): separate native runs pass **22 checks** for rejected emitted offer/refund/reservation cleanup/reissue and **24 checks** for full record inventory, eight atomic overflow rejections and mid-cleanup repair. Counts include repeated baseline checks. Selected failed-offer and maximum native inventory gates are now covered; remaining expiry/stale callback and refund-retry gates are listed in findings.
+
 | Slot | Handler | Responsibility | Critical assertions |
 | --- | --- | --- | --- |
 | 0 | issuance | Native purchase/register, name/TLD/price/pause checks; mint/offer/refund callback stages | Reserve only once; no root owner before claim; correlate every emitted tx |

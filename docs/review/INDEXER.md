@@ -33,7 +33,9 @@ The read-only live source check connected to NetworkID 21338 and decoded validat
 
 [26 October native recovery replay](P2-STANDALONE-2026-10-26.md) additionally verifies quarantine through actual weak transfer/burn failures, failed strong repair and successful repair/retry on an isolated node. Test-only fault handlers are explicitly separate from production bytes.
 
-The weak-phase on-chain recovery issue [F-01](FINDINGS.md) remains open. The on-chain recovery path is implemented and normal reconciliation is live-tested; quarantine is not an on-chain repair, and controlled native fault injection of that path is still required before production.
+[Offer/maximum-inventory replay](OFFER-AND-LIMITS-2026-10-26.md) also verifies recipient rejection without a false incoming offer/ownership event, refunded treasury reservation, cleanup/reissue, and maximum-record partial failure/repair. Selected native API-error paths are covered; expiry, refund retry and arbitrary engine/process crash assurance remain open.
+
+The weak-phase recovery assurance item [F-01](FINDINGS.md) remains open for its residual gates. The recovery path is implemented, with normal reconciliation and selected injected native failures verified; quarantine itself is not an on-chain repair or a general crash-recovery guarantee.
 
 SQLite tests and native bounded replay/reconnect are not million-domain benchmarks or consensus crash tests. The P2 run closes one independent pinned namespace/native-owner comparison after live replay. Runtime projection remains resident in memory; PostgreSQL, bounded-memory projection, API load/outage tests, multi-version migration, larger backfills and failed/expired callback coverage remain required for production claims.
 

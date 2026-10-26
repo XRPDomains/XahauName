@@ -10,16 +10,26 @@ async function main(){
  const rpc=new Client(summary.endpoint),manifest=require('../../../deployments/testnet.json'),parts=require('../../../hook/config/handlers.json'),checks=[];
  try{
   await rpc.connect();assert.equal(rpc.networkID,65535);
-  for(const kind of ['transfer','burn']){
-   const fault=summary.faultCases.find(x=>x.kind===kind&&x.writeOrdinal===4);assert(fault);
-   const receipt=(await rpc.request({command:'tx',transaction:fault.txHash})).result;assert.equal(receipt.validated,true);
-   const prior=(await rpc.request({command:'ledger',ledger_index:receipt.ledger_index-1,transactions:false})).result;
+  const selectedFaults=[...(summary.faultCases??[]).filter(x=>['transfer','burn'].includes(x.kind)&&x.writeOrdinal===4),
+   ...(summary.maxInventoryCases??[]).filter(x=>x.failure).map(x=>({...x.failure,txHash:x.failure.hash,kind:x.kind.startsWith('transfer')?'transfer':'burn',domain:x.domain,maximum:true}))];
+  assert(selectedFaults.length||summary.offerFailureCase,'A native lifecycle scenario is required');
+  async function setup(index){
+   const prior=(await rpc.request({command:'ledger',ledger_index:index,transactions:false})).result;
    const slots=(await rpc.request({command:'account_objects',account:summary.accounts.treasury,type:'hook',ledger_hash:prior.ledger_hash})).result.account_objects.flatMap(x=>x.Hooks??[]);
+   assert.equal(slots.length,parts.length);
    const config={wss:summary.endpoint,treasury:summary.accounts.treasury,namespaceId:manifest.namespace,expectedNetworkId:65535,hookHashes:Object.fromEntries(parts.map((name,i)=>[name,slots[i].Hook.HookHash]))};
    const source=new XahauLedgerSource(config,rpc),storage=new SqliteStorage(':memory:'),indexer=createIndexer({network:config,storage,source});
-   const domain='fault'+kind+'4.xah';
+   try{await indexer.bootstrap({ledgerIndex:index,ledgerHash:prior.ledger_hash});}catch(error){storage.close();throw error;}
+   return{source,storage,indexer};
+  }
+  for(const fault of selectedFaults){
+   const kind=fault.kind;
+   const receipt=(await rpc.request({command:'tx',transaction:fault.txHash})).result;assert.equal(receipt.validated,true);
+   const {source,storage,indexer}=await setup(receipt.ledger_index-1);
+   const domain=fault.domain??'fault'+kind+'4.xah';
    try{
-    await indexer.bootstrap({ledgerIndex:receipt.ledger_index-1,ledgerHash:prior.ledger_hash});assert.equal(indexer.describe(domain).status,'claimed');
+    assert.equal(indexer.describe(domain).status,'claimed');
+    if(fault.maximum){assert.equal(Object.keys(indexer.describe(domain).addrs).length,15);assert.equal(Object.keys(indexer.describe(domain).texts).length,15);}
     const events=await indexer.applyLedger(await source.ledger(receipt.ledger_index));
     assert.equal(indexer.describe(domain).status,'recoveryRequired');assert(events.some(x=>x.type==='HookExecutionFailed'));
     assert(!indexer.listOwnedDomains(summary.accounts.a).includes(domain));assert(!indexer.listOwnedDomains(summary.accounts.b).includes(domain));
@@ -33,7 +43,32 @@ async function main(){
     else assert.equal(indexer.describe(domain),null);
     assert.equal(indexer.listRecovery().some(x=>x.domain===domain),false);
     await indexer.applyLedger(await source.ledger(next)); // Second reconcile remains idempotent.
-    checks.push({kind,domain,failureHash:fault.txHash,fromLedger:receipt.ledger_index-1,throughLedger:next,quarantined:true,recovered:true,failedStrongRecoveryVerified:!!fault.failedStrongRecovery,eventTypes:events.map(x=>x.type)});
+    checks.push({kind:fault.maximum?'maximum-'+kind:kind,domain,failureHash:fault.txHash,fromLedger:receipt.ledger_index-1,throughLedger:next,quarantined:true,recovered:true,failedStrongRecoveryVerified:!!fault.failedStrongRecovery,eventTypes:events.map(x=>x.type)});
+   }finally{storage.close();}
+  }
+  if(summary.offerFailureCase){
+   const item=summary.offerFailureCase,domain=item.domain;
+   async function receipt(hash){const r=(await rpc.request({command:'tx',transaction:hash})).result;assert.equal(r.validated,true);return r;}
+   const [buy,refund,burn]=await Promise.all([receipt(item.buyHash),receipt(item.refundHash),receipt(item.cleanupBurnHash)]);
+   const lastBurn=summary.transactions.find(x=>x.stage==='same name reissues after reserved token cleanup'&&x.transaction.TransactionType==='URITokenBurn');assert(lastBurn);
+   const claim=summary.transactions.find(x=>x.stage==='same name reissues after reserved token cleanup'&&x.transaction.TransactionType==='URITokenBuy');assert(claim);
+   const [end,reclaim]=await Promise.all([receipt(lastBurn.hash),receipt(claim.hash)]);assert(end.ledger_index-buy.ledger_index<128,'Bounded isolated replay only');
+   const {source,storage,indexer}=await setup(buy.ledger_index-1),events=[];
+   try{
+    assert.equal(indexer.describe(domain),null);
+    for(let index=buy.ledger_index;index<=end.ledger_index;index++){
+     const batch=await indexer.applyLedger(await source.ledger(index));events.push(...batch);
+     if(index<=burn.ledger_index)assert(!batch.some(x=>x.type==='DomainClaimed'||x.type==='DomainTransferred'),'A refunded unclaimed token cannot emit an ownership event');
+     if(index===refund.ledger_index){
+      assert.equal(indexer.describe(domain).status,'recoveryRequired');
+      assert(!indexer.listOwnedDomains(summary.accounts.a).includes(domain));assert(!indexer.listOwnedDomains(summary.accounts.treasury).includes(domain));
+      assert(!indexer.listIncomingOffers(summary.accounts.a).some(x=>x.domain===domain),'Rejected offer must not enter recipient inbox');
+     }
+     if(index===burn.ledger_index)assert.equal(indexer.describe(domain),null);
+     if(index===reclaim.ledger_index){const p=indexer.describe(domain);assert.equal(p.status,'claimed');assert.equal(p.owner,summary.accounts.a);assert.deepEqual(p.texts,{});assert.deepEqual(p.addrs,{});}
+    }
+    assert.equal(indexer.describe(domain),null);
+    checks.push({kind:'offer-failure',domain,fromLedger:buy.ledger_index-1,throughLedger:end.ledger_index,refundLedger:refund.ledger_index,reservationBurnLedger:burn.ledger_index,reclaimLedger:reclaim.ledger_index,rejectedOfferNotOwned:true,rejectedOfferNotInInbox:true,refundedReservationQuarantined:true,reissuedAndCleaned:true,eventTypes:events.map(x=>x.type)});
    }finally{storage.close();}
   }
   fs.writeFileSync(output,JSON.stringify({networkID:65535,readOnly:true,result:'PASS',checks},null,2)+'\n');console.log(JSON.stringify({result:'PASS',checks}));
