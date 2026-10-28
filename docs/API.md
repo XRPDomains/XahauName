@@ -107,7 +107,7 @@ Access through client.resolver. Identity/profile aliases above are also availabl
 | getContentURI(domain) | Validated canonical IPFS URI or null |
 | getContentHash(domain) | ENSIP-7 IPFS byte representation or null |
 
-setProfile set/clear use ten Global Keys in profile-v2 order: avatar, description, display, email, keywords, mail, notice, location, phone, url. Typed validation includes display casing, E.164 phone, basic email and supported media/website URIs. Generic setText intentionally does not enforce those field meanings. Profile, services and custom texts share fifteen slots. Service/custom writes use setText; they are not silently included in the Global batch.
+setProfile set/clear use ten Global Keys in profile-v2 order: avatar, description, display, email, keywords, mail, notice, location, phone, url. Display is optional free text (up to 128 UTF-8 bytes), including spaces and mixed case. Typed validation includes E.164 phone, basic email and supported media/website URIs. Generic setText intentionally does not enforce those field meanings. Profile, services and custom texts share fifteen slots. Service/custom writes use setText; they are not silently included in the Global batch.
 
 ## Administration and utilities
 

@@ -1,7 +1,9 @@
 import {appMarkup} from './app-markup';
 import {ActivityHistory} from './activity';
 import {createWalletKit} from '@xrpl-wallet-kit/client';
-import {XahauNameClient, createWalletKitRpcTransport, util, explainError, normalizeDomainInput, diffProfile, type ProfileTextKey, type FullProfile, type RegistrationStatus, type TxResult} from '@xahauname/sdk';
+import {XahauNameClient, createWalletKitRpcTransport, util, explainError, normalizeDomainInput, type ProfileTextKey, type FullProfile, type RegistrationStatus, type TxResult} from '@xahauname/sdk';
+import {evaluateProfileEdit} from './profile-editor';
+import {resolveTransferRecipient,createTransferRecipientPreview,type TransferRecipient} from './transfer-recipient';
 import {assertNetwork,createWalletSigner,MAX_FEE} from './wallet-signer';
 import './styles.css';
 import {XAMAN_CLIENT_ID,DEPLOYMENT,CHAIN} from './config';
@@ -28,6 +30,20 @@ el('connection-status').after(reconnectButton);
 function connectionUnavailable(){el('connection-status').textContent=`${CHAIN.label} · Disconnected`;reconnectButton.hidden=false;}
 reader.rawClient.on('disconnected',connectionUnavailable);
 let writer: XahauNameClient | null = null, selected = '', profile: FullProfile | null = null, busy = false, checked: {name:string;status:RegistrationStatus;price:bigint}|null = null, epoch=0,currentAction='';
+const touchedProfileFields=new Set<string>();
+function showTransferRecipient(recipient:TransferRecipient){const result=el('transfer-recipient-result');result.replaceChildren();const label=document.createElement('strong'),address=document.createElement('code');label.textContent=recipient.domain?'Current owner of '+recipient.domain:'Recipient wallet';address.textContent=recipient.address;result.append(label,address);result.hidden=false;}
+const recipientPreview=createTransferRecipientPreview(domain=>reader.read.getOwner({name:domain,bypassCache:true}),state=>{
+ const result=el('transfer-recipient-result'),error=el('transfer-recipient-error'),input=el<HTMLInputElement>('transfer-recipient');
+ result.classList.toggle('is-loading',state.status==='loading');result.hidden=state.status==='idle'||state.status==='error';error.hidden=state.status!=='error'||busy;
+ input.setAttribute('aria-busy',String(state.status==='loading'));
+ if(state.status==='loading')result.textContent='Checking recipient…';
+ else if(state.status==='ready')showTransferRecipient(state.recipient);
+ else if(state.status==='error'){result.replaceChildren();error.textContent=explainError(state.error).message;input.setAttribute('aria-invalid','true');}
+ else result.replaceChildren();
+ if(state.status!=='error')input.removeAttribute('aria-invalid');
+});
+function clearTransferRecipient(){recipientPreview.reset();el('transfer-submit').textContent='Create transfer offer';el('transfer-form').querySelectorAll<HTMLElement>(':scope > .field-error').forEach(error=>{error.hidden=true;error.textContent='';});}
+document.querySelectorAll<HTMLAnchorElement>('.record-nav a').forEach(link=>link.addEventListener('click',()=>{const section=document.getElementById(link.hash.slice(1));if(section instanceof HTMLDetailsElement)section.open=true;}));
 const activity=new ActivityHistory();
 function log(label:string,result:string,hash?:string,details?:unknown) {activity.add({label,result,hash,details});el('activity-count').textContent=String(activity.size);el('activity-list').innerHTML=activity.recent().map(r=>`<article><div><strong>${esc(r.label)}</strong><span>${esc(r.result)}</span></div>${r.hash?`<a class="mono" href="${explorer(r.hash)}" target="_blank" rel="noreferrer">${esc(short(r.hash))} ↗</a>`:''}${r.details?`<details><summary>Hook executions / result</summary><pre>${esc(JSON.stringify(r.details,(_k,v)=>typeof v==='bigint'?v.toString():v,2))}</pre></details>`:''}</article>`).join('');}
 const kit = createWalletKit({network:CHAIN.walletKitId,wallets:XAMAN_CLIENT_ID?['gemwallet','xyra','xaman']:['gemwallet','xyra'],xamanClientId:XAMAN_CLIENT_ID,autoReconnect:true,storage:'localStorage',preflight:{maxFeeDrops:MAX_FEE},transactionConfirmation:{enabled:false},accountStatus:{enabled:false},metadata:{name:'XahauName',description:'Manage domains on '+CHAIN.label,url:location.origin},connectButton:{target:'#connect-wallet',showBalance:true,balanceResolver:createBalanceResolver(reader,ready)},xahau:{request:createWalletKitRpcTransport(reader.rawClient,ready,CHAIN.walletKitId)},ui:{mode:'light',toast:false}});
@@ -51,7 +67,7 @@ async function run(label:string,fn:()=>Promise<unknown>,errorTarget?:HTMLElement
  catch(e:any){const info=explainError(e);if(currentAction==='Buy & claim domain'&&info.txHash){el('buy-name')?.remove();checked=null;el<HTMLFormElement>('receipt-form').querySelector<HTMLInputElement>('[name=hash]')!.value=info.txHash;}log(label,info.title,info.txHash,{...info,technicalMessage:e.message,hookExecutions:e.details?.hookExecutions});if(errorTarget){errorTarget.textContent=info.message;errorTarget.hidden=false;}notice(info.message,info.stage==='confirmation'?'warning':'error',info.stage==='connection'?{label:'Retry connection',run:()=>reconnectButton.click()}:undefined);if(dialog.open&&!errorTarget){actionStatus.hidden=false;actionStatus.textContent=info.message;actionStatus.className='error';}}
  finally{busy=false;currentAction='';notifications.clearWaiting();if(kit.manager.getAccount()&&reader.isConnected())void kit.refreshBalance();el('notice').removeAttribute('aria-busy');updateActions();}
 }
-function form(id:string,fn:(data:FormData)=>Promise<unknown>){const f=el<HTMLFormElement>(id);const error=document.createElement('p');error.className='field-error';error.hidden=true;error.setAttribute('role','alert');f.append(error);f.addEventListener('submit',e=>{e.preventDefault();error.hidden=true;const submitter=(e as SubmitEvent).submitter as HTMLButtonElement|null;void run(submitter?.textContent??f.querySelector<HTMLButtonElement>('button[type=submit],button:not([type])')?.textContent??'Save',()=>fn(new FormData(f)),error);});}
+function form(id:string,fn:(data:FormData)=>Promise<unknown>,validate?:()=>boolean){const f=el<HTMLFormElement>(id);const error=document.createElement('p');error.className='field-error';error.hidden=true;error.setAttribute('role','alert');const actions=f.querySelector('.transfer-actions');if(actions)actions.before(error);else f.append(error);f.addEventListener('submit',e=>{e.preventDefault();error.hidden=true;if(validate&&!validate())return;const submitter=(e as SubmitEvent).submitter as HTMLButtonElement|null;void run(submitter?.textContent??f.querySelector<HTMLButtonElement>('button[type=submit],button:not([type])')?.textContent??'Save',()=>fn(new FormData(f)),error);});}
 async function ready(){
  if(readerConnection)return readerConnection;
  if(reader.isConnected())return;
@@ -120,7 +136,7 @@ function renderDomainCards(names:string[],primary:string|null){
 }
 el('incoming-list').addEventListener('click',e=>{const button=(e.target as Element).closest<HTMLElement>('[data-claim-domain]');if(!button)return;const name=button.dataset.claimDomain!;void run('Claim domain',async()=>{const r=await writeClient().registrar.claimIncoming(name);log('Claim domain',r.engineResult,r.txHash,r.hookExecutions);await refreshConfirmed(name);return{message:name+' is now in your wallet.'};});});
 el('domain-list').addEventListener('click',e=>{const button=(e.target as Element).closest<HTMLElement>('button');if(!button)return;if(button.dataset.transfer)openDomainAction('transfer',button.dataset.transfer);else if(button.dataset.burn)openDomainAction('burn',button.dataset.burn);else if(button.dataset.domain)void run('Load profile',()=>loadProfile(button.dataset.domain!));});
-function openDomainAction(action:'transfer'|'burn',domain:string){if(busy)return;actionDomain=domain;el('action-title').textContent=action==='transfer'?'Transfer domain':'Burn domain';el('action-domain').textContent=domain;el('action-status').hidden=true;el<HTMLFormElement>('transfer-form').reset();el<HTMLFormElement>('burn-form').reset();el('transfer-form').hidden=action!=='transfer';el('burn-form').hidden=action!=='burn';el<HTMLFormElement>('burn-form').querySelector<HTMLInputElement>('[name="confirmation"]')!.placeholder=domain;el<HTMLDialogElement>('domain-action-dialog').showModal();}
+function openDomainAction(action:'transfer'|'burn',domain:string){if(busy)return;actionDomain=domain;clearTransferRecipient();el('action-title').textContent=action==='transfer'?'Transfer domain':'Burn domain';el('action-domain').textContent=domain;el('action-status').hidden=true;el<HTMLFormElement>('transfer-form').reset();el<HTMLFormElement>('burn-form').reset();el('transfer-form').hidden=action!=='transfer';el('burn-form').hidden=action!=='burn';el<HTMLFormElement>('burn-form').querySelector<HTMLInputElement>('[name="confirmation"]')!.placeholder=domain;el<HTMLDialogElement>('domain-action-dialog').showModal();}
 el('close-action').onclick=()=>el<HTMLDialogElement>('domain-action-dialog').close();
 el('copy-owner').onclick=async()=>{if(!profile)return;try{await navigator.clipboard.writeText(profile.owner);el('copy-owner').textContent='Copied';}catch{el('copy-owner').textContent='Copy';notice('Copy the owner address from On-chain details.','warning');}};
 const artworkBases=new Map<string,Promise<string|null>>();
@@ -138,21 +154,24 @@ function addressEditor(coin:number){const data=profile?.addrs[coin],decoded=data
 function updateAddressNetwork(){const select=el<HTMLSelectElement>('address-network'),custom=select.value==='custom',raw=el<HTMLInputElement>('address-raw');el('custom-coin-label').hidden=!custom;if(custom)raw.checked=true;const input=el<HTMLFormElement>('addr-form').querySelector<HTMLInputElement>('[name="address"]')!;input.placeholder=raw.checked?'Hex bytes (without 0x)':NETWORKS.find(n=>String(n.coin)===select.value)?.placeholder??'Wallet address';}
 el('address-network').addEventListener('change',()=>{el<HTMLInputElement>('address-raw').checked=false;el<HTMLFormElement>('addr-form').querySelector<HTMLInputElement>('[name="address"]')!.value='';updateAddressNetwork();});el('address-raw').addEventListener('change',updateAddressNetwork);
 function renderRecords(p:FullProfile){
- el('address-list').innerHTML=addressRows(p.addrs);el('profile-fields').innerHTML=profileFieldForms(p.texts,p.owner===writer?.signerAddress&&!p.locked);
+ touchedProfileFields.clear();el('address-list').innerHTML=addressRows(p.addrs);el('profile-fields').innerHTML=profileFieldForms(p.texts,p.owner===writer?.signerAddress&&!p.locked,selected);
  const standards=new Set<string>(PROFILE_FIELDS.map(f=>f.key));el('text-list').innerHTML=Object.entries(p.texts).filter(([key])=>!standards.has(key)).map(([key,value])=>`<div class="record"><div><span>${esc(key)}</span><p>${esc(value)}</p></div><button class="subtle owner-action" data-clear-text="${esc(key)}">Remove</button></div>`).join('')||'<p class="placeholder">No custom text records yet.</p>';
  if(!p.textKeysComplete)el('text-list').insertAdjacentHTML('beforeend',`<p class="hint">Some legacy keys have no stored name. Save the original key again to add its name.</p><pre>${esc(JSON.stringify(p.unnamedTexts,null,2))}</pre>`);
  el('address-list').querySelectorAll<HTMLButtonElement>('[data-edit-addr]').forEach(b=>b.onclick=()=>addressEditor(Number(b.dataset.editAddr)));
  el('address-list').querySelectorAll<HTMLButtonElement>('[data-clear-addr]').forEach(b=>b.onclick=()=>void mutate('Remove address',c=>c.resolver.clearAddr({...util.splitDomain(selected),coinType:Number(b.dataset.clearAddr)})));
  el('text-list').querySelectorAll<HTMLButtonElement>('[data-clear-text]').forEach(b=>b.onclick=()=>void mutate('Remove text record',c=>c.resolver.clearText({...util.splitDomain(selected),key:b.dataset.clearText!})));
- el('profile-fields').querySelectorAll<HTMLElement>('[data-profile-key]').forEach(field=>{field.querySelector<HTMLButtonElement>('[data-clear-field]')!.onclick=()=>{field.querySelector<HTMLInputElement|HTMLTextAreaElement>('input,textarea')!.value='';updateProfileState();};});
+ el('profile-fields').querySelectorAll<HTMLElement>('[data-profile-key]').forEach(field=>{field.querySelector<HTMLButtonElement>('[data-clear-field]')!.onclick=()=>{field.querySelector<HTMLInputElement|HTMLTextAreaElement>('input,textarea')!.value='';updateProfileState();validateProfileForm();};});
  updateProfileState();
 }
 
-function profilePatch(){const values:Partial<Record<ProfileTextKey,string>>={};el('profile-fields').querySelectorAll<HTMLInputElement|HTMLTextAreaElement>('input,textarea').forEach(input=>{values[input.name as ProfileTextKey]=input.value;});return diffProfile(profile?.texts??{},values);}
+function profileEdit(){const values:Partial<Record<ProfileTextKey,string>>={};el('profile-fields').querySelectorAll<HTMLInputElement|HTMLTextAreaElement>('input,textarea').forEach(input=>{values[input.name as ProfileTextKey]=input.value;});return evaluateProfileEdit(selected,profile?.texts??{},values);}
+function profilePatch(){return profileEdit().patch;}
+function validateProfileForm(focus=false){const{errors}=profileEdit();let first:HTMLInputElement|HTMLTextAreaElement|undefined;el('profile-fields').querySelectorAll<HTMLInputElement|HTMLTextAreaElement>('input,textarea').forEach(input=>{const message=errors[input.name as ProfileTextKey];if(focus&&message)touchedProfileFields.add(input.name);const show=!!message&&(focus||touchedProfileFields.has(input.name)),error=el('profile-error-'+input.name);error.textContent=show?message!:'';error.hidden=!show;if(show)input.setAttribute('aria-invalid','true');else input.removeAttribute('aria-invalid');if(message&&!first)first=input;});if(focus)first?.focus();return!first;}
 function updateProfileState(){if(!el('save-profile'))return;const patch=profilePatch(),count=Object.keys(patch.set).length+patch.clear.length,editable=!!writer&&profile?.owner===writer.signerAddress&&!profile.locked;const supported=!!DEPLOYMENT.hookHashes?.profile;el<HTMLButtonElement>('save-profile').disabled=busy||!editable||!count||!supported;el<HTMLButtonElement>('discard-profile').disabled=busy||!editable||!count;el('profile-status').textContent=!supported?'Update unavailable':profile?.locked?'Profile locked':count?`${count} unsaved ${count===1?'change':'changes'}`:'No changes';el('profile-fields').querySelectorAll<HTMLInputElement|HTMLTextAreaElement>('input,textarea').forEach(input=>input.readOnly=busy||!editable);el('profile-fields').querySelectorAll<HTMLButtonElement>('[data-clear-field]').forEach(button=>button.disabled=busy||!editable);}
-el('profile-form').addEventListener('input',updateProfileState);
-el('discard-profile').onclick=()=>{el<HTMLFormElement>('profile-form').reset();updateProfileState();};
-form('profile-form',async()=>{const patch=profilePatch();if(!Object.keys(patch.set).length&&!patch.clear.length)return{message:'No profile changes to save.'};const c=writeClient(),name=selected,r=await c.resolver.setProfile({...util.splitDomain(name),...patch});if(!r)return{message:'These profile changes are already saved on the ledger.'};log('Save profile',r.engineResult,r.txHash,r.hookExecutions);await refreshConfirmed(name);return{message:'Profile saved with one transaction.'};});
+el('profile-form').addEventListener('input',()=>{updateProfileState();validateProfileForm();});
+el('profile-fields').addEventListener('focusout',event=>{const input=event.target;if(input instanceof HTMLInputElement||input instanceof HTMLTextAreaElement){touchedProfileFields.add(input.name);validateProfileForm();}});
+el('discard-profile').onclick=()=>{el<HTMLFormElement>('profile-form').reset();touchedProfileFields.clear();validateProfileForm();updateProfileState();};
+form('profile-form',async()=>{const patch=profilePatch();if(!Object.keys(patch.set).length&&!patch.clear.length)return{message:'No profile changes to save.'};const c=writeClient(),name=selected,r=await c.resolver.setProfile({...util.splitDomain(name),...patch});if(!r)return{message:'These profile changes are already saved on the ledger.'};log('Save profile',r.engineResult,r.txHash,r.hookExecutions);await refreshConfirmed(name);return{message:'Profile changes saved with one transaction.'};},()=>validateProfileForm(true));
 
 form('search-form',data=>checkName(canonical(String(el<HTMLInputElement>('search-name').value))));form('lookup-form',data=>loadProfile(canonical(el<HTMLInputElement>('lookup-name').value)));
 form('addr-form',async data=>{const network=String(data.get('network')),ct=network==='custom'?Number(data.get('coin')):Number(network),value=String(data.get('address')).trim();let bytes:Buffer;
@@ -163,7 +182,24 @@ form('text-form',async data=>{const r=await writeClient().resolver.setText({...u
 el('transfer-claim').onclick=()=>void mutate('Accept transferred domain',c=>c.registrar.acceptTransfer(selected));
 el('primary-button').onclick=()=>void mutate('Update primary name',c=>c.resolver.setPrimary({...util.splitDomain(selected),flag:!profile?.primary}));el('refresh-domains').onclick=()=>void run('Load domains',refreshDomains);el('close-profile').onclick=()=>{selected='';profile=null;view('portfolio');};
 el('reset-profile').onclick=()=>{if(confirm('Remove all addresses, text records, and primary settings for '+selected+'?'))void mutate('Reset profile',c=>c.resolver.reset(util.splitDomain(selected)));};
-form('transfer-form',async data=>{const r=await writeClient().registrar.createTransferOffer(actionDomain,String(data.get('recipient')).trim());log('Transfer offer',r.engineResult,r.txHash,r.meta);el<HTMLDialogElement>('domain-action-dialog').close();return{message:'Transfer offer created. The recipient can claim it from Ready to claim in My domains.'};});
+el('transfer-recipient').addEventListener('input',clearTransferRecipient);
+const autoResolveRecipient=()=>{if(el<HTMLDialogElement>('domain-action-dialog').open&&!el('transfer-form').hidden)void recipientPreview.resolve(el<HTMLInputElement>('transfer-recipient').value).catch(()=>{});};
+el('transfer-recipient').addEventListener('change',autoResolveRecipient);
+el('transfer-recipient').addEventListener('blur',autoResolveRecipient);
+el('domain-action-dialog').addEventListener('close',clearTransferRecipient);
+form('transfer-form',async data=>{
+ const client=writeClient(),name=actionDomain,input=String(data.get('recipient')).trim();
+ const preview=recipientPreview.state.status==='ready'?recipientPreview.state.recipient:null;
+ const pending=preview?resolveTransferRecipient(input,domain=>reader.read.getOwner({name:domain,bypassCache:true})):recipientPreview.resolve(input),version=recipientPreview.version;
+ const recipient=await pending;
+ if(!recipient)throw new Error('Recipient changed. Review the recipient and try again.');
+ if(recipientPreview.version!==version||!el<HTMLDialogElement>('domain-action-dialog').open||actionDomain!==name||el<HTMLInputElement>('transfer-recipient').value.trim()!==input||writeClient()!==client)throw new Error('Transfer details changed. Review the recipient and try again.');
+ if(recipient.domain&&preview&&preview.address!==recipient.address){
+  clearTransferRecipient();await recipientPreview.resolve(input);
+  return{message:'The domain owner changed. Review the updated recipient before confirming.',warning:true};
+ }
+ const r=await client.registrar.createTransferOffer(name,recipient.address);log('Transfer offer',r.engineResult,r.txHash,r.meta);el<HTMLDialogElement>('domain-action-dialog').close();return{message:'Transfer offer created. The recipient can claim it from Ready to claim in My domains.'};
+});
 el('cancel-transfer').onclick=()=>void run('Cancel transfer offer',async()=>{const r=await writeClient().registrar.cancelTransferOffer(actionDomain);log('Cancel transfer',r.engineResult,r.txHash,r.meta);el<HTMLDialogElement>('domain-action-dialog').close();return{message:'Transfer offer cancelled.'};});
 form('burn-form',async data=>{const domain=actionDomain;if(String(data.get('confirmation'))!==domain)throw new Error('The confirmation name does not match.');const r=await writeClient().registrar.burn(domain);log('Burn domain',r.engineResult,r.txHash,r.hookExecutions);el<HTMLDialogElement>('domain-action-dialog').close();if(selected===domain){profile=null;selected='';view('portfolio');}await refreshConfirmed();return{message:domain+' was burned and its domain records were removed.'};});
 form('register-form',async data=>{const name=canonical(String(data.get('domain'))),r=await writeClient().registrar.register({...util.splitDomain(name),recipient:String(data.get('recipient')).trim()});log('Treasury register',r.engineResult,r.txHash,r.hookExecutions);view('discover');el<HTMLInputElement>('search-name').value=name;await checkName(name);});

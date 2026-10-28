@@ -136,7 +136,9 @@ export function diffProfile(current: Record<string,string>, values: Partial<Reco
     for(const [key,value] of Object.entries(values)){
         if(!(PROFILE_TEXT_KEYS as readonly string[]).includes(key)||typeof value!=='string')invalid('Invalid profile field');
         if(value===(current[key]??''))continue;
-        if(value==='')clear.push(key as ProfileTextKey);else set[key as ProfileTextKey]=value;
+        const next=value.trim()===''?'':value;
+        if(next===(current[key]??''))continue;
+        if(next==='')clear.push(key as ProfileTextKey);else set[key as ProfileTextKey]=next;
     }
     return {set,clear};
 }

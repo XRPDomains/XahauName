@@ -9,27 +9,26 @@ export const ENS_SERVICE_TEXT_KEYS = ['com.github','com.peepeth','com.linkedin',
 export const GLOBAL_PROFILE_FIELDS = [
     {key:'avatar',label:'Avatar URL',placeholder:'https://... or ipfs://...'},
     {key:'description',label:'Bio',placeholder:'A short introduction',multiline:true},
-    {key:'display',label:'Domain display name',placeholder:'Alice.xah'},
+    {key:'display',label:'Display name',placeholder:'Your name'},
     {key:'email',label:'Email',placeholder:'hello@example.com'},
     {key:'keywords',label:'Keywords',placeholder:'design, development'},
     {key:'mail',label:'Mailing address',placeholder:'Physical mailing address',multiline:true},
     {key:'notice',label:'Notice',placeholder:'A public notice',multiline:true},
     {key:'location',label:'Location',placeholder:'City, country'},
-    {key:'phone',label:'Phone',placeholder:'+84901234567'},
+    {key:'phone',label:'Phone',placeholder:'+ [country code] [phone number]'},
     {key:'url',label:'Website',placeholder:'https://example.com'},
 ] as const;
-/** ENSIP-5 display is only a casing of the canonical domain, not a personal alias. */
+/** Optional profile name; the canonical domain remains the identity used for resolution. */
 export function getDomainDisplayName(domain:string,records:Record<string,string>):string {
     const value=records.display;
-    return typeof value==='string'&&value.toLowerCase()===domain.toLowerCase()?value:domain;
+    return typeof value==='string'&&value.trim().length>0?value:domain;
 }
 
 /** Validation for typed profile writes. Generic text records remain opaque strings. */
 export function validateProfileValue(domain:string,key:string,value:string):void {
-    const fail=(message:string):never=>{throw new XahauNameError(message,'INVALID_ARGUMENT');};
+    const fail=(message:string):never=>{throw new XahauNameError(message,'INVALID_ARGUMENT',{field:key,domain});};
     if(typeof value!=='string'||!value.length||Buffer.byteLength(value)>128)fail('Profile values must be 1..128 UTF-8 bytes');
-    if(key==='display'&&value.toLowerCase()!==domain.toLowerCase())fail('Display must match the domain, allowing casing changes only');
-    if(key==='phone'&&!/^\+[1-9]\d{1,14}$/.test(value))fail('Phone must use E.164 format, for example +84901234567');
+    if(key==='phone'&&!/^\+[1-9]\d{1,14}$/.test(value))fail('Use international format: + followed by country code and phone number, without spaces');
     if(key==='email'&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value))fail('Enter a valid email address');
     if(key==='avatar'&&!mediaURL(value))fail('Avatar must be a supported HTTPS or IPFS image URI');
     if(key==='url'){

@@ -10,7 +10,7 @@
 
 Keys MUST normalize to lowercase ASCII letters/digits/dot/underscore/hyphen, length 1..40. Typed text values MUST be valid UTF-8, length 1..128 bytes. Fifteen text slots are shared by Globals, services and custom keys. Writers MUST persist custom key names in the records index/name slots. Readers MUST expose textKeysComplete=false for legacy unnamed slots rather than invent names.
 
-Global Keys follow [ENSIP-5](https://docs.ens.domains/ensip/5/): avatar, description, display, email, keywords, mail, notice, location, phone, url. Display MUST equal the canonical domain ignoring case; it is not an arbitrary personal alias. Typed profile writers validate E.164 phone, basic email and supported avatar/website URI formats. Applications MAY enforce stricter product rules. Generic setText does not enforce field semantics, so typed readers MUST validate before use.
+Global Key names follow [ENSIP-5](https://docs.ens.domains/ensip/5/): avatar, description, display, email, keywords, mail, notice, location, phone, url. XahauName defines display as an optional free-text profile name (up to 128 UTF-8 bytes), including Unicode, spaces and mixed case. This differs from the ENSIP-5 display convention. The canonical domain remains the identity used for resolution and authorization; display never changes it. Typed profile writers validate E.164 phone, basic email and supported avatar/website URI formats. Applications MAY enforce stricter product rules. Generic setText does not enforce field semantics, so typed readers MUST validate before use.
 
 Service keys use reversed namespaces, for example com.github and org.telegram. Custom namespaces MUST NOT claim ownership, primary or admin authority. Unknown keys remain opaque strings, escaped as text in UI.
 
