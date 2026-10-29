@@ -9,6 +9,14 @@ export const toolchain=path.join(root,'hook/build/current/explorer-toolchain',up
 const files=['LICENSE','SKILL.md','reference/format.md','reference/reader.md','reference/patterns.md','reference/publishing.md',
  'scripts/check.mjs','scripts/validate.mjs','scripts/lib/io.js','scripts/lib/manifest.js','scripts/lib/parser.js','scripts/lib/xfl.js','scripts/package.json','scripts/package-lock.json'];
 const sha=bytes=>crypto.createHash('sha256').update(bytes).digest('hex');
+/** Official Node installations put npm beside node on Windows, under ../lib on Unix. */
+export function resolveNpmCli({execPath=process.execPath,npmExecPath=process.env.npm_execpath}={}){
+ const nodeDir=path.dirname(execPath);
+ const candidates=[npmExecPath,path.join(nodeDir,'node_modules/npm/bin/npm-cli.js'),path.resolve(nodeDir,'../lib/node_modules/npm/bin/npm-cli.js')];
+ const cli=candidates.find(candidate=>candidate&&fs.existsSync(candidate));
+ if(!cli)throw new Error('npm CLI not found. Run npm run explorer:prepare or set npm_execpath to npm-cli.js.');
+ return cli;
+}
 export function verifyToolchain(){
  const receiptFile=path.join(toolchain,'source.json');
  if(!fs.existsSync(receiptFile))throw new Error('Run node scripts/explorer/prepare.mjs first');
@@ -26,7 +34,7 @@ export async function prepareToolchain(){
   if(!response.ok)throw new Error('Unable to fetch ABI tool '+file+': '+response.status);
   const data=Buffer.from(await response.arrayBuffer()),target=path.join(toolchain,file);fs.mkdirSync(path.dirname(target),{recursive:true});fs.writeFileSync(target,data);checksums[file]=sha(data);
  }));
- const npmCli=process.env.npm_execpath??path.join(path.dirname(process.execPath),'node_modules/npm/bin/npm-cli.js');
+ const npmCli=resolveNpmCli();
  const result=spawnSync(process.execPath,[npmCli,'ci','--ignore-scripts','--no-audit','--no-fund','--workspaces=false','--prefix',path.join(toolchain,'scripts')],{cwd:toolchain,stdio:'inherit'});
  if(result.error||result.status!==0)throw new Error('ABI toolchain dependency installation failed');
  fs.writeFileSync(path.join(toolchain,'source.json'),JSON.stringify({...upstream,files:checksums},null,2)+'\n');return verifyToolchain();

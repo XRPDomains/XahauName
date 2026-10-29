@@ -3,6 +3,14 @@ const { Wallet, validate, decodeAccountID } = require('xahau');
 const sdk = require('../dist'), { parameters, domainFields, coinBytes, boolBytes, priceBytes, addressBytes, textValueBytes } = sdk;
 const { transactionResult, decodeExecutions } = require('../dist/receipts');
 const { rootKey, pendingKey, asyncKey, computeUritokenId, primaryOfKey, pricingKey } = sdk.util;
+test('buy binds the approved quote and never submits a changed or invalid price',async()=>{
+    const s=ctx(),registrar=new sdk.RegistrarModule(s.c);registrar.getPrice=async()=>20n;
+    await assert.rejects(registrar.buy({label:'alice',tld:'xah',expectedPriceDrops:10n}),e=>e.code==='PRICE_CHANGED');
+    for(const expectedPriceDrops of [-1n,2n**64n,'20'])await assert.rejects(registrar.buy({label:'alice',tld:'xah',expectedPriceDrops}),e=>e.code==='INVALID_ARGUMENT');
+    assert.equal(s.sent.length,0);
+    await registrar.buy({label:'alice',tld:'xah',expectedPriceDrops:20n});assert.equal(s.sent[0].tx.Amount,'20');
+    assert.equal(sdk.explainError({code:'PRICE_CHANGED'}).stage,'validation');
+});
 const treasury = 'rw5W1Ljeg7T4JionCu2hKzWeUus7XQ9qs', buyer = 'rKMpMYo7yo7Xa4Bqmuf4BQRoeaf9TwkmDZ', other = 'rU2Wkux7AhyBzw3i4AXunktLAz1j9p8ABF', ledger = 'AB'.repeat(32), namespace = 'CD'.repeat(32), domain = 'alice.xah', id = computeUritokenId(treasury, 'alice', 'xah');
 function root(owner = buyer, flags = 0) {
     const b = Buffer.alloc(32);

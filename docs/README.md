@@ -2,6 +2,8 @@
 
 Guides and references for integrating, operating and extending XahauName. Start with a task, then follow protocol and source links for implementation details.
 
+The app's `/docs/` site presents a concise developer introduction from [site/overview.md](site/overview.md), followed by on-chain concepts, SDK reads/writes, standards and deployment information. The detailed references below remain available for implementation specifics.
+
 ## Start by task
 
 | Task | Guide |

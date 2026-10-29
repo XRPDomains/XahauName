@@ -47,6 +47,8 @@ export interface OwnedDomainSummary {
     tokenId:string;
     uri:string;
     primary:boolean;
+    /** Registration time in Ripple epoch seconds, when supplied by the deployment. */
+    mintedAt?:number;
 }
 export interface PortfolioSnapshot {
     address:string;
@@ -154,6 +156,8 @@ export interface LabelTldArgs {
 }
 export interface BuyArgs extends LabelTldArgs {
     recipient?: string;
+    /** Refuse to prepare a Payment if its price differs from the user's approved quote. */
+    expectedPriceDrops?: bigint;
     /** URI is constructed by the hook from its on-chain URIBase. */
     uri?: never;
     URI?: never;

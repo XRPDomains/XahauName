@@ -1,0 +1,18 @@
+[
+  {"slug":"overview","title":"Overview","group":"Understand","file":"overview.md","summary":"An on-chain name and identity layer for Xahau."},
+  {"slug":"on-chain","title":"On-chain model","group":"Understand","file":"on-chain.md","summary":"What the ledger stores, how to verify it, and where trust remains."},
+  {"slug":"xahau","title":"Xahau foundations","group":"Understand","file":"xahau.md","summary":"Hooks, URITokens, transactions and validated ledgers."},
+  {"slug":"architecture","title":"Architecture","group":"Understand","file":"architecture.md","summary":"Ten handlers, one shared namespace and a small client stack."},
+  {"slug":"security","title":"Security & trust","group":"Understand","file":"security.md","summary":"On-chain authority, treasury upgrades and verification boundaries."},
+  {"slug":"quickstart","title":"SDK quickstart","group":"Integrate","file":"quickstart.md","summary":"Read a domain and connect a wallet signer."},
+  {"slug":"wallet","title":"Wallet integration","group":"Integrate","file":"wallet.md","summary":"Connect Wallet Kit, bind a signer and verify transaction outcomes."},
+  {"slug":"read","title":"Read functions","group":"Integrate","file":"read.md","summary":"Owners, receiving addresses, profiles and verified primary names."},
+  {"slug":"write","title":"Write functions","group":"Integrate","file":"write.md","summary":"Register, claim, transfer and update on-chain records."},
+  {"slug":"errors","title":"Errors & reliability","group":"Integrate","file":"errors.md","summary":"Timeouts, lifecycle recovery and bounded RPC read retries."},
+  {"slug":"protocol","title":"Protocol specification","group":"Reference","file":"../SPEC.md","summary":"The authoritative protocol specification, rendered from SPEC.md."},
+  {"slug":"functions","title":"SDK function reference","group":"Reference","file":"functions.md","summary":"Read/write signatures, parameters and source-backed result types."},
+  {"slug":"hook","title":"Hook & raw operations","group":"Reference","file":"hook.md","summary":"C entry points, parameter bytes, state keys and independent RPC verification."},
+  {"slug":"standards","title":"Standards & limits","group":"Reference","file":"standards.md","summary":"Naming, Global Keys, addresses and XNIP conventions."},
+  {"slug":"api","title":"Indexer & API","group":"Reference","file":"api.md","summary":"Optional indexed reads and events, derived from the ledger."},
+  {"slug":"deployment","title":"Network & deployment","group":"Reference","file":"deployment.md","summary":"The selected network, treasury, namespace and installed hook hashes."}
+]

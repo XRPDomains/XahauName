@@ -12,6 +12,8 @@ node docs/examples/read-profile.mjs alice.xah
 
 [read-profile.mjs](read-profile.mjs) reads a domain profile, receiving address, owner portfolio and verified primary at one validated ledger hash. Output includes that hash so the related reads share an explicit snapshot.
 
+For independent verification without XahauName SDK, run `node docs/examples/verify-domain.mjs web3domains.xah`. [verify-domain.mjs](verify-domain.mjs) uses the generic `xahau` RPC/codec library and Node crypto, verifies the configured hook chain and domain/token identity at one validated ledger, and refuses unresolved tracking. It never signs. An optional second argument selects a public deployment manifest in the shape used by `deployments/testnet.json` (`rpc`, `networkID`, `treasury`, `namespace`, ordered `handlers`). Missing root is not proof that a pending name is available.
+
 With the [indexer service](../../packages/indexer/README.md#serve-http-and-events) running:
 
 ```sh

@@ -11,7 +11,7 @@ jobs:
       - run: npm ci
       - run: node scripts/sync-protocol.mjs
       - run: npm run packages:build
-      - run: node scripts/explorer/prepare.mjs
+      - run: npm run explorer:prepare
       - run: node --test scripts/explorer/*.test.mjs
       - run: npm run test:unit --workspace @xahauname/sdk
       - run: npm run lint --workspace @xahauname/sdk

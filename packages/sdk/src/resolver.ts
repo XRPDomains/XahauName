@@ -37,7 +37,7 @@ export class ResolverModule {
             const {label,tld}=splitDomain(name),root=await new ResolverModule(ctx).getRoot(name,opts);
             if(!root&&address===ctx.treasury)return null;
             if(!root||root.owner!==address)throw new XahauNameError('Native token ownership is not finalized in root: '+name,'OWNERSHIP_MISMATCH');
-            return {domain:name,tokenId:token.index.toUpperCase(),uri:Buffer.from(token.URI,'hex').toString('utf8'),primary:root.primary};
+            return {domain:name,tokenId:token.index.toUpperCase(),uri:Buffer.from(token.URI,'hex').toString('utf8'),primary:root.primary,mintedAt:root.mintedAt};
         })).filter((item):item is OwnedDomainSummary=>item!==null);
         const nextCursor=result.marker===undefined?null:Buffer.from(JSON.stringify({v:1,address,hash:hash.toUpperCase(),marker:result.marker})).toString('base64url');
         if(nextCursor&&nextCursor.length>8192)throw new XahauNameError('Oversized pagination marker','BAD_RESPONSE');

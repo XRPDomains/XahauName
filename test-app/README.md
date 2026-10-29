@@ -23,6 +23,14 @@ npm run app:dev
 
 Open http://127.0.0.1:5173/. Vite imports the local SDK source, so application and SDK edits update during development. The [static hosting guide](DEPLOY.md) covers production builds and server configuration.
 
+Developer Docs are available at `/docs/` from the app menu. Concise English pages live in [docs/site/](../docs/site/overview.md); [the Docs generator](docs/site.ts) prerenders them into static HTML, with local search and copyable examples. Docs do not load Wallet Kit or contact the ledger. A requested application build includes `dist/docs/`, ready to upload alongside the app without a separate server.
+
+The initial screen is Find a name. Connecting or restoring a wallet opens My names and refreshes its collection, while an active discovery draft, quote, checkout or public profile stays open. Disconnecting from My names returns to discovery.
+
+Hash routes preserve browser Back/Forward and work under a static hosting subdirectory: `#/find`, `#/find/lookup`, `#/my-names`, and `#/name/alice.xah/records` (also `addresses`, `profile`, `settings`). Changing profile sections reuses the displayed snapshot; entering a profile performs a fresh verified read. Navigation waits for an in-flight action to settle and never replays a signature.
+
+Activity opens from the footer in a separate dialog. It contains this session's actions, transaction hashes, status lookups and collapsed technical details for troubleshooting; it is not a complete wallet history. Opening Activity alone does not request ledger data.
+
 The application connects to the ledger on demand: a submitted search, profile lookup, transaction-status check, or connected-wallet balance/domain view triggers the connection. Opening the landing page or an empty form does not make ledger requests. Read failures appear beside the relevant form; Activity retains technical details.
 
 ## Network and wallets
@@ -50,6 +58,10 @@ The [wallet integration guide](../docs/WALLET-INTEGRATION.md) describes the sign
 | [src/styles.css](src/styles.css) | Layout, spacing, states and responsive styling |
 
 A purchase and its claim are separate wallet approvals. Declining claim leaves the domain available to claim later. Profile saves use one Invoke; accepted transfers clear existing records and primary selection according to the [protocol lifecycle](../docs/SPEC.md#4-transfer-burn-and-reset).
+
+Find a name pairs registration and public profile lookup in a full-width, two-column desktop surface, stacking the panels on small screens. Navigation handlers bind only to navigation buttons so form clicks retain input focus. Registration uses a label input with a visible `.xah` suffix and an inline Payment → Mint & offer → Accept offer progress view. Wallet connection preserves the quote. An explicit Buy click may open the wallet picker and continue to payment after connection, session validation and a fresh price check. Closing the picker or leaving the page while connecting cancels that intent; an ordinary connection does not start a payment. Public domain/account/hash hints survive reload and are scoped by network, treasury and namespace. They block uncertain repeat attempts but never establish ownership; continuation reads validated ledger state again. Unknown payment/claim outcomes remain blocked, while a validated failed receipt can release that attempt for an explicit user retry.
+
+My names reloads on each entry and after a completed registration claim. The collection keeps primary first, then sorts by registration time or a locally observed acquisition. New badges cover the past seven days; acquisition hints are wallet/deployment-scoped and never establish ownership. Keyword, exact length (1–10 or >10), character and ordering controls work locally without extra RPC reads. Ready to claim appears above the owned collection. Unknown claim feedback links directly to `#/my-names/claims`; a verified inbox claim clears that name's saved purchase hint. Emoji names are unsupported by the current protocol.
 
 ## Development checks
 

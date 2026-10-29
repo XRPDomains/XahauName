@@ -32,9 +32,9 @@ export async function resolveTransferRecipient(input:string,lookup:(name:string)
  const value=input.trim();
  try{encodeAddress(21337,value);return{address:value};}catch{/* Otherwise consider a domain. */}
  if(!value||(/^r[a-zA-Z0-9]{24,}$/.test(value)&&!value.includes('.')))
-  throw new XahauNameError('Enter a valid wallet address or domain','INVALID_ARGUMENT');
+  throw new XahauNameError('Enter a valid wallet address or name','INVALID_ARGUMENT');
  const domain=normalizeDomainInput(value),address=await lookup(domain);
- if(!address)throw new XahauNameError(`${domain} has no verified owner. Check the domain or enter the recipient's wallet address.`,'INVALID_ARGUMENT');
- try{encodeAddress(21337,address);}catch{throw new XahauNameError('The domain has an invalid owner address','INVALID_ARGUMENT');}
+ if(!address)throw new XahauNameError(`${domain} has no verified owner. Check the name or enter the recipient's wallet address.`,'INVALID_ARGUMENT');
+ try{encodeAddress(21337,address);}catch{throw new XahauNameError('The name has an invalid owner address','INVALID_ARGUMENT');}
  return{address,domain};
 }

@@ -1,6 +1,6 @@
 {
   "name": "@xahauname/sdk",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Native-v2 XahauName client with URIToken registration, claims and direct ledger resolution",
   "keywords": [
     "xahau",

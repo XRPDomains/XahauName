@@ -4,6 +4,14 @@ import {assertTestnet,createWalletSigner as createAppWalletSigner,waitValidated,
 import {createWalletKitSigner} from '../../packages/sdk/src/wallet-kit';
 const createWalletSigner=(manager:any,rpc:any,submitted:(hash:string)=>void)=>createWalletKitSigner(manager,rpc,{network:NETWORK,networkId:21338,maxFeeDrops:MAX_FEE,onSubmitted:submitted});
 const address='rTest', hash='AB'.repeat(32);
+test('durable signing gate runs only after SDK preflight and can prevent wallet dispatch',async()=>{
+ const f=fixture();let started=0;
+ const options={network:NETWORK,networkId:21338,maxFeeDrops:MAX_FEE,onSigning:()=>{started++;}};
+ f.rpc.autofill=async()=>{throw new Error('RPC disconnected before wallet dispatch');};
+ await assert.rejects(createWalletKitSigner(f.manager,f.rpc,options).signAndSubmit({TransactionType:'Invoke'}));assert.equal(started,0);assert.equal(f.signs(),0);
+ const g=fixture();await assert.rejects(createWalletKitSigner(g.manager,g.rpc,{...options,onSigning:()=>{throw new Error('Storage unavailable');}}).signAndSubmit({TransactionType:'Invoke'}),/Storage unavailable/);assert.equal(g.signs(),0);
+ const h=fixture();await createWalletKitSigner(h.manager,h.rpc,options).signAndSubmit({TransactionType:'Invoke'});assert.equal(started,1);assert.equal(h.signs(),1);
+});
 function fixture(){let signs=0;const manager={getAccount:()=>({address,network:{id:'xahau-testnet'}}),getNetwork:()=>({id:'xahau-testnet'}),signAndSubmit:async()=>{signs++;return{hash};}};const rpc={autofill:async(tx:any)=>({...tx,Fee:'12'}),request:async()=>({result:{validated:true,Account:address,NetworkID:21338,Fee:'12',TransactionType:'Invoke',meta:{TransactionResult:'tesSUCCESS',HookExecutions:[]}}})};return{manager,rpc,signs:()=>signs};}
 test('app delegates fee preparation to Kit, caps the receipt and ignores observer failures',async()=>{
  const f=fixture();let autofills=0,request:any;

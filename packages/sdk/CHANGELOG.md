@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.3.1 — 2026-10-28
 
 - Share primary-lookup snapshot reads and concurrent identical pinned object requests. Registration polling reads lifecycle state only when the validated ledger hash changes, while retrying failed reads and preserving submission safety.
 
@@ -15,7 +15,7 @@
 - Keep SDK fee estimation separate from Wallet Kit's sequence/flags/expiry preparation, and pass the signer's fee ceiling explicitly to the manager.
 - Let Wallet Kit prepare expiry when the SDK only estimated fees; preserve explicit caller deadlines and verify them in validated receipts. Classify wallet verification failures separately from unknown errors.
 - Allow configuring the WebSocket connection timeout (15 seconds by default), share concurrent connection attempts, and distinguish connection failures from transaction confirmation errors.
-- Add explicit `registrar.reconcile(domain)` for Invoke17 recovery, deployed on testnet on 2026-10-23. SDK package changes are not yet published.
+- Add explicit `registrar.reconcile(domain)` for Invoke17 recovery.
 - Quarantine cleanup journals and finalized-root/registration-tracking contradictions.
 - Prepare and cap wallet-filled fees before signing; request-only transports require explicit Fee, and receipt intent is immutable.
 - Use network-neutral funding and wallet-connection diagnostics.

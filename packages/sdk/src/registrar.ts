@@ -47,10 +47,14 @@ export class RegistrarModule {
     }
     async buy(args: BuyArgs) {
         rejectCustomURI(args);
+        if(args.expectedPriceDrops!==undefined&&(typeof args.expectedPriceDrops!=='bigint'||args.expectedPriceDrops<0n||args.expectedPriceDrops>0xffffffffffffffffn))
+            throw new XahauNameError('Expected price must be an unsigned uint64 drop amount', 'INVALID_ARGUMENT');
         const signer = this.signer(), fields = domainFields(args.label, args.tld);
         if (signer === this.ctx.treasury)
             throw new XahauNameError('Treasury must use register, not self Payment', 'INVALID_ARGUMENT');
-        const price = await this.getPrice(fields.label.length);
+        const price = await this.getPrice(fields.label.length,{bypassCache:true});
+        if(args.expectedPriceDrops!==undefined&&price!==args.expectedPriceDrops)
+            throw new XahauNameError('The price changed. Review the new quote before paying.', 'PRICE_CHANGED');
         if (price === 0n)
             throw new XahauNameError('Zero-price buy cannot be sent as a native Payment; use treasury register', 'INVALID_ARGUMENT');
         return this.ctx.submit({ TransactionType: 'Payment', Destination: this.ctx.treasury, Amount: price.toString(), HookParameters: parameters('buy', { ...fields, ...(args.recipient ? { recipient: recipientBytes(args.recipient) } : {}) }) }, { handler: 'issuance', returns: ['minting'], status: 'pending' });

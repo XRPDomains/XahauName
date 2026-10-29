@@ -12,6 +12,8 @@ export interface WalletKitSignerOptions {
     maxFeeDrops?:string;
     /** Use wallet-kit only with a manager that enforces the request's maxFeeDrops. Default: sdk. */
     feePreparation?:'sdk'|'wallet-kit';
+    /** Durable intent gate, called immediately before dispatching to the wallet manager. Throw to abort. */
+    onSigning?:()=>void;
     onSubmitted?:(hash:string)=>void;
     onValidated?:(result:SignAndSubmitResult)=>void;
 }
@@ -64,6 +66,7 @@ export function createWalletKitSigner(manager:WalletKitSession,rpc:Rpc,options:W
         // expiry, including queued-account handling and bounded expiry extensions.
         // Explicit caller values remain exact in both the request and receipt.
         const intent:Record<string,unknown>=structuredClone({...requested,...(prepared.Fee===undefined?{}:{Fee:prepared.Fee})});
+        options.onSigning?.();
         const result=await manager.signAndSubmit({txJson:structuredClone(intent),maxFeeDrops:max}),hash=result.hash;
         if(!hash||!/^[A-Fa-f0-9]{64}$/.test(hash))throw new Error('No transaction hash was returned. Check your wallet history before resubmitting.');
         try{options.onSubmitted?.(hash);}catch{/* Observers must not interrupt receipt verification. */}

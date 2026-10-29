@@ -75,7 +75,7 @@ test('custom text descriptors load concurrently with bounded fan-out and preserv
 });
 test('portfolio verifies native ownership and primary with one enumeration and no duplicate state reads',async()=>{
  const f=fixture(),p=await f.client.getPortfolio(owner,{bypassCache:true});
- assert.equal(p.ledgerHash,H);assert.equal(p.primary,'portfolio0.xah');assert.deepEqual(p.domains,[{domain:'portfolio0.xah',tokenId:f.tokens[0].index,uri:'portfolio0.xah',primary:true}]);
+ assert.equal(p.ledgerHash,H);assert.equal(p.primary,'portfolio0.xah');assert.deepEqual(p.domains,[{domain:'portfolio0.xah',tokenId:f.tokens[0].index,uri:'portfolio0.xah',primary:true,mintedAt:0}]);
  assert.equal(f.calls.length,7);assert.equal(f.calls.filter(q=>q.command==='account_objects').length,1);
  const keys=f.calls.filter(q=>q.hook_state).map(q=>q.hook_state.key);assert.equal(new Set(keys).size,keys.length);
  const before=f.calls.length;await f.client.getPortfolio(owner,{bypassCache:true});assert.equal(f.calls.length-before,7);
