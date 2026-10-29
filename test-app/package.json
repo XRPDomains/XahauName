@@ -7,7 +7,7 @@
     "dev": "vite --host 127.0.0.1",
     "build": "node scripts/build.mjs",
     "preview": "vite preview --host 127.0.0.1",
-    "test": "node --import tsx --test tests/*.test.ts",
+    "test": "tsx --tsconfig tsconfig.test.json --test tests/*.test.ts",
     "test:browser": "node --import tsx tests/browser-smoke.cjs",
     "test:screenshots": "node --import tsx tests/browser-smoke.cjs --screenshots",
     "typecheck": "tsc --noEmit"
