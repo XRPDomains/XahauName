@@ -44,7 +44,7 @@ await writer.resolver.setAddress({
 await writer.resolver.setPrimary({label: 'alice', tld: 'xah', flag: true});
 ```
 
-`ownerAddress` is a valid Xahau wallet address. Set the native receiving record to the owner's wallet before expecting a forward-confirmed primary. Use `clearText`, `clearAddr` or `setProfile.clear` for explicit removals. `reset({label, tld})` clears a profile while retaining ownership.
+`ownerAddress` is a valid Xahau wallet address. Use `clearText`, `clearAddr` or `setProfile.clear` for explicit removals. `reset({label, tld})` clears a profile while retaining ownership.
 
 ## Handle outcomes
 

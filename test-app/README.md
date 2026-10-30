@@ -75,3 +75,5 @@ These checks do not start a browser or capture screenshots. During development, 
 Browser/layout checks run only when explicitly requested. With a running Vite instance and installed Chrome, use `npm run test:browser --workspace xahauname-test-app`. This also leaves screenshots disabled. To explicitly capture visual artifacts, use `npm run test:screenshots --workspace xahauname-test-app` (or append `--screenshots` to another browser script). `APP_TEST_URL` selects another instance. Provider approvals can be exercised in the browser with the configured wallet.
 
 See the [SDK API](../docs/API.md), [architecture](../docs/ARCHITECTURE.md#domain-manager) and [artwork attribution](src/icons/README.md).
+
+Registration offers an unchecked **Set as my primary name** option. When selected, a verified claim is followed by a separate owner-verified `setPrimary` Invoke and wallet approval. Declining this optional update does not undo the claim; uncertain primary outcomes are shown separately and never retried automatically. Saved preferences can continue with an explicit later claim, but page reloads never initiate signing.

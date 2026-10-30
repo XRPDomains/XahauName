@@ -439,3 +439,11 @@ main[data-view="discover"] #page-description{font-size:15px;line-height:1.6;marg
  #portfolio .incoming-domain{padding:16px;gap:16px}
  #portfolio .incoming-domain .domain-actions{grid-column:1;grid-row:2;padding:14px 0 0;border-top:1px solid var(--rule);border-left:0;flex-direction:row;align-items:center;justify-content:space-between;flex-wrap:wrap}
 }
+
+.registration-primary-option{display:flex;align-items:flex-start;gap:12px;margin:20px 0 0;padding:14px 16px;border:1px solid var(--rule);border-radius:10px;cursor:pointer;background:var(--surface)}
+.registration-primary-option input[type=checkbox]{width:18px;height:18px;min-height:0;flex-shrink:0;margin:3px 0 0;padding:0;accent-color:var(--accent)}
+.registration-primary-option>span{display:flex;flex-direction:column;gap:4px;min-width:0}
+.registration-primary-option strong{font-size:13px;font-weight:500;line-height:1.5}
+.registration-primary-option small{font-size:12px;font-weight:400;line-height:1.5;color:var(--muted)}
+.registration-steps.has-primary{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:600px){.registration-steps.has-primary{grid-template-columns:minmax(0,1fr);gap:20px}.registration-steps.has-primary li{grid-template-columns:30px minmax(0,1fr);gap:12px;align-items:start}.registration-steps.has-primary li:not(:last-child)::after{top:36px;left:14px;width:2px;height:calc(100% - 16px)}}

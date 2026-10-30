@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.0 — 2026-10-29
+
+- Align the SDK dependency with 0.4.0 primary and address lookup semantics.
+
+- Verify indexed primary names from selection and ownership independently of receiving records.
+
 ## 0.3.1 — 2026-10-28
 
 - Require SDK ^0.3.1 for synchronized deployment identity and lifecycle validation.

@@ -34,7 +34,11 @@ export class ReadModule {
         return this.run(options,async(ctx,opts)=>new ReadModule(ctx,this.ready,this.tlds,opts.ledgerHash));
     }
     getOwner(args:NameRequest){return this.run(args,(ctx,opts)=>new ResolverModule(ctx).getOwner(args.name,opts));}
-    getAddress(args:NameRequest&{coinType?:number}){return this.run(args,(ctx,opts)=>new ResolverModule(ctx).resolveAddress(args.name,args.coinType??21337,opts));}
+    /** Default name lookup resolves native custody; an explicit coinType selects a receiving record. */
+    getAddress(args:NameRequest&{coinType?:number}){return this.run(args,(ctx,opts)=>{
+        const resolver=new ResolverModule(ctx);
+        return args.coinType===undefined?resolver.getOwner(args.name,opts):resolver.resolveAddress(args.name,args.coinType,opts);
+    });}
     getText(args:NameRequest&{key:string}){return this.run(args,async(ctx,opts)=>{
         const resolver=new ResolverModule(ctx);
         return await resolver.getOwner(args.name,opts)?resolver.getText(args.name,args.key,opts):null;
@@ -56,7 +60,7 @@ export class ReadModule {
         const {label,tld}=splitDomain(args.name);domainFields(label,tld);
         if(await resolver.getPrimaryHash(args.address,opts)!==rootKey(label,tld))return null;
         const root=await resolver.getRoot(args.name,opts);
-        return root?.primary&&await resolver.getOwner(args.name,opts)===args.address&&await resolver.resolveAddress(args.name,21337,opts)===args.address?label+'.'+tld:null;
+        return root?.primary&&await resolver.getOwner(args.name,opts)===args.address?label+'.'+tld:null;
     });}
     getDomain(args:NameRequest){return this.run(args,(ctx,opts)=>new RegistrarModule(ctx).getRegistrationStatus(args.name,opts));}
     getQuote(args:NameRequest){return this.run(args,async(ctx,opts)=>{

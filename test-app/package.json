@@ -1,6 +1,6 @@
 {
   "name": "xahauname-test-app",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -13,8 +13,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@xahauname/sdk": "0.3.1",
-    "@xrpl-wallet-kit/client": "0.2.2",
+    "@xahauname/sdk": "0.4.0",
+    "@xrpl-wallet-kit/client": "0.3.2",
     "buffer": "6.0.3",
     "xahau": "4.2.0"
   },

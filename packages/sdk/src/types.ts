@@ -54,7 +54,7 @@ export interface PortfolioSnapshot {
     address:string;
     ledgerHash:string;
     domains:OwnedDomainSummary[];
-    /** Owned primary candidate; use getVerifiedPrimaryName for forward-confirmed identity. */
+    /** Owned primary candidate; use getVerifiedPrimaryName for primary selection and native-owner verification. */
     primary:string|null;
 }
 export interface DomainQuote {

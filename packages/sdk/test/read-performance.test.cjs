@@ -97,7 +97,7 @@ test('empty portfolio needs only ledger, primary and one account page',async()=>
  assert.deepEqual(p.domains,[]);assert.equal(p.primary,null);assert.equal(f.calls.length,3);
 });
 
-test('public primary lookups reuse identity reads while preserving forward-address verification',async()=>{
+test('public primary lookups reuse identity reads while verifying primary selection and native ownership',async()=>{
  const previous=fixture();previous.states.set(util.addrKey('portfolio0','xah',21337),Buffer.from(decodeAccountID(owner)));
  const oldOpts={ledgerHash:await previous.client.getLedgerHash(),bypassCache:true,verifyOwner:true},r=previous.client.resolver;
  // The former primary routine enumerated ownership, reread the root, then
@@ -106,12 +106,13 @@ test('public primary lookups reuse identity reads while preserving forward-addre
  assert.equal(previous.calls.length,15);
  const f=fixture();f.states.set(util.addrKey('portfolio0','xah',21337),Buffer.from(decodeAccountID(owner)));
  assert.equal(await f.client.getVerifiedPrimaryName(owner,{bypassCache:true}),'portfolio0.xah');
- assert.equal(f.calls.length,9);assert.equal(new Set(f.calls.map(call=>JSON.stringify(call))).size,f.calls.length);
+ assert.equal(f.calls.length,8);assert.equal(new Set(f.calls.map(call=>JSON.stringify(call))).size,f.calls.length);
  f.calls.length=0;assert.equal(await f.client.getPrimaryName(owner,{bypassCache:true}),'portfolio0.xah');assert.equal(f.calls.length,7);
  f.states.set(util.addrKey('portfolio0','xah',21337),Buffer.from(decodeAccountID(Wallet.generate().classicAddress)));
- assert.equal(await f.client.getVerifiedPrimaryName(owner,{bypassCache:true}),null);
+ assert.equal(await f.client.getVerifiedPrimaryName(owner,{bypassCache:true}),'portfolio0.xah');
+ f.states.delete(util.addrKey('portfolio0','xah',21337));
+ assert.equal(await f.client.getVerifiedPrimaryName(owner,{bypassCache:true}),'portfolio0.xah');
  f.states.delete(util.primaryOfKey(owner));f.calls.length=0;assert.equal(await f.client.getVerifiedPrimaryName(owner,{bypassCache:true}),null);assert.equal(f.calls.length,2);
- console.log('Verified primary RPCs: 15 → 9; configured primary: 9 → 7');
 });
 
 test('concurrent pinned reads share only in-flight RPCs, clone results and release failures',async()=>{

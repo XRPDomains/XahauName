@@ -12,7 +12,7 @@ The protocol provides bounded on-chain storage and authorization. XNIPs describe
 | [0001](xnip-0001-names.md) | Names and token identity | 0.1.0 | Draft | Hook and SDK |
 | [0002](xnip-0002-records.md) | Text, custom and website content | 0.2.0 | Draft | Records and SDK conventions |
 | [0003](xnip-0003-addresses.md) | Multichain receiving addresses | 0.1.0 | Draft | Storage and codecs |
-| [0004](xnip-0004-primary.md) | Primary and forward confirmation | 0.2.0 | Draft | Selection and verified resolution |
+| [0004](xnip-0004-primary.md) | Primary and verified ownership | 0.3.0 | Draft | Selection and verified resolution |
 | [0005](xnip-0005-avatar.md) | Avatar and metadata presentation | 0.1.0 | Draft | SDK and UI |
 
 ## Implement a convention

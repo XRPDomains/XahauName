@@ -9,7 +9,7 @@ XNIPs define XahauName's naming, records and identity conventions. They are **pr
 | 0001 | Canonical names and domain–token identity |
 | 0002 | Text, custom keys and website content |
 | 0003 | Multichain receiving addresses |
-| 0004 | Primary selection and forward confirmation |
+| 0004 | Primary selection and verified ownership |
 | 0005 | Avatar and metadata presentation |
 
 Read the [versioned XNIP registry](https://github.com/XRPDomains/XahauName/blob/main/docs/standards/README.md) for exact formats.
@@ -30,7 +30,7 @@ Text keys normalize to lowercase ASCII letters/digits plus `.`, `_`, `-`, with 1
 
 Address values use chain-specific binary codecs, not interchangeable address strings. The current index supports coin types 0–65535, up to 15 address records per domain and 1–128 bytes per address. XAH uses coin type 21337; XRP uses 144.
 
-A verified primary must belong to the wallet and resolve through its native-XAH receiving record back to that wallet. A selected name alone is not a verified reverse identity.
+A verified primary requires matching on-chain primary selection and verified native token ownership. Receiving address records are independent: an absent or different XAH record does not invalidate the owner's primary name.
 
 ## Content and media
 

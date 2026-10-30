@@ -24,11 +24,11 @@ The facade connects lazily, verifies the configured deployment and pins each ope
 | Method | Result |
 | --- | --- |
 | `getOwner({name})` | Native-verified owner, separate from receiving records |
-| `getAddress({name, coinType?})` | Decoded receiving address; default coin 21337; no owner fallback; unsupported/malformed codec rejects |
+| `getAddress({name, coinType?})` | Verified owner when coinType is omitted; explicit coinType reads only that receiving record (null if absent); unsupported/malformed codec rejects |
 | `getText({name, key})` | UTF-8 record after verifying domain ownership |
 | `getRecords({name, addresses?, texts?, contentHash?})` | Decoded addresses with `address`/`hex` format, texts, unnamed legacy keys, source, ledger hash and completeness |
 | `getProfile({name, addrs?, texts?})` | Verified profile, native token ID/URI and transfer offer; rejects unfinished lifecycle state; no HTTP metadata fetch |
-| `getName({address, name?})` | Forward-confirmed native-XAH primary; optional candidate name avoids enumerating owned tokens |
+| `getName({address, name?})` | Ownership-verified primary; optional candidate name avoids enumerating owned tokens |
 | `getDomain({name})` | Registration/claim/refund/recovery lifecycle state |
 | `getQuote({name})` | Same-ledger lifecycle, price and TLD availability; purchase still rechecks |
 | `getNames({address, cursor?, limit?})` | One account-object page: `items: OwnedDomainSummary[]` (read each item's `.domain`), `nextCursor`, `complete`, `ledgerHash`, `source` |
@@ -43,7 +43,7 @@ All facade calls accept `ledgerHash`, `bypassCache`, `timeoutMs` (default 15,000
 
 Client defaults are 512 cached entries, approximately 1 MiB retained cache, 30-second TTL, six concurrent RPC reads and at most 1,024 queued reads. Configure `cacheMaxEntries`, `cacheMaxBytes`, `cacheTtlMs` and `readConcurrency` (1–32). A zero cache budget/TTL disables state storage. Clearing the cache or changing signer prevents older in-flight reads from repopulating it. These budgets cover retained values/estimates, not the JavaScript engine's total heap.
 
-`getPortfolio(address)` remains the combined collection read for existing views. Its primary is an owned candidate; use `getName` or `getVerifiedPrimaryName` for forward confirmation. Pass an indexer/portfolio candidate to `getName({address, name})` to avoid another portfolio scan.
+`getPortfolio(address)` remains the combined collection read for existing views. Its primary is an owned candidate; use `getName` or `getVerifiedPrimaryName` to verify primary selection and native ownership. Pass an indexer/portfolio candidate to `getName({address, name})` to avoid another portfolio scan.
 
 `listIncomingDomains` shares one snapshot and verifies candidates with bounded concurrency. Completed inboxes are reused only at the identical immutable ledger. Subsequent heads scan new account-history ledgers and revalidate active offers. Discovery cache is bounded to 32 wallets and approximately 1 MiB. It still needs an initial history scan, can fail at the 100-page/20,000-candidate limit, and exposes `historyMinLedger`; pruned history is not proof that no old offer exists. For large accounts use the [indexer](INDEXER.md) for discovery, then verify ledger state before signing.
 

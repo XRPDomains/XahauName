@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.0 — 2026-10-29
+
+- Migration: pass an explicit `coinType` when reading a receiving record. Omitting it now resolves verified ownership, independently of receiving records.
+- Bind purchases to `expectedPriceDrops`, expose the `onSigning` intent callback, and include `mintedAt` in owned-name summaries.
+
+- Resolve `read.getAddress({name})` and `resolver.resolveAddress(name)` to the verified owner; explicit `coinType` continues to select a receiving record without fallback.
+
+- Resolve primary names from matching on-chain selection and native ownership without requiring an XAH receiving record.
+
 ## 0.3.1 — 2026-10-28
 
 - Share primary-lookup snapshot reads and concurrent identical pinned object requests. Registration polling reads lifecycle state only when the validated ledger hash changes, while retrying failed reads and preserving submission safety.

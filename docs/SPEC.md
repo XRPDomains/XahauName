@@ -95,7 +95,7 @@ Version 2 order: avatar, description, display, email, keywords, mail, notice, lo
 
 [XNIP standards](standards/README.md) define application-facing names, texts/content, addresses, primary and avatars. These are bounded adaptations of ENS concepts, not ENS contracts/ABI implementations. High-bit ENSIP-11 EVM coin IDs, arbitrary-chain reverse registrations, Unicode names, wildcards and DNS delegation are unsupported.
 
-getPrimaryName returns an owned configured candidate. getVerifiedPrimaryName additionally requires explicit XAH receiving record21337 to resolve to the requesting account at the same validated ledger. It never substitutes XRP (144) or the owner. Destination tags participate in comparison. Arbitrary text primary values have no authority.
+getPrimaryName returns an owned configured primary. getVerifiedPrimaryName and read.getName verify the account's primary reverse mapping, root primary flag and native token ownership at one validated ledger. No receiving address record is required; missing, tagged or different XAH/XRP records do not change primary identity. Receiving records remain explicit payment destinations and are never inferred from primary selection. Arbitrary text primary values have no authority.
 
 The contenthash text key stores canonical ipfs://CID root URI. SDK optionally converts to/from the IPFS subset of ENSIP-7 binary bytes. No separate binary contenthash state exists. Typed SDK/UI validates rich formats; generic setText remains bounded raw storage.
 

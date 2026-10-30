@@ -7,8 +7,8 @@ Use `client.read` for validated, native-verified reads. These methods do not nee
 | Method | Result / purpose |
 | --- | --- |
 | `getOwner({name})` | Verified current owner; use for transferring a domain to another domain's owner |
-| `getAddress({name, coinType})` | Explicit receiving record; defaults to XAH 21337; no owner fallback |
-| `getName({address, name?})` | Forward-confirmed primary name or null |
+| `getAddress({name, coinType?})` | Verified owner by default; explicit coinType reads a receiving record |
+| `getName({address, name?})` | Ownership-verified primary name or null |
 | `getText({name, key})` | One UTF-8 text record or null |
 | `getRecords({name, addresses?, texts?})` | Selected or discovered profile records |
 | `getProfile({name})` | Verified profile, token identity/URI and transfer offer; no metadata HTTP request |
@@ -34,7 +34,7 @@ Create a new snapshot after a write or refresh. An existing snapshot intentional
 
 ## Missing data and pagination
 
-`getOwner()` returning `null` means there is no finalized domain root in that snapshot. `getAddress()` returning `null` does not mean the domain is unowned: its receiving record may simply be absent.
+`getOwner()` returning `null` means there is no finalized domain root in that snapshot. With an explicit `coinType`, `getAddress()` returning `null` can mean the receiving record is absent. Without `coinType`, it resolves the verified owner and does not read XAH records.
 
 Follow `nextCursor` until null when listing names. A page can contain zero recognized domains and still have a cursor because pagination counts ledger objects.
 

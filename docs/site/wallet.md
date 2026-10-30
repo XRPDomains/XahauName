@@ -38,13 +38,17 @@ Use `feePreparation: 'wallet-kit'` only with a real manager that enforces `maxFe
 
 ## Session lifecycle
 
+Configure Wallet Kit with `autoReconnect: true` and `storage: 'localStorage'` to request session restoration on the same origin. Restoration still requires provider verification; saved browser data alone does not authorize signing.
+
+The app pins Wallet Kit 0.3.2 with name display enabled. Its identity resolver reuses the application SDK and deployment, calling `read.getName({address})` to verify primary selection and native ownership without requiring an XAH receiving record. Primary changes, reset and burn refresh the wallet name. GemWallet 0.3.2 supports restoring Xahau protocol context; restoration still depends on wallet availability and authorization.
+
 On disconnect call `client.setSigner(null)`. On account/network change clear the signer, verify the new session, and create a new signer before another write. Disconnect the client when the application session ends.
 
 Keep a single transport where possible. The domain manager disables duplicate Kit confirmation polling because the SDK owns validated-receipt checks. This does not disable network, account, fee or transaction-intent verification.
 
 ## Consent and uncertainty
 
-Buying and claiming require separate approvals. Declining claim leaves a claimable name; it does not authorize a second purchase. Persist submitted hashes even if a later wallet check fails. A confirmation timeout needs a receipt lookup, not automatic resubmission.
+Buying and claiming require separate approvals. Declining claim leaves a claimable name; it does not authorize a second purchase. Use the signer’s optional `onSigning` callback to persist dispatch intent immediately before Kit signing begins, and `onSubmitted` to persist the returned hash. If intent cannot be saved, throwing from `onSigning` stops dispatch. Persist submitted hashes even if a later wallet check fails. A confirmation timeout needs a receipt lookup, not automatic resubmission.
 
 Xaman's client ID is public configuration; wallet secrets are not. For server hosting, use HTTPS and configure the allowed origin/redirect with the wallet provider.
 

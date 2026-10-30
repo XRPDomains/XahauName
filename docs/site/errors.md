@@ -42,6 +42,7 @@ Recovery values are `reconnect`, `correct-input`, `check-status`, `operator` or 
 | `TIMEOUT`, `NOT_VALIDATED`, `ABORTED` | Consumer wait ended or confirmation is unknown; do not infer transaction failure |
 | `INVALID_ARGUMENT`, `BAD_ADDRESS` | Correct the supplied input |
 | `WRONG_NETWORK`, `NO_SIGNER` | Select the intended network/account and recreate the signer |
+| `PRICE_CHANGED` | The approved quote differs from the current price; show a fresh quote and request consent again |
 | `SIGN_FAILED` | Inspect wallet/request status; do not automatically sign another payment |
 | `OWNERSHIP_MISMATCH`, `CLAIM_NOT_FINALIZED` | Stop ordinary writes and investigate ledger/root consistency |
 | `HOOK_NOT_EXECUTED`, `WRONG_HOOK`, `BAD_STATE` | Expected execution/state could not be verified; inspect configuration and receipt |

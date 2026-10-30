@@ -24,7 +24,7 @@ client.read.getNames({address, cursor?, limit?, ...options}): Promise<{
 client.read.snapshot(options?): Promise<ReadModule>
 ```
 
-This block is a signature guide, not executable TypeScript. `coinType` defaults to 21337; `getAddress()` reads an explicit receiving record, while `getOwner()` reads verified custody. `limit` is 1–200 and limits ledger objects, not the number of matching domains.
+This block is a signature guide, not executable TypeScript. Without `coinType`, `getAddress()` returns verified custody, like `getOwner()`. An explicit `coinType` reads only that receiving record, returning null when absent. `limit` is 1–200 and limits ledger objects, not the number of matching domains.
 
 `name`, `address`, `key`, `cursor` and `ledgerHash` are strings; `coinType`, `limit` and timeout values are numbers. `addresses`/`addrs` are number arrays and `texts` is a string array. An optional `name` in `getName()` supplies a primary candidate to verify, rather than changing the wallet's selection.
 

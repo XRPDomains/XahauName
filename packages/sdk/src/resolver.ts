@@ -5,7 +5,7 @@ import type { Operation } from './protocol';
 import type { ClientContext } from './context';
 import type { RootRecord, SetProfileArgs, ReadOptions, DescribeOptions, FullProfile, RecordKeys, SetPrimaryArgs, SetAddrArgs, ClearAddrArgs, SetTextArgs, ClearTextArgs, LabelTldArgs } from './types';
 import { XahauNameError } from './errors';
-import { encodeAddress,decodeAddress,canonicalAddressBytes } from './addresses';
+import { encodeAddress,decodeAddress } from './addresses';
 import {validateProfileValue} from './text-records';
 import {normalizeContentURI,encodeContentHash} from './content';
 import { decodeAccountID } from 'xahau';
@@ -76,10 +76,11 @@ export class ResolverModule {
     async addr(domain:string,coinType:number,options?:ReadOptions):Promise<Buffer> {
         return await this.getAddr(domain,coinType,options) ?? Buffer.alloc(0);
     }
-    /** A receiving record is separate from native domain ownership. No owner fallback. */
-    async resolveAddress(domain:string,coinType=21337,options?:ReadOptions):Promise<string|null> {
+    /** Omit coinType for verified ownership; specify it for an explicit receiving record. */
+    async resolveAddress(domain:string,coinType?:number,options?:ReadOptions):Promise<string|null> {
         const opts={...options,ledgerHash:options?.ledgerHash??await this.ctx.ledgerHash(),verifyOwner:true};
-        if(!await this.getOwner(domain,opts))return null;
+        const owner=await this.getOwner(domain,opts);
+        if(!owner||coinType===undefined)return owner;
         const bytes=await this.getAddr(domain,coinType,opts);
         if(!bytes)return null;
         const result=decodeAddress(coinType,bytes);
@@ -167,20 +168,12 @@ export class ResolverModule {
         }
         throw new XahauNameError('Primary reverse map does not match an owned primary domain', 'OWNERSHIP_MISMATCH');
     }
-    /** XNIP-0004 draft: native XAH primary, forward-confirmed at one validated ledger.
-     * The historical getPrimaryName remains an owned-domain identity lookup. */
+    /** XNIP-0004: primary selection and native custody verified at one ledger. */
     async getVerifiedPrimaryName(address:string,options:ReadOptions={}):Promise<string|null> {
         decodeAccountID(address);
         const opts={...options,ledgerHash:options.ledgerHash??await this.ctx.ledgerHash(),verifyOwner:true};
         const name=await this.getPrimaryName(address,opts);
-        if(!name)return null;
-        if(await this.getOwner(name,opts)!==address)return null;
-        const receiving=await this.getAddr(name,21337,opts);
-        if(!receiving)return null;
-        let canonical:Buffer;
-        try {canonical=canonicalAddressBytes(21337,receiving);}catch{return null;}
-        // Full canonical bytes preserve tag differences; never compare just AccountID.
-        return canonical.equals(encodeAddress(21337,address))?name:null;
+        return name&&await this.getOwner(name,opts)===address?name:null;
     }
     async getRecordKeys(domain: string, options: ReadOptions = {}): Promise<RecordKeys> {
         const {label, tld} = splitDomain(domain); domainFields(label, tld);

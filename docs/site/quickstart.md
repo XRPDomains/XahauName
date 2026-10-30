@@ -1,10 +1,16 @@
 # SDK quickstart
 
-Use the repository workspace for this testnet release. Package names below refer to the local workspace; this guide does not assume an npm publication.
+Install the published SDK for an application integration. Use the repository workspace to run the name manager or work with changes newer than the published package.
 
 ## Set up
 
-Node.js 20+ is required. From the repository root:
+Node.js 20+ is required. In your application:
+
+```sh
+npm install @xahauname/sdk
+```
+
+To run the repository app from its source:
 
 ```sh
 npm ci
@@ -59,9 +65,13 @@ With the [wallet signer](wallet.md) connected, use this resumable flow. Let the 
 
 ```ts
 const name = 'alice.xah';
-const status = await writer.read.getDomain({name, bypassCache: true});
+const quote = await writer.read.getQuote({name, bypassCache: true});
+const status = quote.status;
 if (status.stage === 'available') {
-  const purchase = await writer.registrar.buy({label: 'alice', tld: 'xah'});
+  // Show quote.priceDrops to the user before requesting payment.
+  const purchase = await writer.registrar.buy({
+    label: 'alice', tld: 'xah', expectedPriceDrops: quote.priceDrops,
+  });
   console.log('Persist purchase hash before waiting:', purchase.txHash);
   await writer.registrar.waitForOffer(name);
   await writer.registrar.claim(name); // separate wallet approval

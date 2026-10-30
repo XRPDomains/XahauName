@@ -13,12 +13,14 @@ import {XAMAN_CLIENT_ID,DEPLOYMENT,CHAIN} from './config';
 import {NETWORKS,PROFILE_FIELDS,networkName,encodeAddress,decodeAddress} from './records';
 import {fetchMetadata,metadataURL,mediaURL} from './metadata';
 import {purchaseThenClaim} from './purchase';
+import {applyRegistrationPrimary,type PrimaryOutcome} from './registration-primary';
 import {connectThenPurchase} from './purchase-connection';
 import {checkoutFromLedger,checkoutActions,isUnstartedPurchase,isConfirmedFailure,definitiveWalletDecline,createPurchaseJournal,type CheckoutState,type PurchaseHint} from './registration-progress';
 import {registrationProgress,registrationSuccess} from './registration-view';
 import {celebrateRegistration,clearCelebration} from './celebration';
 import {domainCards,incomingDomainCards,addressRows,profileFieldForms,escapeHTML as esc} from './views';
 import {createBalanceResolver} from './wallet-balance';
+import {createIdentityResolver} from './wallet-identity';
 import {enhanceDomainInputs,enhanceRegistrationInput} from './domain-input';
 import {renderArtwork} from './artwork';
 import {createNotifications,type NotificationTone,type NotificationAction} from './notifications';
@@ -64,17 +66,19 @@ const activity=new ActivityHistory();
 el('open-activity').onclick=()=>{const dialog=el<HTMLDialogElement>('activity-dialog');if(!dialog.open)dialog.showModal();};
 el('close-activity').onclick=()=>el<HTMLDialogElement>('activity-dialog').close();
 function log(label:string,result:string,hash?:string,details?:unknown) {activity.add({label,result,hash,details});el('activity-count').textContent=String(activity.size);el('activity-count').hidden=activity.size===0;el('activity-list').innerHTML=activity.recent().map(r=>`<article><div><strong>${esc(r.label)}</strong><span>${esc(r.result)}</span></div>${r.hash?`<a class="mono" href="${explorer(r.hash)}" target="_blank" rel="noreferrer">${esc(short(r.hash))} ↗</a>`:''}${r.details?`<details><summary>Technical details</summary><pre>${esc(JSON.stringify(r.details,(_k,v)=>typeof v==='bigint'?v.toString():v,2))}</pre></details>`:''}</article>`).join('');}
-const kit = createWalletKit({network:CHAIN.walletKitId,wallets:XAMAN_CLIENT_ID?['gemwallet','xyra','xaman']:['gemwallet','xyra'],xamanClientId:XAMAN_CLIENT_ID,autoReconnect:true,storage:'localStorage',preflight:{maxFeeDrops:MAX_FEE},transactionConfirmation:{enabled:false},accountStatus:{enabled:false},metadata:{name:'XahauName',description:'Manage names on '+CHAIN.label,url:location.origin},connectButton:{target:'#connect-wallet',showBalance:true,balanceResolver:createBalanceResolver(reader,ready)},xahau:{request:createWalletKitRpcTransport(reader.rawClient,ready,CHAIN.walletKitId)},ui:{mode:'light',toast:false}});
+const kit = createWalletKit({network:CHAIN.walletKitId,wallets:XAMAN_CLIENT_ID?['gemwallet','xyra','xaman']:['gemwallet','xyra'],xamanClientId:XAMAN_CLIENT_ID,autoReconnect:true,storage:'localStorage',identity:{web3Name:true,fallbackToAddress:true},preflight:{maxFeeDrops:MAX_FEE},transactionConfirmation:{enabled:false},accountStatus:{enabled:false},metadata:{name:'XahauName',description:'Manage names on '+CHAIN.label,url:location.origin},connectButton:{target:'#connect-wallet',showBalance:true,identityResolver:createIdentityResolver(reader,address=>ownedPortfolio?.address===address?ownedPortfolio.primary??undefined:undefined),balanceResolver:createBalanceResolver(reader,ready)},xahau:{request:createWalletKitRpcTransport(reader.rawClient,ready,CHAIN.walletKitId)},ui:{mode:'light',toast:false}});
 const notifications=createNotifications();
 const purchaseJournal=createPurchaseJournal({getItem:key=>localStorage.getItem(key),setItem:(key,value)=>localStorage.setItem(key,value)},CHAIN.networkId+':'+DEPLOYMENT.treasury+':'+DEPLOYMENT.namespaceId);
 let checkout:CheckoutState|null=null,activePurchase:PurchaseHint|null=null,currentInline=false;
 let activeInboxClaim:string|null=null;
-let completedRegistration:{name:string;claimHash:string}|null=null;
+let completedRegistration:{name:string;claimHash:string;primary?:PrimaryOutcome}|null=null;
+let registrationSetPrimary=false,activeRegistrationPrimary:{name:string;account:string}|null=null;
 const hintFor=(name:string)=>activePurchase?.name===name?activePurchase:purchaseJournal.get(name);
 function rememberPurchase(hint:PurchaseHint){try{purchaseJournal.save(hint);}catch(error){throw Object.assign(new Error((error as Error)?.message?.includes('previous purchases')?'Check previous purchase statuses before starting another.':'Allow browser storage to keep your purchase progress, then try again.'),{code:'INVALID_ARGUMENT',cause:error});}activePurchase=hint;}
 function observePurchase(hint:PurchaseHint){activePurchase=hint;try{purchaseJournal.save(hint);}catch{log('Purchase tracking','Keep the transaction hash',hint.claimHash??hint.paymentHash);}}
 function forgetPurchase(name:string){if(activePurchase?.name===name)activePurchase=null;try{purchaseJournal.clear(name);}catch{/* A future ledger refresh still verifies the remaining hint. */}}
 function registrationSigning(){
+ if(activeRegistrationPrimary){const c=writeClient();if(disposed||queuedRoute||c.signerAddress!==activeRegistrationPrimary.account||kit.manager.getAccount()?.address!==activeRegistrationPrimary.account)throw new Error('Primary update paused because the wallet or page changed.');assertNetwork(kit.manager,activeRegistrationPrimary.account);return;}
  if(activeInboxClaim){if(disposed||queuedRoute)throw new Error('Claim paused because the page changed. Check status before continuing.');const hint=hintFor(activeInboxClaim);if(hint)rememberPurchase({...hint,claimStarted:true});return;}
  if(!currentInline||!['Buy & claim name','Accept name','Continue registration'].includes(currentAction))return;
  if(disposed||queuedRoute||currentView!=='discover'||!checked||!checkout)throw new Error('Registration paused because the page changed. Check status before continuing.');
@@ -82,6 +86,7 @@ function registrationSigning(){
  rememberPurchase({...hint,...(checkout.step===2?{claimStarted:true}:{paymentStarted:true})});
 }
 function registrationSubmitted(hash:string){
+ if(activeRegistrationPrimary){log('Primary update submitted','submitted',hash);if(checkout?.step===3)setCheckout({...checkout,phase:'primary-confirming',message:'Name claimed. Confirming your primary update on the ledger…'});return;}
  if(!checked||!checkout||!/^[a-f0-9]{64}$/i.test(hash))return;const hint=hintFor(checked.name);if(!hint)return;
  const claim=checkout.step===2;observePurchase({...hint,...(claim?{claimHash:hash}:{paymentHash:hash})});
  checkout={...checkout,phase:claim?'claim-confirming':'payment-confirming',message:claim?'Confirming ownership on the ledger…':'Confirming your payment on the ledger…',...(claim?{claimHash:hash}:{paymentHash:hash})};renderRegistration();
@@ -118,11 +123,11 @@ window.addEventListener('popstate',followLocation);window.addEventListener('hash
 function view(name:string,focus=true,refresh=true,historyMode:'push'|'replace'|'none'='push'){currentView=name;el('main-content').dataset.view=name;el('page-eyebrow').hidden=name==='discover';for(const v of ['portfolio','discover','profile-section'])el(v).hidden=v!==name;document.querySelectorAll<HTMLElement>('.nav').forEach(n=>{const active=n.dataset.view===(name==='profile-section'?'portfolio':name);n.classList.toggle('active',active);if(active)n.setAttribute('aria-current','page');else n.removeAttribute('aria-current');});el('page-eyebrow').textContent=name==='profile-section'?'NAME PROFILE':'NAME MANAGER';el('page-heading').textContent=name==='discover'?'Find a name':name==='profile-section'?selected:'My names';el('page-description').textContent=name==='discover'?'One name for your wallet, profile, and links.':name==='profile-section'?'Addresses, profile, and settings.':'Manage your on-chain identity.';el('find-domain').hidden=name!=='portfolio';el('close-profile').hidden=name!=='profile-section';const route:AppRoute=name==='profile-section'?{view:'profile-section',name:selected}:name==='portfolio'?{view:'portfolio'}:{view:'discover'};if(historyMode!=='none')writeRoute(route,historyMode);if(name==='profile-section')scrollRoute(route);if(focus)el('page-heading').focus({preventScroll:true});if(refresh&&name==='portfolio'&&writer)requestPortfolioRefresh();}
 document.querySelectorAll<HTMLButtonElement>('button[data-view]').forEach(n=>n.addEventListener('click',()=>{const target=n.getAttribute('data-view')!;view(target);}));
 function canonical(input:string){return normalizeDomainInput(input);}
-el('search-name').addEventListener('input',()=>{checked=null;checkout=null;completedRegistration=null;el('search-result').replaceChildren();el('discovery-error').hidden=true;});
+el('search-name').addEventListener('input',()=>{checked=null;checkout=null;completedRegistration=null;registrationSetPrimary=false;el('search-result').replaceChildren();el('discovery-error').hidden=true;});
 const registrationInput=enhanceRegistrationInput(el<HTMLInputElement>('search-name'));
 enhanceDomainInputs([el<HTMLInputElement>('lookup-name'),el<HTMLFormElement>('register-form').querySelector<HTMLInputElement>('[name="domain"]')!]);
 function writeClient(){if(!writer)throw new Error(`Connect a ${CHAIN.label} wallet to continue.`);assertNetwork(kit.manager,writer.signerAddress??undefined);return writer;}
-function updateActions(){el('admin-panel').hidden=writer?.signerAddress!==DEPLOYMENT.treasury;const own=!!writer&&profile?.owner===writer.signerAddress;document.querySelectorAll<HTMLElement>('.owner-action').forEach(n=>n.hidden=!own);document.querySelectorAll<HTMLButtonElement>('button').forEach(b=>{if(b.closest('#connect-wallet,.app-notifications')||b.id==='open-activity'||b.id==='close-activity')return;b.disabled=busy||(b.id==='refresh-domains'&&!writer);});el<HTMLInputElement>('search-name').readOnly=busy&&['Buy & claim name','Accept name','Continue registration'].includes(currentAction);updateProfileState();}
+function updateActions(){const primaryOption=el<HTMLInputElement>('registration-set-primary');if(primaryOption)primaryOption.disabled=busy;el('admin-panel').hidden=writer?.signerAddress!==DEPLOYMENT.treasury;const own=!!writer&&profile?.owner===writer.signerAddress;document.querySelectorAll<HTMLElement>('.owner-action').forEach(n=>n.hidden=!own);document.querySelectorAll<HTMLButtonElement>('button').forEach(b=>{if(b.closest('#connect-wallet,.app-notifications')||b.id==='open-activity'||b.id==='close-activity')return;b.disabled=busy||(b.id==='refresh-domains'&&!writer);});el<HTMLInputElement>('search-name').readOnly=busy&&['Buy & claim name','Accept name','Continue registration'].includes(currentAction);updateProfileState();}
 function progress(message:string){if(currentInline){if(checkout){checkout.message=message;renderRegistration();}return;}notifications.show(message,'waiting');}
 async function run(label:string,fn:()=>Promise<unknown>,errorTarget?:HTMLElement,inline=false){
  if(busy)return;busy=true;currentAction=label;currentInline=inline;updateActions();el('notice').hidden=true;el('notice').setAttribute('aria-busy','true');if(inline){notifications.dismiss();el('discovery-error').hidden=true;el('discovery-status').textContent=label+'…';el('discovery-status').hidden=false;}else progress(label+'…');
@@ -143,7 +148,7 @@ async function ready(){
 reconnectButton.onclick=()=>void run('Reconnect to ledger',async()=>{await ready();if(kit.manager.getAccount()&&!writer)await connectWriter();});
 async function connectWriter(){
  const generation=++epoch;await ready();if(generation!==epoch)return;
- const signer=createWalletSigner(kit.manager,{request:async request=>{await ready();return reader.rawClient.request(request);}},hash=>{log('Submitted — awaiting confirmation','submitted',hash);if(activeInboxClaim){const hint=hintFor(activeInboxClaim);if(hint)observePurchase({...hint,claimStarted:true,claimHash:hash});}if(currentInline&&['Buy & claim name','Accept name','Continue registration'].includes(currentAction))registrationSubmitted(hash);else progress('Confirming transaction…');},result=>{kit.manager.addTransaction({hash:result.txHash,status:result.engineResult==='tesSUCCESS'?'confirmed':'failed',result,confirmedAt:Date.now()});},registrationSigning);
+ const signer=createWalletSigner(kit.manager,{request:async request=>{await ready();return reader.rawClient.request(request);}},hash=>{log('Submitted — awaiting confirmation','submitted',hash);if(activeInboxClaim&&!activeRegistrationPrimary){const hint=hintFor(activeInboxClaim);if(hint)observePurchase({...hint,claimStarted:true,claimHash:hash});}if(currentInline&&['Buy & claim name','Accept name','Continue registration'].includes(currentAction))registrationSubmitted(hash);else progress('Confirming transaction…');},result=>{kit.manager.addTransaction({hash:result.txHash,status:result.engineResult==='tesSUCCESS'?'confirmed':'failed',result,confirmedAt:Date.now()});},registrationSigning);
  reader.setSigner(signer);writer=reader;
  const destination=connectedWalletView(currentView,!!(checked||checkout||completedRegistration||el<HTMLInputElement>('search-name').value.trim()));
  if(destination!==currentView)view(destination,false,false);
@@ -182,7 +187,7 @@ async function loadProfile(name:string,historyMode:'push'|'none'='push',section?
  el('profile-uri').textContent=uri;void hydrateArtwork(name,el('profile-art'),{ledgerHash,bypassCache:true,profileAvatar:p.texts.avatar??null},uri);el('primary-button').textContent=p.primary?'Unset primary':'Set primary';
  renderRecords(p);updateActions();scrollRoute({view:'profile-section',name,...(section?{section}:{})});
 }
-async function mutate(label:string,fn:(c:XahauNameClient)=>Promise<TxResult>){return run(label,async()=>{const c=writeClient(),r=await fn(c);log(label,r.engineResult,r.txHash,r.hookExecutions);if(label==='Accept transferred name')recentNames(c.signerAddress!).mark(selected);await refreshConfirmed(selected||undefined);return{message:label+' confirmed.'};});}
+async function mutate(label:string,fn:(c:XahauNameClient)=>Promise<TxResult>){return run(label,async()=>{const c=writeClient(),r=await fn(c);log(label,r.engineResult,r.txHash,r.hookExecutions);if(label==='Accept transferred name')recentNames(c.signerAddress!).mark(selected);await refreshConfirmed(selected||undefined);if(['Update primary name','Reset profile','Accept transferred name'].includes(label))void kit.refreshIdentity()?.catch(()=>{});return{message:label+' confirmed.'};});}
 async function refreshConfirmed(name?:string){
  try{if(name&&currentView!=='portfolio'){const route=parseRoute(location.hash);await loadProfile(name,'none',route?.view==='profile-section'&&route.name===name?route.section:undefined);}else if(currentView==='portfolio')await refreshDomains();return true;}
  catch(error){log('Refresh view','Pending',undefined,{message:'The transaction is confirmed; the view could not be refreshed.',technicalMessage:String((error as Error)?.message??error)});return false;}
@@ -208,7 +213,7 @@ function renderRegistration(){
  form.hidden=!!completedRegistration;intro.hidden=!!completedRegistration;
  if(completedRegistration){
   const{name,claimHash}=completedRegistration;
-  el('search-result').innerHTML=registrationSuccess(name,claimHash,explorer,busy);
+  el('search-result').innerHTML=registrationSuccess(name,claimHash,explorer,busy,completedRegistration.primary);
   el('buy-another-name').onclick=()=>{if(!busy)resetDiscovery();};
   el('open-name').onclick=()=>void run('Load profile',async()=>{await loadProfile(name);if(currentView==='profile-section'&&selected===name)resetDiscovery(false);},undefined,true);
   return;
@@ -219,8 +224,9 @@ function renderRegistration(){
  const labels={available:enabled?'Available':'Registration disabled',pending:'Creating your name',awaitingClaim:'Ready to accept',claimed:account===status.owner?'Your name is ready':'Already owned',refundPending:'Refund needs checking',recoveryRequired:'Recovery required'};
  let primary=needWallet?'<button id="registration-connect" class="primary">Connect wallet</button>':canBuy?'<button id="buy-name" class="primary">Buy name</button>':canClaim?'<button id="claim-name" class="primary">Accept name</button>':canContinue?'<button id="continue-name" class="primary">Continue registration</button>':status.stage==='awaitingClaim'?'<button id="claim-in-my-names" class="primary">Open My names</button>':status.stage==='claimed'?'<button id="open-name" class="primary">Manage name</button>':'';
  if(busy)primary='';
- el('search-result').innerHTML=`<div class="registration-summary"><div><strong>${esc(name)}</strong><span class="availability-label" data-stage="${status.stage}">${labels[status.stage]}</span></div>${status.stage==='available'&&!hint?`<b>${esc(amount(price))}</b>`:''}</div>${checkout?registrationProgress(checkout,explorer):canBuy?'<p class="registration-consent">2 wallet approvals · Network fees apply</p>':''}${status.recipient&&status.recipient!==account&&status.stage!=='claimed'?`<p class="registration-recipient">Recipient: <span class="mono">${esc(short(status.recipient))}</span>${writer?' · Switch to this wallet to accept.':''}</p>`:''}<div class="registration-actions"><button id="refresh-name" class="subtle" ${busy?'disabled':''}>${hint||checkout?'Check status':'Refresh'}</button>${primary}</div>`;
+ el('search-result').innerHTML=`<div class="registration-summary"><div><strong>${esc(name)}</strong><span class="availability-label" data-stage="${status.stage}">${labels[status.stage]}</span></div>${status.stage==='available'&&!hint?`<b>${esc(amount(price))}</b>`:''}</div>${checkout?registrationProgress(checkout,explorer,hint?.setPrimary===true):canBuy?`<p class="registration-consent">${registrationSetPrimary?3:2} wallet approvals · Network fees apply</p>`:''}${status.recipient&&status.recipient!==account&&status.stage!=='claimed'?`<p class="registration-recipient">Recipient: <span class="mono">${esc(short(status.recipient))}</span>${writer?' · Switch to this wallet to accept.':''}</p>`:''}${canBuy&&!busy?`<label class="registration-primary-option"><input id="registration-set-primary" type="checkbox" ${registrationSetPrimary?'checked':''}><span><strong>Set as my primary name</strong><small>Requires one extra approval after claiming.</small></span></label>`:''}<div class="registration-actions"><button id="refresh-name" class="subtle" ${busy?'disabled':''}>${hint||checkout?'Check status':'Refresh'}</button>${primary}</div>`;
  el('registration-connect')?.addEventListener('click',()=>{if(kit.manager.getAccount())void run('Connect wallet',connectWriter,undefined,true);else kit.openModal();});
+ el('registration-set-primary')?.addEventListener('change',event=>{registrationSetPrimary=(event.target as HTMLInputElement).checked;const consent=el('search-result').querySelector('.registration-consent');if(consent)consent.textContent=(registrationSetPrimary?'3':'2')+' wallet approvals · Network fees apply';});
  el('buy-name')?.addEventListener('click',()=>void startPurchase(name));
  el('claim-name')?.addEventListener('click',()=>void run('Accept name',()=>continueCheckedName(name,false),undefined,true));
  el('continue-name')?.addEventListener('click',()=>void run('Continue registration',()=>continueCheckedName(name,true),undefined,true));
@@ -229,7 +235,7 @@ function renderRegistration(){
  el('claim-in-my-names')?.addEventListener('click',()=>{const route:AppRoute={view:'portfolio',section:'claims'};writeRoute(route);void applyRoute(route);});
 }
 function resetDiscovery(focus=true){
- completedRegistration=null;checked=null;checkout=null;clearCelebration();
+ completedRegistration=null;checked=null;checkout=null;registrationSetPrimary=false;clearCelebration();
  el<HTMLFormElement>('search-form').reset();registrationInput.reset();el('search-result').replaceChildren();
  el('search-form').querySelectorAll<HTMLElement>('.field-error').forEach(error=>{error.hidden=true;error.textContent='';});
  el('discovery-error').hidden=true;el('discovery-error').textContent='';el('discovery-status').hidden=true;
@@ -247,29 +253,44 @@ function registrationFailed(error:unknown,name:string){
  if(checkout)setCheckout({...checkout,phase:info.recovery==='operator'?'attention':uncertain?'uncertain':checkout.step===2?'claim-ready':'attention',message:info.stage==='refund'?'Refund tracking needs checking. Do not send another payment.':info.recovery==='operator'?info.message:uncertain?'Confirmation is unknown. Check status before signing again.':checkout.step===2&&declined?'Your name is ready. Accept it now or later from My names.':info.message,...(current?{paymentHash:current.paymentHash,claimHash:current.claimHash}:{})});
  log('Registration',info.title,info.txHash,{...info,technicalMessage:String((error as Error)?.message??error)});
 }
+async function finishRegistrationPrimary(name:string,account:string){
+ const requested=hintFor(name)?.setPrimary===true&&hintFor(name)?.account===account;
+ if(!requested)return 'skipped' as const;
+ if(checked?.name===name)checked.status={...checked.status,stage:'claimed',owner:account};
+ activeRegistrationPrimary={name,account};
+ if(currentView==='discover'&&checked?.name===name)setCheckout({...checkout!,phase:'primary-approval',completed:3,step:3,message:'Name claimed. Approve one more transaction to set it as your primary name.'});
+ else progress('Name claimed. Approve the primary update in your wallet.');
+ try{
+  const c=writeClient(),outcome=await applyRegistrationPrimary(c,name,account,true,()=>{if(disposed||queuedRoute||writer!==c||c.signerAddress!==account||kit.manager.getAccount()?.address!==account)throw new Error('Primary update paused because the wallet or page changed.');assertNetwork(kit.manager,account);});
+  if(outcome.result){log('Set primary name',outcome.result.engineResult,outcome.result.txHash,outcome.result.hookExecutions);void kit.refreshIdentity()?.catch(()=>{});}
+  if(outcome.error){const info=explainError(outcome.error);log('Set primary name',info.title,info.txHash,{...info,technicalMessage:String(outcome.error)});}
+  return outcome.outcome;
+ }catch(error){log('Set primary name','Not updated',undefined,{technicalMessage:String(error)});return 'not-set' as const;}
+ finally{activeRegistrationPrimary=null;}
+}
 async function finishRegistration(name:string,result:TxResult,account:string){
  log('Name accepted',result.engineResult,result.txHash,result.hookExecutions);recentNames(account).mark(name);
- forgetPurchase(name);resetDiscovery(false);completedRegistration={name,claimHash:result.txHash};renderRegistration();
+ const primary=await finishRegistrationPrimary(name,account);forgetPurchase(name);resetDiscovery(false);completedRegistration={name,claimHash:result.txHash,primary};renderRegistration();
  if(currentView==='discover')celebrateRegistration(result.txHash,el('search-result'));
  if(writer?.signerAddress===account&&kit.manager.getAccount()?.address===account)try{await refreshDomains();}catch(error){log('Refresh names','Refresh pending',undefined,{technicalMessage:String(error)});}
 }
 async function startPurchase(name:string){
  await run('Buy & claim name',async()=>{
-  const origin=location.href,price=checked?.price;
+  const origin=location.href,price=checked?.price,setPrimary=registrationSetPrimary;
   await connectThenPurchase({
    isCurrent:()=>!disposed&&!queuedRoute&&currentView==='discover'&&location.href===origin&&checked?.name===name&&checked.price===price,
    hasAccount:()=>!!kit.manager.getAccount(),
    connect:async()=>{if(!kit.modal)throw new Error('Wallet connection is unavailable.');el('discovery-status').textContent='Connect your wallet to continue…';await kit.modal.openAndWait();},
    bind:async()=>{if(!writer||writer.signerAddress!==kit.manager.getAccount()?.address){await connectWriter();if(walletSyncTimer!==undefined){clearTimeout(walletSyncTimer);walletSyncTimer=undefined;}}},
-   buy:()=>buyCheckedName(name),
+   buy:()=>buyCheckedName(name,setPrimary),
   });
  },undefined,true);
 }
-async function buyCheckedName(name:string){
+async function buyCheckedName(name:string,setPrimary=false){
  const c=writeClient(),account=c.signerAddress!;if(checked?.name!==name||!checkoutActions(checked.status,checkout,hintFor(name),account,checked.enabled).buy)throw new Error('Check the previous purchase status before paying again.');
  const quote=await reader.read.getQuote({name,bypassCache:true});ensureRegistrationWallet(c,account);
  if(quote.status.stage!=='available'||!quote.tldEnabled||quote.priceDrops!==checked?.price){checked={name,status:quote.status,price:quote.priceDrops,enabled:quote.tldEnabled};checkout=checkoutFromLedger(quote.status,hintFor(name));renderRegistration();el('discovery-error').textContent='Availability or price changed. Review the updated result before continuing.';el('discovery-error').hidden=false;return;}
- rememberPurchase({name,account,paid:false,paymentStarted:false});
+ rememberPurchase({name,account,paid:false,paymentStarted:false,setPrimary});
  setCheckout({phase:'payment-approval',completed:0,step:0,message:'Approve the payment in your wallet.'});
  try{
   const result=await purchaseThenClaim(c.registrar,{...util.splitDomain(name),expectedPriceDrops:quote.priceDrops},{
@@ -315,8 +336,8 @@ function renderDomainCards(names:string[],primary:string|null,newNames:ReadonlyS
  el('empty-search')?.addEventListener('click',()=>view('discover'));
 }
 el('incoming-list').addEventListener('click',e=>{const button=(e.target as Element).closest<HTMLElement>('[data-claim-domain]');if(!button)return;const name=button.dataset.claimDomain!;void run('Claim name',async()=>{const c=writeClient(),account=c.signerAddress!;activeInboxClaim=name;try{
- const r=await c.registrar.claimIncoming(name);forgetPurchase(name);recentNames(account).mark(name);
- if(checked?.name===name){resetDiscovery(false);completedRegistration={name,claimHash:r.txHash};renderRegistration();}
+ const r=await c.registrar.claimIncoming(name);const primary=await finishRegistrationPrimary(name,account);forgetPurchase(name);recentNames(account).mark(name);
+ if(checked?.name===name){resetDiscovery(false);completedRegistration={name,claimHash:r.txHash,primary};renderRegistration();}
  log('Claim name',r.engineResult,r.txHash,r.hookExecutions);await refreshConfirmed(name);return{message:name+' is now in your wallet.'};
  }catch(error){const hint=hintFor(name),info=explainError(error);if(hint){if(info.txHash)observePurchase({...hint,claimStarted:true,claimHash:info.txHash});else if(definitiveWalletDecline(error)&&!hint.claimHash)observePurchase({...hint,claimStarted:false});}throw error;}finally{activeInboxClaim=null;}});});
 el('domain-list').addEventListener('click',e=>{const button=(e.target as Element).closest<HTMLElement>('button');if(!button)return;if(button.dataset.transfer)openDomainAction('transfer',button.dataset.transfer);else if(button.dataset.burn)openDomainAction('burn',button.dataset.burn);else if(button.dataset.domain)void run('Load profile',()=>loadProfile(button.dataset.domain!));});
@@ -385,7 +406,7 @@ form('transfer-form',async data=>{
  const r=await client.registrar.createTransferOffer(name,recipient.address);log('Transfer offer',r.engineResult,r.txHash,r.meta);el<HTMLDialogElement>('domain-action-dialog').close();return{message:'Transfer offer created. The recipient can claim it from Ready to claim in My names.'};
 });
 el('cancel-transfer').onclick=()=>void run('Cancel transfer offer',async()=>{const r=await writeClient().registrar.cancelTransferOffer(actionDomain);log('Cancel transfer',r.engineResult,r.txHash,r.meta);el<HTMLDialogElement>('domain-action-dialog').close();return{message:'Transfer offer cancelled.'};});
-form('burn-form',async data=>{const domain=actionDomain;if(String(data.get('confirmation'))!==domain)throw new Error('The confirmation name does not match.');const r=await writeClient().registrar.burn(domain);log('Burn name',r.engineResult,r.txHash,r.hookExecutions);el<HTMLDialogElement>('domain-action-dialog').close();if(selected===domain){profile=null;selected='';view('portfolio');}await refreshConfirmed();return{message:domain+' was burned and its name records were removed.'};});
+form('burn-form',async data=>{const domain=actionDomain;if(String(data.get('confirmation'))!==domain)throw new Error('The confirmation name does not match.');const r=await writeClient().registrar.burn(domain);log('Burn name',r.engineResult,r.txHash,r.hookExecutions);el<HTMLDialogElement>('domain-action-dialog').close();if(selected===domain){profile=null;selected='';view('portfolio');}await refreshConfirmed();void kit.refreshIdentity()?.catch(()=>{});return{message:domain+' was burned and its name records were removed.'};});
 form('register-form',async data=>{const name=canonical(String(data.get('domain'))),r=await writeClient().registrar.register({...util.splitDomain(name),recipient:String(data.get('recipient')).trim()});log('Treasury register',r.engineResult,r.txHash,r.hookExecutions);view('discover');el<HTMLInputElement>('search-name').value=name;await checkName(name);});
 form('uribase-form',async data=>{const r=await writeClient().registrar.setURIBase(String(data.get('base')).trim());log('Update URI base',r.engineResult,r.txHash,r.hookExecutions);});
 form('receipt-form',async data=>{await ready();const hash=String(data.get('hash')),r=await reader.waitForTransaction(hash,{timeoutMs:10000});log('Check transaction',r.meta.TransactionResult,hash,r.meta.HookExecutions);if(r.meta.TransactionResult!=='tesSUCCESS')throw new Error(r.meta.TransactionResult);});

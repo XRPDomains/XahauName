@@ -51,7 +51,7 @@ See [shared network configuration](NETWORKS.md). The existing hook deploy script
 | `describe(domain)` | Canonical domain profile or null; raw address values are uppercase hex |
 | `listOwnedDomains(address)` | Consistent claimed domains only |
 | `listIncomingOffers(address)` | Directed native offers, including transactions without HookExecutions |
-| `getVerifiedPrimaryName(address)` | Primary with native owner and explicit XAH forward confirmation |
+| `getVerifiedPrimaryName(address)` | Primary selection with verified native ownership |
 | `listRecovery()` | Quarantined domains, without hiding healthy domains |
 | `events(afterCursor?, limit?)` | Durable cursor-ordered event outbox; maximum page 1000 |
 | `status()` | Network ID, checkpoint hash/index, observed head and sampled lag |

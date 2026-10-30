@@ -1,7 +1,7 @@
 import type {RegistrationStatus} from '@xahauname/sdk';
-export type CheckoutPhase='ready'|'payment-approval'|'payment-confirming'|'minting'|'claim-ready'|'claim-approval'|'claim-confirming'|'complete'|'attention'|'uncertain';
+export type CheckoutPhase='ready'|'payment-approval'|'payment-confirming'|'minting'|'claim-ready'|'claim-approval'|'claim-confirming'|'primary-approval'|'primary-confirming'|'complete'|'attention'|'uncertain';
 export interface CheckoutState {phase:CheckoutPhase;completed:number;step:number;message:string;paymentHash?:string;claimHash?:string}
-export interface PurchaseHint {name:string;account:string;paid:boolean;paymentStarted?:boolean;paymentHash?:string;claimHash?:string;claimStarted?:boolean}
+export interface PurchaseHint {name:string;account:string;paid:boolean;paymentStarted?:boolean;paymentHash?:string;claimHash?:string;claimStarted?:boolean;setPrimary?:boolean}
 export function checkoutActions(status:RegistrationStatus,state:CheckoutState|null,hint:PurchaseHint|null,account:string|undefined,enabled:boolean){return{
  buy:status.stage==='available'&&!hint&&!state&&enabled,
  claim:status.stage==='awaitingClaim'&&status.recipient===account&&!!account&&state?.phase==='claim-ready'&&!hint?.claimHash&&!hint?.claimStarted,
@@ -29,7 +29,7 @@ export function checkoutFromLedger(status:RegistrationStatus,hint:PurchaseHint|n
 /** Public hints only. Ledger reads, not this journal, authorize every continuation. */
 export function createPurchaseJournal(storage:Pick<Storage,'getItem'|'setItem'>,scope:string){
  const key='xahauname:purchase:v1:'+scope;
- const read=():PurchaseHint[]=>{try{const data=JSON.parse(storage.getItem(key)??'[]');if(!Array.isArray(data))return[];return data.slice(0,20).filter((item:any)=>item&&typeof item.name==='string'&&/^[a-z0-9-]{1,57}\.[a-z0-9]{2,8}$/.test(item.name)&&typeof item.account==='string'&&/^r[a-zA-Z0-9]{24,}$/.test(item.account)&&typeof item.paid==='boolean'&&(item.paymentStarted===undefined||typeof item.paymentStarted==='boolean')&&(item.claimStarted===undefined||typeof item.claimStarted==='boolean')&&[item.paymentHash,item.claimHash].every(hash=>hash===undefined||/^[a-f0-9]{64}$/i.test(hash))).map((item:any)=>({name:item.name,account:item.account,paid:item.paid,paymentStarted:item.paymentStarted,paymentHash:item.paymentHash,claimHash:item.claimHash,claimStarted:item.claimStarted}));}catch{return[];}};
+ const read=():PurchaseHint[]=>{try{const data=JSON.parse(storage.getItem(key)??'[]');if(!Array.isArray(data))return[];return data.slice(0,20).filter((item:any)=>item&&typeof item.name==='string'&&/^[a-z0-9-]{1,57}\.[a-z0-9]{2,8}$/.test(item.name)&&typeof item.account==='string'&&/^r[a-zA-Z0-9]{24,}$/.test(item.account)&&typeof item.paid==='boolean'&&(item.paymentStarted===undefined||typeof item.paymentStarted==='boolean')&&(item.claimStarted===undefined||typeof item.claimStarted==='boolean')&&(item.setPrimary===undefined||typeof item.setPrimary==='boolean')&&[item.paymentHash,item.claimHash].every(hash=>hash===undefined||/^[a-f0-9]{64}$/i.test(hash))).map((item:any)=>({name:item.name,account:item.account,paid:item.paid,paymentStarted:item.paymentStarted,paymentHash:item.paymentHash,claimHash:item.claimHash,claimStarted:item.claimStarted,setPrimary:item.setPrimary}));}catch{return[];}};
  return{
   get:(name:string)=>read().find(item=>item.name===name)??null,
   latest:()=>read().at(-1)??null,

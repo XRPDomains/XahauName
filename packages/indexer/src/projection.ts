@@ -1,4 +1,4 @@
-import {ResolverModule, util, encodeAddress, canonicalAddressBytes, domainFields, type ClientContext} from '@xahauname/sdk';
+import {ResolverModule, util, domainFields, type ClientContext} from '@xahauname/sdk';
 import {decodeAccountID} from 'xahau';
 import {canonicalName} from './decoder';
 import type {Change, Deployment, Json, Materialized} from './types';
@@ -89,11 +89,7 @@ export async function projectDomain(name: string, state: Materialized, cfg: Depl
     try {
         const profile = await resolver.describe(name, {verifyOwner: true});
         if (!profile) throw new Error('Profile missing');
-        let verifiedPrimary = false;
-        const receiving = profile.addrs[21337];
-        if (profile.primary && receiving && state.state[util.primaryOfKey(profile.owner)] === util.rootKey(label, tld)) {
-            try {verifiedPrimary = canonicalAddressBytes(21337, receiving).equals(encodeAddress(21337, profile.owner));} catch { /* Not a forward-confirmed primary. */ }
-        }
+        const verifiedPrimary = profile.primary && state.state[util.primaryOfKey(profile.owner)] === util.rootKey(label, tld);
         return {...base, ...profile, addrs: Object.fromEntries(Object.entries(profile.addrs).map(([coin, bytes]) => [coin, bytes.toString('hex').toUpperCase()])),
             status: 'claimed', verifiedPrimary};
     } catch (e) {

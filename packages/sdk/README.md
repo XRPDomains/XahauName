@@ -8,6 +8,10 @@ Ownership, name/token mappings and profile records are on-chain. Artwork and oth
 
 For new integrations use the [verified read facade](https://github.com/XRPDomains/XahauName/blob/main/docs/READ-API.md): `client.read.getOwner({name})`, `getAddress`, `getText`, `getRecords`, `getProfile`, `getName`, `getDomain`, `getQuote` and paginated `getNames`. `client.read.snapshot()` shares one immutable ledger across related calls. Existing APIs remain compatible.
 
+## Upgrading to 0.4
+
+Primary lookup requires matching selection and verified ownership; no XAH receiving record is needed. `read.getAddress({name})` and `resolver.resolveAddress(name)` now return the verified owner. To preserve explicit XAH receiving-record lookup, pass `coinType: 21337` (or `resolveAddress(name, 21337)`). Explicit record lookups still return null when unset.
+
 ## Quickstart
 
 Install in your application (Node.js 20+):
@@ -37,7 +41,7 @@ try {
 }
 ```
 
-Public owner/profile reads verify native token identity. A receiving address is an explicit record, separate from the owner: `getAddress()` returns `null` when absent, with no owner fallback. `getName({address, name})` checks whether that candidate is the wallet's forward-confirmed primary; omit `name` to discover it. Missing names/records return `null`; network errors and inconsistent ownership reject the promise.
+Public owner/profile reads verify native token identity. `getAddress({name})` resolves the verified owner without a receiving record. With an explicit `coinType`, it reads only that receiving record and returns `null` when absent; it never substitutes the owner for an explicitly requested record. `getName({address, name})` checks whether that candidate is the wallet's ownership-verified primary; omit `name` to discover it. Missing names/records return `null`; network errors and inconsistent ownership reject the promise.
 
 `getProfile()` returns `{ledgerHash, profile, tokenId, uri, transferOffer}` or `null`, rather than a bare profile. `getNames()` returns `{items, nextCursor, complete, ledgerHash, source}`. Follow `nextCursor` until `null`, even when a page has no items: its limit counts scanned ledger objects. A snapshot stays pinned; create a new snapshot after a write or refresh.
 
@@ -58,7 +62,7 @@ try {
 }
 ```
 
-Each combined read uses one validated ledger. `getPortfolio()` returns verified token URIs alongside domain names; its `primary` is an owned candidate, requiring `getName({address, name})` for forward confirmation. Load incoming offers independently so their initial account-history scan does not delay the owned list. The existing `describe()`, `checkDomain()` and positional resolver methods remain available.
+Each combined read uses one validated ledger. `getPortfolio()` returns verified token URIs alongside domain names; its `primary` is an owned candidate, requiring `getName({address, name})` to verify primary selection and native ownership. Load incoming offers independently so their initial account-history scan does not delay the owned list. The existing `describe()`, `checkDomain()` and positional resolver methods remain available.
 
 The network in this example selects the bundled deployment. To use another deployment or network, supply its public treasury, namespace and hook hashes through [shared network configuration](https://github.com/XRPDomains/XahauName/blob/main/docs/NETWORKS.md).
 

@@ -305,7 +305,7 @@ export class XahauNameClient {
         this.clearCache();
         return transactionResult(result, this.treasuryAddress, options, this.cfg.hookHashes);
     }
-    /** @deprecated Historical owner lookup; use getOwner or resolver.resolveAddress explicitly. */
+    /** @deprecated Historical owner lookup; use getOwner or resolver.resolveAddress with an explicit coinType for receiving records. */
     resolve(domain: string, options?: ReadOptions) {
         return this.getOwner(domain, options);
     }

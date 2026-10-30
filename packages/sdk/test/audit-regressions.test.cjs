@@ -84,3 +84,40 @@ test('failed session reads are evicted so a transient failure can be retried',as
  let n=0;const ctx=snapshotContext({readState:async()=>{if(!n++)throw Error('temporary');return Buffer.from([1]);}},H);
  await assert.rejects(ctx.readState(key(1)));assert.deepEqual(await ctx.readState(key(1)),Buffer.from([1]));
 });
+
+for(const receiving of ['missing','different'])test('primary identity ignores '+receiving+' receiving record',async()=>{
+ const {c,states,calls}=profile(),key=util.addrKey('alice','xah',21337);
+ if(receiving==='missing')states.delete(key);else states.set(key,encodeAddress(21337,require('xahau').Wallet.generate().classicAddress));
+ assert.equal(await c.read.getName({address:TESTNET.treasury,name:'alice.xah'}),'alice.xah');
+ assert.equal(await c.read.getName({address:TESTNET.treasury}),'alice.xah');
+ assert(!calls.some(q=>q.hook_state?.key===key),'Primary lookup must not read receiving records');
+ states.delete(util.primaryOfKey(TESTNET.treasury));
+ assert.equal(await c.read.getName({address:TESTNET.treasury,name:'alice.xah'}),null);
+});
+
+test('primary lookup rejects native custody mismatch even without receiving records',async()=>{
+ const {c,states,token}=profile();states.delete(util.addrKey('alice','xah',21337));
+ token.Owner=require('xahau').Wallet.generate().classicAddress;
+ await assert.rejects(c.read.getName({address:TESTNET.treasury,name:'alice.xah'}),e=>e.code==='OWNERSHIP_MISMATCH');
+ await assert.rejects(c.read.getName({address:TESTNET.treasury}),e=>e.code==='OWNERSHIP_MISMATCH');
+});
+
+for(const receiving of ['missing','different','malformed'])test('default address and owner lookup ignore '+receiving+' XAH record',async()=>{
+ const {c,states,calls}=profile(),key=util.addrKey('alice','xah',21337);
+ const other=require('xahau').Wallet.generate().classicAddress;
+ if(receiving==='missing')states.delete(key);else states.set(key,receiving==='malformed'?Buffer.from([1]):encodeAddress(21337,other));
+ assert.equal(await c.read.getOwner({name:'alice.xah'}),TESTNET.treasury);
+ assert.equal(await c.read.getAddress({name:'alice.xah'}),TESTNET.treasury);
+ assert.equal(await c.getOwner('alice.xah'),TESTNET.treasury);
+ assert.equal(await c.resolve('alice.xah'),TESTNET.treasury);
+ assert.equal(await c.resolver.resolveAddress('alice.xah'),TESTNET.treasury);
+ assert.equal(await c.read.getName({address:TESTNET.treasury,name:'alice.xah'}),'alice.xah');
+ assert(!calls.some(q=>q.hook_state?.key===key),'Identity reads must not query XAH records');
+ if(receiving==='malformed')await assert.rejects(c.read.getAddress({name:'alice.xah',coinType:21337}),e=>e.code==='BAD_ADDRESS');
+ else assert.equal(await c.read.getAddress({name:'alice.xah',coinType:21337}),receiving==='missing'?null:other);
+});
+
+test('default address lookup still rejects native owner mismatch',async()=>{
+ const {c,token}=profile();token.Owner=require('xahau').Wallet.generate().classicAddress;
+ await assert.rejects(c.read.getAddress({name:'alice.xah'}),e=>e.code==='OWNERSHIP_MISMATCH');
+});

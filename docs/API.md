@@ -20,7 +20,7 @@ Concurrent identical object/state requests with an explicit ledger hash may shar
 
 ## Client reads
 
-New integrations can use [the verified named-argument read API](READ-API.md). It adds bounded read sessions, decoded selected records, forward-confirmed primary candidates and pinned collection pagination while keeping the methods below compatible. Cache budgets default to 512 entries / approximately 1 MiB, with six aggregate RPC reads; zero TTL/budget disables storage. Facade deadlines default to 15 seconds, including stalled RPC waits.
+New integrations can use [the verified named-argument read API](READ-API.md). It adds bounded read sessions, decoded selected records, ownership-verified primary names and pinned collection pagination while keeping the methods below compatible. Cache budgets default to 512 entries / approximately 1 MiB, with six aggregate RPC reads; zero TTL/budget disables storage. Facade deadlines default to 15 seconds, including stalled RPC waits.
 
 `client.setSigner(signer | null)` attaches or detaches a signing session on the existing connected client. It clears the state cache without opening or closing a WebSocket. Recreate the Wallet Kit signer on account/network changes; normal submission network and session checks still apply.
 
@@ -35,7 +35,7 @@ New integrations can use [the verified named-argument read API](READ-API.md). It
 | checkDomain(domain, options) | Same-ledger lifecycle status, priceDrops and tldEnabled; independent reads run concurrently |
 | listIncomingDomains(address, options) | Registration/transfer offers from history and verified native state; optional AbortSignal stops obsolete scans |
 | getPrimaryName(address) | Configured owned candidate or null |
-| getVerifiedPrimaryName(address) | Candidate with explicit native receiving round-trip |
+| getVerifiedPrimaryName(address) | Primary selection with verified native ownership |
 | primaryOf(address) | Raw primary root-state hash or null |
 | isAvailable(domain) | Registration stage available |
 | getAvatar(domain, options) | {uri,url,source} or null; optional fallbackToMetadata |
@@ -89,7 +89,7 @@ Access through client.resolver. Identity/profile aliases above are also availabl
 | exists(domain), getRoot(domain), getOwner(domain) | Low-level root reads; getOwner needs verifyOwner:true for native identity |
 | getAddr(domain,coinType) | Binary record or null |
 | addr(domain,coinType) | Same record; empty Buffer if unset |
-| resolveAddress(domain,coinType=21337) | Codec-decoded explicit receiving address, owner verified; null if unset |
+| resolveAddress(domain,coinType?) | Verified owner when coinType is omitted; explicit coinType reads only that receiving record, null if unset |
 | getText(domain,key) | Strict UTF-8 string or null |
 | text(domain,key) | Empty string if unset |
 | getRecordKeys(domain) | Addresses, named texts and unnamed legacy state keys |
