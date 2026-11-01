@@ -1,6 +1,6 @@
 # Refund recovery design
 
-Status: proposal, 2026-10-26. No new opcode, journal layout or retry operation is deployed. Current behavior is defined by [SPEC](../SPEC.md); [native evidence](P2-STANDALONE-2026-10-26.md) proves failed refunds retain pending/correlation. SDK receipt diagnostics are observational only.
+Status: explicit-request flow selected on 2026-11-01; implementation pending resource redesign. No new opcode, journal layout or retry operation is deployed. Current behavior is defined by [SPEC](../SPEC.md); [native evidence](P2-STANDALONE-2026-10-26.md) proves failed refunds retain pending/correlation. SDK receipt diagnostics are observational only.
 
 ## Why a pending flag cannot authorize retry
 
@@ -47,3 +47,13 @@ The existing issuance callback already has a static worst-case count of **63,466
 - Native maximum record inventory and indexer quarantine/settlement projection, SDK receipt validation, friendly UI and migration of legacy unresolved obligations.
 
 Until that implementation and evidence exist, the safe supported behavior is to retain tracking, inspect `getRefundStatus()`, and require operator investigation. Ordinary lifecycle `reconcile` must not discard or repay refund obligations.
+
+## Resource feasibility, 2026-11-01
+
+The selected flow uses a separate recipient/treasury strong Invoke to queue a refund. Registration failure callbacks no longer initiate payment in the proposed design; an application must show Request refund and request wallet consent.
+
+The first issuance resource probe compiled to 22,423 bytes. The unchanged native guard checker reported 52,196 instructions for the entry point and 127,718 for the callback, exceeding the 65,535 limit. The probe was rejected, not deployed. Production sources were restored; draft source, tested source, WASM and diagnostics are isolated in ignored `hook/build/current/refund-request-draft/`.
+
+Next architecture: keep callbacks limited to validating correlation and recording outcome. Move paid settlement/cleanup into an explicit strong invocation, with no emission in the paid phase. Re-measure the production artifact before freezing the opcode/layout or exposing SDK writes. The draft also identifies a migration requirement: only registrations with provenance recorded before their first emission may enter the new journal; legacy pending/correlation alone cannot authorize a refund.
+
+The resource probe establishes a compiler/validator failure only. It provides no native safety evidence for refund requests, retries or settlement. Existing deployed automatic-refund behavior remains unchanged.

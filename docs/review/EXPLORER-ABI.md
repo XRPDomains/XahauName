@@ -31,3 +31,7 @@ Selectors use exact known keys because the explorer cannot reverse a domain hash
 Root mint time is eight-byte `UInt64 BE` with Ripple epoch semantics; pending/pricing drops are integer `UInt64 BE`; flags remain integers. Addresses are raw bytes, not automatically treated as XRPL account IDs. Legacy unnamed custom descriptors expose their stored state key without inventing a name.
 
 No explorer authentication or publication was performed. Review the generated files and use the network's Namespace editor to publish from the maintainer's own Google/Xaman account. A new HookHash or changed snapshot/catalog needs revalidation. This tooling neither proves domain ownership nor replaces SDK/indexer reads, native weak-phase fault tests or application metadata services. No wallet signing, transaction submission, frontend production build or screenshots occurred.
+
+## Snapshot refresh, 2026-11-01
+
+The local testnet bundle was refreshed at validated ledger 13672624 (`2908D4D11FD07D98C011383B3A3459D239BFAECBB9CC5EEC9ADD6F1A7187EB00`). All ten installed HookHashes match the deployment manifest. The pinned XRPLWin toolchain checked 139 live entries plus 8 synthetic fixtures against 147 projections: zero unmatched, ambiguous or untested projections and no warnings. The canonical local output remains `hook/build/current/explorer-testnet/`. This is a checked handoff, not evidence of explorer publication; future hashed keys or changed variable lengths require another snapshot/catalog refresh.
