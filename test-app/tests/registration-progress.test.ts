@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import type {RegistrationStatus} from '@xahauname/sdk';
-import {checkoutFromLedger,checkoutActions,isUnstartedPurchase,isConfirmedFailure,definitiveWalletDecline,createPurchaseJournal,type PurchaseHint} from '../src/registration-progress';
+import {checkoutFromLedger,checkoutActions,canRetryDeclinedPayment,isUnstartedPurchase,isConfirmedFailure,definitiveWalletDecline,createPurchaseJournal,type PurchaseHint} from '../src/registration-progress';
 import {registrationInput} from '../src/domain-input';
 import {registrationProgress,registrationSuccess} from '../src/registration-view';
 import {purchaseThenClaim} from '../src/purchase';
@@ -114,4 +114,24 @@ test('confirmed completion has only profile/new-name actions and its receipt, wi
  assert(html.includes('Manage name'));assert(html.includes('Buy another name'));
  assert(!html.includes('registration-steps'));assert(!html.includes('id="buy-name"'));assert(!html.includes('Check status'));assert(!html.includes('XAH'));
  assert(!html.includes('disabled'));assert.equal((registrationSuccess('alice.xah',hash,()=>'/receipt',true).match(/disabled/g)??[]).length,2);
+});
+
+test('terminal payment decline clears only an unsigned/unsubmitted attempt and exposes explicit Buy',()=>{
+ const pending={name:'alice.xah',account,paid:false,paymentStarted:true,setPrimary:true};
+ const approval:any={phase:'payment-approval',completed:0,step:0,message:'Approve'};
+ for(const error of [{code:'SIGN_REJECTED'},{code:'SIGN_FAILED',cause:{code:4001}}])assert(canRetryDeclinedPayment(error,pending,approval));
+ const declined:any={phase:'payment-rejected',completed:0,step:0,message:'Payment declined'};
+ assert(checkoutActions(status('available'),declined,null,account,true).buy);
+ assert(!checkoutActions(status('available'),declined,pending,account,true).buy);
+ assert(!checkoutActions(status('claimed'),declined,null,account,true).buy);
+ assert(!checkoutActions(status('available'),declined,null,account,false).buy);
+ const html=registrationProgress(declined,()=>'/receipt',true);assert.match(html,/is-failed/);assert.match(html,/Declined/);assert(!html.includes('is-active'));assert.match(html,/Set primary/);
+});
+test('unknown payment or any submission evidence cannot be unlocked as a decline',()=>{
+ const pending={name:'alice.xah',account,paid:false,paymentStarted:true};
+ const approval:any={phase:'payment-approval',completed:0,step:0,message:'Approve'};
+ for(const error of [{code:'TIMEOUT'},{code:'REQUEST_CANCELLED'},{code:'SIGN_FAILED'},{code:'SIGN_REJECTED',details:{outcomeUnknown:true}},{code:'SIGN_REJECTED',txHash:hash},{code:'SIGN_REJECTED',cause:{providerRequestId:'request'}}])assert(!canRetryDeclinedPayment(error,pending,approval));
+ for(const evidence of [{paid:true},{paymentHash:hash},{claimHash:hash},{claimStarted:true}])assert(!canRetryDeclinedPayment({code:'SIGN_REJECTED'},{...pending,...evidence},approval));
+ assert(!canRetryDeclinedPayment({code:'SIGN_REJECTED'},pending,{...approval,paymentHash:hash}));
+ assert(!canRetryDeclinedPayment({code:'SIGN_REJECTED'},pending,{...approval,step:2,completed:2}));
 });

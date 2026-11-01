@@ -1,9 +1,9 @@
 import type {RegistrationStatus} from '@xahauname/sdk';
-export type CheckoutPhase='ready'|'payment-approval'|'payment-confirming'|'minting'|'claim-ready'|'claim-approval'|'claim-confirming'|'primary-approval'|'primary-confirming'|'complete'|'attention'|'uncertain';
+export type CheckoutPhase='ready'|'payment-approval'|'payment-rejected'|'payment-confirming'|'minting'|'claim-ready'|'claim-approval'|'claim-confirming'|'primary-approval'|'primary-confirming'|'complete'|'attention'|'uncertain';
 export interface CheckoutState {phase:CheckoutPhase;completed:number;step:number;message:string;paymentHash?:string;claimHash?:string}
 export interface PurchaseHint {name:string;account:string;paid:boolean;paymentStarted?:boolean;paymentHash?:string;claimHash?:string;claimStarted?:boolean;setPrimary?:boolean}
 export function checkoutActions(status:RegistrationStatus,state:CheckoutState|null,hint:PurchaseHint|null,account:string|undefined,enabled:boolean){return{
- buy:status.stage==='available'&&!hint&&!state&&enabled,
+ buy:status.stage==='available'&&!hint&&(!state||state.phase==='payment-rejected')&&enabled,
  claim:status.stage==='awaitingClaim'&&status.recipient===account&&!!account&&state?.phase==='claim-ready'&&!hint?.claimHash&&!hint?.claimStarted,
  continue:status.stage==='pending'&&status.recipient===account&&!!account&&state?.phase==='minting'&&!hint?.claimHash&&!hint?.claimStarted,
 };}
@@ -17,6 +17,10 @@ export function definitiveWalletDecline(error:any){
   queue.push(value.cause,value.data,value.details);
  }
  return declined;
+}
+/** A terminal payment rejection can unlock a new user-initiated Buy; unknown outcomes cannot. */
+export function canRetryDeclinedPayment(error:unknown,hint:PurchaseHint|null,state:CheckoutState|null){
+ return !!hint&&state?.step===0&&state.completed===0&&!hint.paid&&!hint.paymentHash&&!hint.claimHash&&!hint.claimStarted&&!state.paymentHash&&!state.claimHash&&definitiveWalletDecline(error);
 }
 export function checkoutFromLedger(status:RegistrationStatus,hint:PurchaseHint|null):CheckoutState|null{
  const hashes={paymentHash:hint?.paymentHash,claimHash:hint?.claimHash};

@@ -447,3 +447,7 @@ main[data-view="discover"] #page-description{font-size:15px;line-height:1.6;marg
 .registration-primary-option small{font-size:12px;font-weight:400;line-height:1.5;color:var(--muted)}
 .registration-steps.has-primary{grid-template-columns:repeat(4,minmax(0,1fr))}
 @media(max-width:600px){.registration-steps.has-primary{grid-template-columns:minmax(0,1fr);gap:20px}.registration-steps.has-primary li{grid-template-columns:30px minmax(0,1fr);gap:12px;align-items:start}.registration-steps.has-primary li:not(:last-child)::after{top:36px;left:14px;width:2px;height:calc(100% - 16px)}}
+
+.registration-progress[data-phase=payment-rejected] .registration-message{background:var(--error-bg);color:var(--error)}
+.registration-steps .is-failed .step-number{border-color:var(--error);background:var(--error-bg);color:var(--error)}
+.registration-steps .is-failed .step-copy strong,.registration-steps .is-failed .step-copy>span{color:var(--error)}
